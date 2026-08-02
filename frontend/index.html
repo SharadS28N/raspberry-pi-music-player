@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PiPlayer - Production Open-Source Music Player</title>
+    
+    <!-- PWA Meta Tags for iOS & Android Installation -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#07111F">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #2563eb #07111F;
+        }
+        body {
+            background-color: #07111F;
+            color: #F8FAFC;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .sidebar-bg { background-color: #0B1628; }
+        .card-bg { background-color: #13243A; }
+        .accent-color { color: #2563EB; }
+        .accent-bg { background-color: #2563EB; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2563EB;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2563EB;
+            cursor: pointer;
+            border: none;
+        }
+        .eq-bar {
+            width: 3px;
+            background-color: #3b82f6;
+            animation: bounce 1.2s infinite ease-in-out alternate;
+        }
+        .eq-bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
+        .eq-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+        .eq-bar:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+        .eq-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
+        @keyframes bounce {
+            0% { transform: scaleY(0.3); }
+            100% { transform: scaleY(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div x-data="playerApp()" class="h-screen flex flex-col overflow-hidden pb-16 md:pb-0">
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar Navigation (Desktop) -->
+            <aside class="hidden md:flex flex-col w-64 sidebar-bg p-6">
+                <div class="mb-8 flex items-center justify-between">
+                    <h1 class="text-2xl font-bold flex items-center gap-2">
+                        <i class="fas fa-compact-disc accent-color text-3xl"></i>
+                        PiPlayer
+                    </h1>
+                </div>
+                <nav class="space-y-4">
+                    <button @click="activeTab = 'home'" :class="{'text-blue-400 font-bold': activeTab === 'home', 'text-gray-400': activeTab !== 'home'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
+                        <i class="fas fa-home w-6 text-lg"></i>
+                        Home
+                    </button>
+                    <button @click="activeTab = 'search'" :class="{'text-blue-400 font-bold': activeTab === 'search', 'text-gray-400': activeTab !== 'search'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
+                        <i class="fas fa-search w-6 text-lg"></i>
+                        Search Songs
+                    </button>
+                    <button @click="activeTab = 'playlists'; loadPlaylists()" :class="{'text-blue-400 font-bold': activeTab === 'playlists', 'text-gray-400': activeTab !== 'playlists'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
+                        <i class="fas fa-list-music w-6 text-lg"></i>
+                        Playlists
+                    </button>
+                    <button @click="activeTab = 'library'" :class="{'text-blue-400 font-bold': activeTab === 'library', 'text-gray-400': activeTab !== 'library'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
+                        <i class="fas fa-heart w-6 text-lg"></i>
+                        Favorites & History
+                    </button>
+                    <button @click="activeTab = 'sound'" :class="{'text-blue-400 font-bold': activeTab === 'sound', 'text-gray-400': activeTab !== 'sound'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
+                        <i class="fas fa-bluetooth w-6 text-lg"></i>
+                        BT Receiver & Sound
+                    </button>
+                    <button @click="activeTab = 'equalizer'" :class="{'text-blue-400 font-bold': activeTab === 'equalizer', 'text-gray-400': activeTab !== 'equalizer'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
+                        <i class="fas fa-sliders-h w-6 text-lg"></i>
+                        Audio Equalizer
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Main Content Container -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-8">
+                <!-- PWA Install Banner -->
+                <div x-show="deferredPrompt" class="mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 border border-blue-500/40 flex items-center justify-between shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-mobile-screen-button text-2xl text-blue-400"></i>
+                        <div>
+                            <h4 class="font-bold text-xs md:text-sm text-white">Install PiPlayer App</h4>
+                            <p class="text-[11px] text-gray-300">Run as a standalone app on your phone</p>
+                        </div>
+                    </div>
+                    <button @click="installPWA()" class="px-3.5 py-1.5 rounded-full accent-bg font-bold text-xs text-white shadow hover:scale-105 transition">
+                        Install App
+                    </button>
+                </div>
+
+                <!-- Mobile Header -->
+                <div class="flex md:hidden items-center justify-between mb-4">
+                    <h1 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fas fa-compact-disc accent-color text-2xl"></i>
+                        PiPlayer
+                    </h1>
+                    <button @click="toggleSleepTimerModal()" class="text-gray-400 hover:text-blue-400 relative">
+                        <i class="fas fa-moon text-lg" :class="{'text-blue-400': sleepTimerMinutes > 0}"></i>
+                        <span x-show="sleepTimerMinutes > 0" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="`${sleepTimerMinutes}m`"></span>
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="mb-6" x-show="activeTab === 'search' || activeTab === 'home'">
+                    <div class="relative max-w-2xl mx-auto">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            x-model="searchQuery"
+                            @input.debounce.400ms="searchSongs()"
+                            placeholder="Search songs, artists, playlists..."
+                            class="w-full pl-12 pr-10 py-3 rounded-full card-bg border border-gray-700 focus:outline-none focus:border-blue-500 transition text-sm"
+                        >
+                        <i x-show="isSearching" class="fas fa-spinner fa-spin absolute right-4 top-1/2 -translate-y-1/2 text-blue-400"></i>
+                    </div>
+                </div>
+
+                <!-- Home Tab -->
+                <div x-show="activeTab === 'home'">
+                    <div class="flex items-center justify-between mb-4 md:mb-6">
+                        <h2 class="text-xl md:text-2xl font-bold">Recently Played</h2>
+                        <div x-show="!playerState.paused" class="flex items-end gap-1 h-5 px-3 py-1 rounded-full bg-blue-950 border border-blue-800">
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <div class="eq-bar"></div>
+                            <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider ml-1">Playing</span>
+                        </div>
+                    </div>
+
+                    <div x-show="recentSongs.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                        <template x-for="song in recentSongs" :key="song.id || song.url">
+                            <div class="card-bg rounded-xl p-3 md:p-4 hover:bg-opacity-80 transition cursor-pointer group relative" @click="playSong(song)">
+                                <div class="relative aspect-square rounded-lg overflow-hidden mb-2.5 bg-gray-800">
+                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-2">
+                                        <button class="w-10 h-10 rounded-full accent-bg flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition">
+                                            <i class="fas fa-play text-white ml-0.5 text-xs"></i>
+                                        </button>
+                                        <button @click.stop="openAddToPlaylistModal(song)" class="w-10 h-10 rounded-full bg-gray-800/80 hover:bg-blue-600 flex items-center justify-center shadow transition" title="Add to Playlist">
+                                            <i class="fas fa-folder-plus text-white text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <h3 class="font-semibold text-xs md:text-sm truncate" x-text="song.title"></h3>
+                                <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Search Tab -->
+                <div x-show="activeTab === 'search'">
+                    <div x-show="searchResults.length > 0">
+                        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6">Search Results</h2>
+                        <div class="space-y-2.5 md:space-y-3">
+                            <template x-for="song in searchResults" :key="song.id || song.url">
+                                <div class="card-bg rounded-xl p-3 flex items-center gap-3.5 hover:bg-gray-800/80 transition border border-gray-800">
+                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover bg-gray-800 flex-shrink-0">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-semibold text-sm md:text-base truncate text-white" x-text="song.title"></h3>
+                                        <p class="text-gray-400 text-xs truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
+                                        <span x-show="song.duration" class="text-[10px] md:text-[11px] text-blue-400 font-mono" x-text="formatTime(song.duration)"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 md:gap-2">
+                                        <button @click="playSong(song)" class="w-9 h-9 md:w-10 md:h-10 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition shadow" title="Play Now">
+                                            <i class="fas fa-play text-white ml-0.5 text-xs md:text-sm"></i>
+                                        </button>
+                                        <button @click="openAddToPlaylistModal(song)" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-700 hover:bg-blue-600 flex items-center justify-center transition" title="Add to Playlist">
+                                            <i class="fas fa-folder-plus text-white text-xs md:text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playlists Tab -->
+                <div x-show="activeTab === 'playlists'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold">Your Playlists</h2>
+                            <p class="text-gray-400 text-xs md:text-sm mt-0.5">Organize your music collections</p>
+                        </div>
+                        <button @click="showAddPlaylistModal = true" class="px-3.5 py-2 rounded-full accent-bg hover:bg-blue-700 transition flex items-center gap-1.5 font-medium text-xs md:text-sm">
+                            <i class="fas fa-plus"></i> New Playlist
+                        </button>
+                    </div>
+
+                    <div x-show="!selectedPlaylist" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                        <template x-for="pl in playlists" :key="pl.id">
+                            <div class="card-bg rounded-xl p-4 md:p-5 border border-gray-800 hover:border-blue-500/50 transition cursor-pointer flex flex-col justify-between group" @click="openPlaylist(pl.id)">
+                                <div class="flex items-start justify-between">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-lg md:text-xl mb-2.5">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <button @click.stop="deletePlaylist(pl.id)" class="text-gray-500 hover:text-red-400 transition" title="Delete Playlist">
+                                        <i class="fas fa-trash-can text-sm"></i>
+                                    </button>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-base md:text-lg text-white" x-text="pl.name"></h3>
+                                    <p class="text-gray-400 text-xs mt-0.5" x-text="`${pl.song_count || 0} Songs`"></p>
+                                </div>
+                                <div class="mt-3 pt-2.5 border-t border-gray-800/80 flex items-center justify-between">
+                                    <span class="text-xs text-blue-400 font-semibold group-hover:underline">View Tracks</span>
+                                    <button @click.stop="playPlaylist(pl.id)" class="w-8 h-8 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition" title="Play Playlist">
+                                        <i class="fas fa-play text-white text-xs ml-0.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div x-show="selectedPlaylist" class="space-y-4 md:space-y-6">
+                        <div class="flex items-center gap-3.5 card-bg p-4 md:p-6 rounded-2xl border border-gray-800">
+                            <button @click="selectedPlaylist = null" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition">
+                                <i class="fas fa-arrow-left text-gray-300 text-sm"></i>
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Playlist</span>
+                                <h2 class="text-xl md:text-3xl font-bold text-white truncate" x-text="selectedPlaylist?.name"></h2>
+                                <p class="text-gray-400 text-xs mt-0.5" x-text="`${selectedPlaylist?.songs?.length || 0} Tracks`"></p>
+                            </div>
+                            <button x-show="selectedPlaylist?.songs?.length > 0" @click="playPlaylist(selectedPlaylist.id)" class="px-4 py-2.5 md:px-6 md:py-3 rounded-full accent-bg hover:bg-blue-700 font-bold flex items-center gap-2 text-xs md:text-sm shadow-lg transition">
+                                <i class="fas fa-play"></i> Play All
+                            </button>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <template x-for="song in selectedPlaylist?.songs || []" :key="song.id">
+                                <div class="card-bg rounded-xl p-3 flex items-center gap-3.5 border border-gray-800 hover:bg-gray-800/60 transition">
+                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-11 h-11 rounded-lg object-cover bg-gray-800 flex-shrink-0">
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-semibold text-xs md:text-sm truncate text-white" x-text="song.title"></h4>
+                                        <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="playSong(song)" class="w-8 h-8 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition" title="Play">
+                                            <i class="fas fa-play text-white text-[11px] ml-0.5"></i>
+                                        </button>
+                                        <button @click="removeSongFromPlaylist(selectedPlaylist.id, song.id)" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-red-600/30 hover:text-red-400 text-gray-400 flex items-center justify-center transition" title="Remove">
+                                            <i class="fas fa-minus text-[11px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites & History Tab -->
+                <div x-show="activeTab === 'library'" class="space-y-6">
+                    <h2 class="text-xl md:text-2xl font-bold">Favorites</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <template x-for="song in favorites" :key="song.id">
+                            <div class="card-bg rounded-xl p-3 md:p-4 hover:bg-opacity-80 transition cursor-pointer" @click="playSong(song)">
+                                <img :src="getSongImage(song)" class="w-full aspect-square rounded-lg object-cover mb-2.5 bg-gray-800">
+                                <h3 class="font-semibold text-xs md:text-sm truncate" x-text="song.title"></h3>
+                                <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="song.artist"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- BT Receiver & Sound Tab -->
+                <div x-show="activeTab === 'sound'" class="space-y-6 md:space-y-8 max-w-4xl mx-auto">
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-bold mb-1">Bluetooth Speaker Receiver & Sound Controls</h2>
+                        <p class="text-gray-400 text-xs md:text-sm">Stream audio from your phone, laptop, or tablet to your Raspberry Pi speaker with 0 latency.</p>
+                    </div>
+
+                    <div class="p-5 md:p-6 rounded-2xl bg-gradient-to-br from-blue-900/60 to-indigo-950 border border-blue-500/40 shadow-xl space-y-4">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-blue-600/30 flex items-center justify-center text-blue-400 flex-shrink-0">
+                                <i class="fas fa-bluetooth-b text-2xl md:text-3xl animate-pulse"></i>
+                            </div>
+                            <div>
+                                <span class="px-2.5 py-0.5 rounded-full bg-green-950 text-green-400 border border-green-800 text-[9px] md:text-[10px] font-bold uppercase tracking-wider">Bluetooth Receiver Active</span>
+                                <h3 class="text-lg md:text-xl font-bold text-white mt-0.5">PiPlayer Bluetooth Speaker</h3>
+                                <p class="text-[11px] md:text-xs text-blue-200 mt-0.5">Discoverable as "<span class="font-semibold text-white">aamps-raspberrypi</span>"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-bg rounded-xl p-5 md:p-6 border border-gray-800 space-y-4 shadow-md">
+                        <h3 class="font-semibold text-base md:text-lg flex items-center gap-2">
+                            <i class="fas fa-volume-high accent-color"></i>
+                            Master Volume Controls
+                        </h3>
+                        <div class="bg-gray-900/60 p-4 md:p-5 rounded-xl border border-gray-800 space-y-3">
+                            <div class="flex justify-between items-center text-xs md:text-sm font-medium">
+                                <span class="flex items-center gap-2 text-gray-300">
+                                    <i class="fas fa-sliders text-blue-400"></i> Raspberry Pi ALSA Master Gain
+                                </span>
+                                <span class="accent-color font-bold text-base md:text-lg" x-text="`${masterVolume}%`"></span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="100" 
+                                :value="masterVolume"
+                                @input="setMasterVolume($event.target.value)"
+                                class="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equalizer Tab -->
+                <div x-show="activeTab === 'equalizer'" class="space-y-6 max-w-4xl mx-auto">
+                    <h2 class="text-xl md:text-2xl font-bold">Sound Equalizer Presets</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        <template x-for="eq in eqPresets" :key="eq.id">
+                            <div 
+                                @click="selectEqualizer(eq.id)"
+                                class="p-4 md:p-5 rounded-xl border cursor-pointer transition flex flex-col items-center gap-2.5 text-center"
+                                :class="playerState.equalizer === eq.id ? 'border-blue-500 bg-blue-600/10 text-white font-semibold' : 'border-gray-800 card-bg text-gray-400 hover:border-gray-600'"
+                            >
+                                <i class="fas text-2xl md:text-3xl" :class="[eq.icon, playerState.equalizer === eq.id ? 'text-blue-400' : 'text-gray-500']"></i>
+                                <div>
+                                    <h4 class="font-bold text-sm md:text-base text-white" x-text="eq.name"></h4>
+                                    <p class="text-[11px] md:text-xs text-gray-400 mt-0.5" x-text="eq.desc"></p>
+                                </div>
+                                <span x-show="playerState.equalizer === eq.id" class="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold">Active</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Sticky Footer Player Bar (Desktop & Mobile) -->
+        <footer class="h-20 md:h-24 sidebar-bg border-t border-gray-800 flex items-center px-3 md:px-8 gap-3 md:gap-8 z-40 fixed bottom-16 md:bottom-0 left-0 right-0">
+            <div class="flex items-center gap-3 w-1/2 md:w-1/4 min-w-0 cursor-pointer" @click="showMobilePlayer = true">
+                <img :src="getSongImage(currentSong)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'" class="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover bg-gray-800 flex-shrink-0 shadow">
+                <div class="min-w-0">
+                    <h4 class="font-semibold text-xs md:text-sm truncate text-white" x-text="currentSong?.title || 'No song playing'"></h4>
+                    <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="currentSong?.artist || 'Select a song to play'"></p>
+                </div>
+            </div>
+
+            <!-- YouTube-Style Full Player Controls (Previous, -10s, Play/Pause, +10s, Next, Up Next Queue) -->
+            <div class="flex-1 flex flex-col items-center gap-1 md:gap-2">
+                <div class="flex items-center gap-3 md:gap-4">
+                    <button @click="playPrevious()" class="text-gray-400 hover:text-white transition" title="Previous Track">
+                        <i class="fas fa-step-backward text-xs md:text-base"></i>
+                    </button>
+                    <button @click="seekRelative(-10)" class="text-gray-400 hover:text-blue-400 transition" title="Rewind 10 Seconds">
+                        <i class="fas fa-rotate-left text-xs md:text-base"></i>
+                    </button>
+                    <button @click="togglePlay()" class="w-10 h-10 md:w-12 md:h-12 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition shadow-lg">
+                        <i :class="playerState.paused ? 'fas fa-play ml-0.5' : 'fas fa-pause'" class="text-white text-xs md:text-base"></i>
+                    </button>
+                    <button @click="seekRelative(10)" class="text-gray-400 hover:text-blue-400 transition" title="Forward 10 Seconds">
+                        <i class="fas fa-rotate-right text-xs md:text-base"></i>
+                    </button>
+                    <button @click="playNext()" class="text-gray-400 hover:text-white transition" title="Next Track">
+                        <i class="fas fa-step-forward text-xs md:text-base"></i>
+                    </button>
+                    <button @click="showQueueModal = !showQueueModal" class="text-gray-400 hover:text-blue-400 transition relative" title="Up Next Queue">
+                        <i class="fas fa-list text-xs md:text-base"></i>
+                        <span x-show="queue.length > 0" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="queue.length"></span>
+                    </button>
+                </div>
+
+                <!-- YouTube-Style Timeline (1:24 / 4:18 Format) -->
+                <div class="hidden md:flex w-full max-w-xl items-center gap-3">
+                    <input 
+                        type="range" 
+                        min="0" 
+                        :max="getEffectiveDuration()"
+                        :value="playerState.position"
+                        @input="seekTo($event.target.value)"
+                        class="flex-1 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer transition-all"
+                    >
+                    <span class="text-xs text-gray-400 font-mono min-w-max" x-text="`${formatTime(playerState.position)} / ${formatTime(getEffectiveDuration())}`"></span>
+                </div>
+            </div>
+
+            <div class="hidden md:flex items-center gap-4 w-1/4 justify-end">
+                <button @click="toggleSleepTimerModal()" class="text-gray-400 hover:text-blue-400 transition relative" title="Sleep Timer">
+                    <i class="fas fa-moon text-lg" :class="{'text-blue-400': sleepTimerMinutes > 0}"></i>
+                    <span x-show="sleepTimerMinutes > 0" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center" x-text="`${sleepTimerMinutes}m`"></span>
+                </button>
+
+                <div class="flex items-center gap-1.5" title="Raspberry Pi Master Hardware Volume">
+                    <i class="fas fa-sliders text-blue-400 text-xs"></i>
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="100"
+                        :value="masterVolume"
+                        @input="setMasterVolume($event.target.value)"
+                        class="w-20 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                    >
+                </div>
+
+                <div class="flex items-center gap-1.5" title="Music Stream Player Volume">
+                    <i class="fas fa-music text-blue-400 text-xs"></i>
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="100"
+                        :value="playerState.volume"
+                        @input="setVolume($event.target.value)"
+                        class="w-20 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                    >
+                </div>
+            </div>
+        </footer>
+
+        <!-- Mobile Bottom Navigation Bar (Echo Music App Style) -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 sidebar-bg border-t border-gray-800/80 flex items-center justify-around z-50 text-xs">
+            <button @click="activeTab = 'home'" :class="{'text-blue-400 font-bold': activeTab === 'home', 'text-gray-400': activeTab !== 'home'}" class="flex flex-col items-center gap-1">
+                <i class="fas fa-home text-base"></i> Home
+            </button>
+            <button @click="activeTab = 'search'" :class="{'text-blue-400 font-bold': activeTab === 'search', 'text-gray-400': activeTab !== 'search'}" class="flex flex-col items-center gap-1">
+                <i class="fas fa-search text-base"></i> Search
+            </button>
+            <button @click="activeTab = 'playlists'; loadPlaylists()" :class="{'text-blue-400 font-bold': activeTab === 'playlists', 'text-gray-400': activeTab !== 'playlists'}" class="flex flex-col items-center gap-1">
+                <i class="fas fa-list-music text-base"></i> Playlists
+            </button>
+            <button @click="activeTab = 'library'" :class="{'text-blue-400 font-bold': activeTab === 'library', 'text-gray-400': activeTab !== 'library'}" class="flex flex-col items-center gap-1">
+                <i class="fas fa-heart text-base"></i> Favorites
+            </button>
+            <button @click="activeTab = 'sound'" :class="{'text-blue-400 font-bold': activeTab === 'sound', 'text-gray-400': activeTab !== 'sound'}" class="flex flex-col items-center gap-1">
+                <i class="fas fa-bluetooth text-base"></i> Sound
+            </button>
+        </nav>
+
+        <!-- Up Next Queue Modal -->
+        <div x-show="showQueueModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+            <div @click.away="showQueueModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-list text-blue-400"></i> Up Next Queue
+                    </h3>
+                    <button @click="showQueueModal = false" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-2 max-h-72 overflow-y-auto">
+                    <template x-for="(song, idx) in queue" :key="idx">
+                        <div class="p-3 rounded-xl border border-gray-800 bg-gray-900/60 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <img :src="getSongImage(song)" class="w-10 h-10 rounded-lg object-cover bg-gray-800 flex-shrink-0">
+                                <div class="min-w-0">
+                                    <h4 class="font-semibold text-xs truncate text-white" x-text="song.title"></h4>
+                                    <p class="text-gray-400 text-[10px] truncate" x-text="song.artist"></p>
+                                </div>
+                            </div>
+                            <button @click="playSong(song)" class="px-2.5 py-1 rounded-full accent-bg text-xs font-semibold">Play</button>
+                        </div>
+                    </template>
+                    <div x-show="queue.length === 0" class="text-center py-6 text-gray-400 text-xs">
+                        No upcoming songs in queue. Search and tap '+' to add.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fullscreen Mobile Player Drawer Overlay (Echo Music PWA Style) -->
+        <div x-show="showMobilePlayer" class="fixed inset-0 z-50 sidebar-bg flex flex-col p-6 space-y-6 md:hidden">
+            <div class="flex items-center justify-between">
+                <button @click="showMobilePlayer = false" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-chevron-down text-xl"></i>
+                </button>
+                <span class="text-xs text-blue-400 font-bold uppercase tracking-wider">Now Playing</span>
+                <button @click="toggleSleepTimerModal()" class="text-gray-400 hover:text-blue-400 relative">
+                    <i class="fas fa-moon text-lg" :class="{'text-blue-400': sleepTimerMinutes > 0}"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 flex flex-col items-center justify-center space-y-6">
+                <img :src="getSongImage(currentSong)" class="w-64 h-64 rounded-2xl object-cover shadow-2xl bg-gray-800">
+                <div class="text-center w-full max-w-xs">
+                    <h3 class="text-lg font-bold truncate text-white" x-text="currentSong?.title || 'No Song'"></h3>
+                    <p class="text-xs text-gray-400 truncate mt-1" x-text="currentSong?.artist || 'YouTube'"></p>
+                </div>
+
+                <div class="w-full space-y-1">
+                    <input 
+                        type="range" 
+                        min="0" 
+                        :max="getEffectiveDuration()"
+                        :value="playerState.position"
+                        @input="seekTo($event.target.value)"
+                        class="w-full h-1 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                    >
+                    <div class="flex justify-between text-xs text-gray-400 font-mono">
+                        <span x-text="formatTime(playerState.position)"></span>
+                        <span x-text="formatTime(getEffectiveDuration())"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <button @click="playPrevious()" class="text-gray-400 text-xl">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                    <button @click="seekRelative(-10)" class="text-gray-400 text-xl">
+                        <i class="fas fa-rotate-left"></i>
+                    </button>
+                    <button @click="togglePlay()" class="w-16 h-16 rounded-full accent-bg flex items-center justify-center text-2xl text-white shadow-xl">
+                        <i :class="playerState.paused ? 'fas fa-play ml-1' : 'fas fa-pause'"></i>
+                    </button>
+                    <button @click="seekRelative(10)" class="text-gray-400 text-xl">
+                        <i class="fas fa-rotate-right"></i>
+                    </button>
+                    <button @click="playNext()" class="text-gray-400 text-xl">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Volume Sliders on Mobile Player -->
+            <div class="space-y-3 pt-4 border-t border-gray-800">
+                <div class="flex items-center justify-between text-xs text-gray-300">
+                    <span class="flex items-center gap-2"><i class="fas fa-sliders text-blue-400"></i> Pi Hardware Gain</span>
+                    <span x-text="`${masterVolume}%`" class="font-bold text-blue-400"></span>
+                </div>
+                <input type="range" min="0" max="100" :value="masterVolume" @input="setMasterVolume($event.target.value)" class="w-full h-1.5 bg-gray-700 rounded-full appearance-none">
+
+                <div class="flex items-center justify-between text-xs text-gray-300 mt-2">
+                    <span class="flex items-center gap-2"><i class="fas fa-music text-blue-400"></i> Music Stream Volume</span>
+                    <span x-text="`${playerState.volume}%`" class="font-bold text-blue-400"></span>
+                </div>
+                <input type="range" min="0" max="100" :value="playerState.volume" @input="setVolume($event.target.value)" class="w-full h-1.5 bg-gray-700 rounded-full appearance-none">
+            </div>
+        </div>
+
+        <!-- New Playlist Modal -->
+        <div x-show="showAddPlaylistModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+            <div @click.away="showAddPlaylistModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <h3 class="text-lg font-bold">Create New Playlist</h3>
+                <input type="text" x-model="newPlaylistName" placeholder="Playlist Name..." class="w-full p-3 rounded-xl card-bg border border-gray-700 text-sm focus:outline-none focus:border-blue-500">
+                <div class="flex justify-end gap-3">
+                    <button @click="showAddPlaylistModal = false" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
+                    <button @click="createPlaylist()" class="px-4 py-2 text-sm rounded-xl accent-bg font-semibold">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Song to Playlist Modal -->
+        <div x-show="showAddToPlaylistModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+            <div @click.away="showAddToPlaylistModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <h3 class="text-lg font-bold">Select Playlist</h3>
+                <p class="text-xs text-gray-400 truncate" x-text="`Adding: ${selectedSongForPlaylist?.title || ''}`"></p>
+                <div class="space-y-2 max-h-60 overflow-y-auto">
+                    <template x-for="pl in playlists" :key="pl.id">
+                        <button @click="addSongToPlaylist(pl.id)" class="w-full p-3 rounded-xl border border-gray-800 bg-gray-900/60 hover:border-blue-500 text-left font-medium text-sm flex items-center justify-between">
+                            <span x-text="pl.name"></span>
+                            <i class="fas fa-plus text-xs text-blue-400"></i>
+                        </button>
+                    </template>
+                </div>
+                <div class="flex justify-end">
+                    <button @click="showAddToPlaylistModal = false" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sleep Timer Modal -->
+        <div x-show="showSleepModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+            <div @click.away="showSleepModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-moon text-blue-400"></i> Sleep Timer
+                    </h3>
+                    <button @click="showSleepModal = false" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <template x-for="mins in [15, 30, 45, 60, 90, 0]" :key="mins">
+                        <button 
+                            @click="setSleepTimer(mins)"
+                            class="p-3 rounded-xl border text-sm font-semibold transition"
+                            :class="sleepTimerMinutes === mins ? 'border-blue-500 bg-blue-600/20 text-blue-400' : 'border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-600'"
+                        >
+                            <span x-text="mins === 0 ? 'Turn OFF' : `${mins} Minutes`"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Register PWA Service Worker for Phone Installation
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(reg => console.log('PWA ServiceWorker registered:', reg.scope))
+                    .catch(err => console.log('PWA ServiceWorker registration failed:', err));
+            });
+        }
+
+        function playerApp() {
+            return {
+                activeTab: 'search',
+                showSleepModal: false,
+                showAddPlaylistModal: false,
+                showAddToPlaylistModal: false,
+                showMobilePlayer: false,
+                showQueueModal: false,
+                searchQuery: '',
+                searchResults: [],
+                recentSongs: [],
+                favorites: [],
+                playlists: [],
+                selectedPlaylist: null,
+                selectedSongForPlaylist: null,
+                newPlaylistName: '',
+                queue: [],
+                currentSong: null,
+                isSearching: false,
+                sleepTimerMinutes: 0,
+                playerState: {
+                    paused: true,
+                    position: 0,
+                    duration: 0,
+                    volume: 85,
+                    equalizer: 'normal'
+                },
+                eqPresets: [
+                    { id: 'normal', name: 'Normal / Flat', desc: 'Balanced neutral sound response', icon: 'fa-music' },
+                    { id: 'bass', name: 'Bass Boost', desc: 'Enhanced low-frequency punch', icon: 'fa-drum' },
+                    { id: 'vocal', name: 'Vocal / Night', desc: 'Clear dialogue & acoustic clarity', icon: 'fa-microphone' },
+                    { id: 'treble', name: 'Treble Boost', desc: 'Crisp high frequencies & detail', icon: 'fa-bolt' },
+                    { id: 'party', name: 'Party / Club', desc: 'Full bass & energetic dynamics', icon: 'fa-compact-disc' }
+                ],
+                deferredPrompt: null,
+                masterVolume: 85,
+                ws: null,
+                lastPlayTime: 0,
+
+                init() {
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        this.deferredPrompt = e;
+                    });
+
+                    this.connectWebSocket();
+                    this.loadFavorites();
+                    this.loadHistory();
+                    this.loadPlaylists();
+
+                    setInterval(() => {
+                        if (!this.playerState.paused) {
+                            const maxDur = this.getEffectiveDuration();
+                            if (maxDur > 0 && this.playerState.position < maxDur) {
+                                this.playerState.position += 1;
+                            } else if (maxDur > 0 && this.playerState.position >= maxDur && (Date.now() - this.lastPlayTime > 5000)) {
+                                this.playNext();
+                            }
+                        }
+                    }, 1000);
+                },
+
+                getSongImage(song) {
+                    if (!song) return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300';
+                    if (song.thumbnail && song.thumbnail !== 'None') return song.thumbnail;
+                    if (song.id) return `https://i.ytimg.com/vi/${song.id}/hqdefault.jpg`;
+                    return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300';
+                },
+
+                getEffectiveDuration() {
+                    if (this.currentSong && this.currentSong.duration && this.currentSong.duration > 0) return this.currentSong.duration;
+                    if (this.playerState.duration && this.playerState.duration > 0) return this.playerState.duration;
+                    return 0;
+                },
+
+                connectWebSocket() {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${protocol}//${window.location.host}/ws`;
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onmessage = (event) => {
+                        const message = JSON.parse(event.data);
+                        this.handleMessage(message);
+                    };
+
+                    this.ws.onclose = () => {
+                        setTimeout(() => this.connectWebSocket(), 3000);
+                    };
+                },
+
+                handleMessage(message) {
+                    switch (message.type) {
+                        case 'init':
+                            if (message.data.current_song) this.currentSong = message.data.current_song;
+                            if (message.data.player_state) this.playerState = { ...this.playerState, ...message.data.player_state };
+                            if (message.data.queue) this.queue = message.data.queue;
+                            if (message.data.master_volume !== undefined) this.masterVolume = message.data.master_volume;
+                            break;
+                        case 'song_changed':
+                            this.currentSong = message.data;
+                            this.playerState.position = 0;
+                            if (message.data.duration) this.playerState.duration = message.data.duration;
+                            break;
+                        case 'player_state_changed':
+                            if (message.data.paused !== undefined) this.playerState.paused = message.data.paused;
+                            if (message.data.position !== undefined && (Date.now() - this.lastPlayTime > 3000)) {
+                                this.playerState.position = message.data.position;
+                            }
+                            if (message.data.duration !== undefined && message.data.duration > 0) this.playerState.duration = message.data.duration;
+                            if (message.data.volume !== undefined) this.playerState.volume = message.data.volume;
+                            if (message.data.equalizer) this.playerState.equalizer = message.data.equalizer;
+                            break;
+                        case 'master_volume_changed':
+                            this.masterVolume = message.data.volume;
+                            break;
+                    }
+                },
+
+                async searchSongs() {
+                    if (!this.searchQuery.trim()) {
+                        this.searchResults = [];
+                        return;
+                    }
+                    this.isSearching = true;
+                    try {
+                        const response = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
+                        this.searchResults = await response.json();
+                    } catch (e) {
+                        console.error("Search error:", e);
+                    } finally {
+                        this.isSearching = false;
+                    }
+                },
+
+                async playSong(song) {
+                    this.currentSong = song;
+                    this.playerState.paused = false;
+                    this.playerState.position = 0;
+                    this.lastPlayTime = Date.now();
+                    if (song.duration) this.playerState.duration = song.duration;
+                    
+                    try {
+                        const res = await fetch('/api/play', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(song)
+                        });
+                        const data = await res.json();
+                        if (data.status === 'cancelled_stale_request') {
+                            return;
+                        }
+                        if (data.current_song) this.currentSong = data.current_song;
+                    } catch (e) {
+                        console.error("Play error:", e);
+                    }
+                    this.loadHistory();
+                },
+
+                async togglePlay() {
+                    this.playerState.paused = !this.playerState.paused;
+                    await fetch('/api/toggle', { method: 'POST' });
+                },
+
+                async seekTo(position) {
+                    this.playerState.position = parseFloat(position);
+                    await fetch('/api/seek', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ position: parseFloat(position) })
+                    });
+                },
+
+                async seekRelative(seconds) {
+                    let target = Math.max(0, this.playerState.position + seconds);
+                    this.playerState.position = target;
+                    await fetch('/api/seek', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ position: target })
+                    });
+                },
+
+                async installPWA() {
+                    if (this.deferredPrompt) {
+                        this.deferredPrompt.prompt();
+                        const choice = await this.deferredPrompt.userChoice;
+                        if (choice.outcome === 'accepted') {
+                            this.deferredPrompt = null;
+                        }
+                    }
+                },
+
+                async setMasterVolume(volume) {
+                    this.masterVolume = parseInt(volume);
+                    await fetch('/api/audio/master-volume', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ volume: parseInt(volume) })
+                    });
+                },
+
+                async setVolume(volume) {
+                    this.playerState.volume = parseInt(volume);
+                    await fetch('/api/volume', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ volume: parseInt(volume) })
+                    });
+                },
+
+                async selectEqualizer(presetId) {
+                    this.playerState.equalizer = presetId;
+                    await fetch('/api/equalizer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ preset: presetId })
+                    });
+                },
+
+                toggleSleepTimerModal() {
+                    this.showSleepModal = !this.showSleepModal;
+                },
+
+                async setSleepTimer(minutes) {
+                    this.sleepTimerMinutes = minutes;
+                    this.showSleepModal = false;
+                    await fetch('/api/sleep-timer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ minutes: minutes })
+                    });
+                },
+
+                async loadPlaylists() {
+                    try {
+                        const res = await fetch('/api/playlists');
+                        this.playlists = await res.json();
+                    } catch (e) {}
+                },
+
+                async createPlaylist() {
+                    if (!this.newPlaylistName.trim()) return;
+                    try {
+                        await fetch('/api/playlists', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: this.newPlaylistName.trim() })
+                        });
+                        this.newPlaylistName = '';
+                        this.showAddPlaylistModal = false;
+                        this.loadPlaylists();
+                    } catch (e) {}
+                },
+
+                async deletePlaylist(id) {
+                    try {
+                        await fetch(`/api/playlists/${id}`, { method: 'DELETE' });
+                        if (this.selectedPlaylist && this.selectedPlaylist.id === id) this.selectedPlaylist = null;
+                        this.loadPlaylists();
+                    } catch (e) {}
+                },
+
+                async openPlaylist(id) {
+                    try {
+                        const res = await fetch(`/api/playlists/${id}`);
+                        this.selectedPlaylist = await res.json();
+                    } catch (e) {}
+                },
+
+                async playPlaylist(id) {
+                    try {
+                        await fetch(`/api/playlists/${id}/play`, { method: 'POST' });
+                        this.openPlaylist(id);
+                    } catch (e) {}
+                },
+
+                openAddToPlaylistModal(song) {
+                    this.selectedSongForPlaylist = song;
+                    this.loadPlaylists();
+                    this.showAddToPlaylistModal = true;
+                },
+
+                async addSongToPlaylist(playlistId) {
+                    if (!this.selectedSongForPlaylist) return;
+                    try {
+                        await fetch(`/api/playlists/${playlistId}/songs`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.selectedSongForPlaylist)
+                        });
+                        this.showAddToPlaylistModal = false;
+                        this.loadPlaylists();
+                    } catch (e) {}
+                },
+
+                async removeSongFromPlaylist(playlistId, songId) {
+                    try {
+                        await fetch(`/api/playlists/${playlistId}/songs/${songId}`, { method: 'DELETE' });
+                        this.openPlaylist(playlistId);
+                    } catch (e) {}
+                },
+
+                async addToQueue(song) {
+                    await fetch('/api/queue/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(song)
+                    });
+                },
+
+                async playNext() {
+                    if (this.queue.length > 0) {
+                        const nextSong = this.queue[0];
+                        await this.playSong(nextSong);
+                    }
+                },
+
+                async playPrevious() {
+                    if (this.recentSongs.length > 1) {
+                        await this.playSong(this.recentSongs[1]);
+                    }
+                },
+
+                async loadFavorites() {
+                    try {
+                        const response = await fetch('/api/favorites');
+                        this.favorites = await response.json();
+                    } catch (e) {}
+                },
+
+                async loadHistory() {
+                    try {
+                        const response = await fetch('/api/history');
+                        this.recentSongs = await response.json();
+                    } catch (e) {}
+                },
+
+                formatTime(seconds) {
+                    if (!seconds || isNaN(seconds) || seconds <= 0) return '0:00';
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
