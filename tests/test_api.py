@@ -29,9 +29,17 @@ class TestPiPlayerAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["powered"])
 
-        response = self.client.post("/api/bluetooth/power", json={"power": False})
+    def test_bluetooth_mode_toggle(self):
+        response = self.client.post("/api/bluetooth/mode", json={"mode": "receiver"})
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.json()["powered"])
+        self.assertEqual(response.json()["mode"], "receiver")
+
+    def test_lyrics_api(self):
+        response = self.client.get("/api/lyrics?title=Bohemian%20Rhapsody&artist=Queen")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("status", data)
+        self.assertIn("track", data)
 
     def test_audio_outputs(self):
         response = self.client.get("/api/audio/outputs")

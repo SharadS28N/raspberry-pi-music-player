@@ -30,13 +30,22 @@ class AudioService:
 
     def _init_hardware_audio(self):
         logger.info("Initializing Raspberry Pi 3.5mm hardware audio output...")
-        self._run_cmd(["amixer", "sset", "Master", "on"])
-        self._run_cmd(["amixer", "sset", "Master", "85%"])
+        self._set_alsa_hardware_volume(85)
         player.set_volume(85)
         
         dev_info = AUDIO_OUTPUT_DEVICES.get("jack", {})
         if "alsa_device" in dev_info:
             player.set_audio_device(dev_info["alsa_device"])
+
+    def _set_alsa_hardware_volume(self, volume: int):
+        if not self.is_linux:
+            return
+        # Try PCM first (standard RPi 3.5mm jack ALSA control), fallback to Master
+        out_pcm = self._run_cmd(["amixer", "sset", "PCM", "on"])
+        out_pcm_vol = self._run_cmd(["amixer", "sset", "PCM", f"{volume}%"])
+        if "Unable to find simple control" in out_pcm_vol or not out_pcm_vol.strip():
+            self._run_cmd(["amixer", "sset", "Master", "on"])
+            self._run_cmd(["amixer", "sset", "Master", f"{volume}%"])
 
     def get_output_devices(self) -> List[Dict]:
         devices = []
@@ -61,8 +70,7 @@ class AudioService:
         player.set_audio_device(alsa_target)
 
         if self.is_linux:
-            self._run_cmd(["amixer", "sset", "Master", "on"])
-            self._run_cmd(["amixer", "sset", "Master", f"{self.master_volume}%"])
+            self._set_alsa_hardware_volume(self.master_volume)
 
         return {
             "status": "success",
@@ -74,7 +82,10 @@ class AudioService:
         if not self.is_linux:
             return self.master_volume
 
-        out = self._run_cmd(["amixer", "sget", "Master"])
+        out = self._run_cmd(["amixer", "sget", "PCM"])
+        if "Unable to find simple control" in out or not out.strip():
+            out = self._run_cmd(["amixer", "sget", "Master"])
+
         if "%" in out:
             match = re.search(r"\[(\d+)%\]", out)
             if match:
@@ -89,8 +100,7 @@ class AudioService:
         logger.info(f"Setting master hardware volume to: {volume}%")
 
         if self.is_linux:
-            self._run_cmd(["amixer", "sset", "Master", "on"])
-            self._run_cmd(["amixer", "sset", "Master", f"{volume}%"])
+            self._set_alsa_hardware_volume(volume)
 
         return self.master_volume
 

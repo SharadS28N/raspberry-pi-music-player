@@ -7,6 +7,10 @@ import os
 import sys
 import time
 import asyncio
+import re
+import json
+import urllib.request
+import urllib.parse
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -49,6 +53,10 @@ class SeekRequest(BaseModel):
 
 class BluetoothPowerRequest(BaseModel):
     power: bool
+
+
+class BluetoothModeRequest(BaseModel):
+    mode: str
 
 
 class BluetoothDeviceRequest(BaseModel):
@@ -323,6 +331,17 @@ async def set_bluetooth_power(req: BluetoothPowerRequest):
     return {"status": "ok", "powered": status["powered"], "success": success}
 
 
+@app.post("/api/bluetooth/mode")
+async def set_bluetooth_mode(req: BluetoothModeRequest):
+    try:
+        new_mode = bluetooth_service.set_mode(req.mode)
+        status = bluetooth_service.get_status()
+        await broadcast_state_update("bluetooth_status_changed", status)
+        return {"status": "ok", "mode": new_mode}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.get("/api/bluetooth/devices")
 async def scan_bluetooth_devices():
     devices = bluetooth_service.scan_devices()
@@ -343,6 +362,46 @@ async def disconnect_bluetooth(req: BluetoothDeviceRequest):
     status = bluetooth_service.get_status()
     await broadcast_state_update("bluetooth_status_changed", status)
     return res
+
+
+@app.get("/api/lyrics")
+async def get_lyrics(title: str, artist: Optional[str] = ""):
+    """Fetch synchronized (LRC) or plain lyrics from LRCLIB API"""
+    clean_title = re.sub(r"[\(\[\{].*?[\)\]\}]", "", title).strip()
+    clean_artist = re.sub(r"[\(\[\{].*?[\)\]\}]", "", artist or "").strip()
+    
+    query = f"{clean_title} {clean_artist}".strip()
+    encoded_query = urllib.parse.quote(query)
+    
+    headers = {"User-Agent": "PiPlayer/2.0 (Raspberry Pi Open Source Music Player)"}
+    search_url = f"https://lrclib.net/api/search?q={encoded_query}"
+    
+    try:
+        req = urllib.request.Request(search_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode())
+                if data and isinstance(data, list) and len(data) > 0:
+                    match = data[0]
+                    return {
+                        "status": "success",
+                        "synced_lyrics": match.get("syncedLyrics"),
+                        "plain_lyrics": match.get("plainLyrics"),
+                        "track": match.get("trackName", title),
+                        "artist": match.get("artistName", artist),
+                        "instrumental": match.get("instrumental", False)
+                    }
+    except Exception as e:
+        print(f"Lyrics lookup exception: {e}")
+
+    return {
+        "status": "not_found",
+        "synced_lyrics": None,
+        "plain_lyrics": None,
+        "track": title,
+        "artist": artist,
+        "message": "Synchronized lyrics not available for this track"
+    }
 
 
 @app.get("/api/audio/outputs")
@@ -443,6 +502,7 @@ async def set_master_volume(req: VolumeRequest):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    poll_task = None
     try:
         await websocket.send_json({
             "type": "init",
@@ -457,20 +517,26 @@ async def websocket_endpoint(websocket: WebSocket):
         })
 
         async def poll_state():
-            while True:
-                await asyncio.sleep(1)
-                status = player.get_status()
-                await websocket.send_json({
-                    "type": "player_state_changed",
-                    "data": status
-                })
+            try:
+                while True:
+                    await asyncio.sleep(1)
+                    status = player.get_status()
+                    await websocket.send_json({
+                        "type": "player_state_changed",
+                        "data": status
+                    })
+            except (WebSocketDisconnect, RuntimeError, Exception):
+                pass
 
-        asyncio.create_task(poll_state())
+        poll_task = asyncio.create_task(poll_state())
 
         while True:
             data = await websocket.receive_json()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+    finally:
+        if poll_task and not poll_task.done():
+            poll_task.cancel()
 
 
 if __name__ == "__main__":

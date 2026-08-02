@@ -26,9 +26,15 @@ def get_local_ip():
         return "192.168.18.159"
 
 
+import shutil
+
+
 def ensure_ssl_certs(ip):
     if os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE):
         return True
+
+    if not shutil.which("openssl"):
+        return False
 
     print("[+] Generating self-signed SSL certificates for HTTPS...")
     try:
@@ -43,12 +49,9 @@ def ensure_ssl_certs(ip):
         if res.returncode == 0:
             print("[+] SSL certificates created successfully (cert.pem & key.pem).")
             return True
-        else:
-            print(f"[!] Warning: OpenSSL certificate creation failed: {res.stderr}")
-            return False
-    except Exception as e:
-        print(f"[!] Warning: Could not run openssl: {e}")
-        return False
+    except Exception:
+        pass
+    return False
 
 
 def main():

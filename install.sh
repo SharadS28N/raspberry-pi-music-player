@@ -43,13 +43,17 @@ python3 -m venv venv
 "${INSTALL_DIR}/venv/bin/pip" install -r requirements.txt
 
 echo -e "${GREEN}[4/6] Optimizing hardware audio & Bluetooth receiver settings...${NC}"
-amixer sset Master on 2>/dev/null || true
-amixer sset Master 85% 2>/dev/null || true
+amixer sset PCM on 2>/dev/null || amixer sset Master on 2>/dev/null || true
+amixer sset PCM 85% 2>/dev/null || amixer sset Master 85% 2>/dev/null || true
 
 sudo rfkill unblock bluetooth 2>/dev/null || true
+sudo hciconfig hci0 class 0x20041C 2>/dev/null || true
+sudo hciconfig hci0 piscan 2>/dev/null || true
 sudo bluetoothctl power on 2>/dev/null || true
 sudo bluetoothctl discoverable on 2>/dev/null || true
 sudo bluetoothctl pairable on 2>/dev/null || true
+sudo bluetoothctl agent NoInputNoOutput 2>/dev/null || true
+sudo bluetoothctl default-agent 2>/dev/null || true
 
 echo -e "${GREEN}[5/6] Creating systemd service daemons...${NC}"
 

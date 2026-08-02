@@ -1,4 +1,3 @@
-
 # Python
 __pycache__/
 *.py[cod]
@@ -12,19 +11,28 @@ ENV/
 dist/
 build/
 
-# Database
+# Database & Storage
 database/*.db
 database/*.db-journal
+*.sqlite
 
-# Logs
+# Logs & Temporary Files
 logs/*.log
+*.log
+tmp/
+.cache/
+cert.pem
+key.pem
 
-# IDE
+# Internal Development Docs
+CONTEXT.md
+UI-UX-DESIGN.md
+DEPLOY.md
+
+# IDE & OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db

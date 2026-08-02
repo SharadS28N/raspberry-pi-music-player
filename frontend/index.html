@@ -5,201 +5,572 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PiPlayer - Production Open-Source Music Player</title>
     
-    <!-- PWA Meta Tags for iOS & Android Installation -->
+    <!-- PWA Meta Tags -->
     <link rel="manifest" href="/static/manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#07111F">
+    <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
 
+    <!-- Tailwind CSS, Alpine.js & Lucide Icons (Zero Emojis) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
+        [x-cloak] { display: none !important; }
         * {
             scrollbar-width: thin;
-            scrollbar-color: #2563eb #07111F;
+            scrollbar-color: #ffffff #000000;
         }
         body {
-            background-color: #07111F;
-            color: #F8FAFC;
+            background-color: #050505;
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
-        .sidebar-bg { background-color: #0B1628; }
-        .card-bg { background-color: #13243A; }
-        .accent-color { color: #2563EB; }
-        .accent-bg { background-color: #2563EB; }
+        /* Neubrutalism Card & Button Styling */
+        .neu-card {
+            background-color: #121212;
+            border: 2px solid #FFFFFF;
+            box-shadow: 4px 4px 0px #FFFFFF;
+            transition: all 0.15s ease-in-out;
+        }
+        .neu-card-interactive {
+            background-color: #121212;
+            border: 2px solid #FFFFFF;
+            box-shadow: 4px 4px 0px #FFFFFF;
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+        }
+        .neu-card-interactive:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #FFFFFF;
+            background-color: #1A1A1A;
+        }
+        .neu-card-interactive:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #FFFFFF;
+        }
+        .neu-button {
+            background-color: #FFFFFF;
+            color: #000000;
+            font-weight: 800;
+            border: 2px solid #FFFFFF;
+            box-shadow: 3px 3px 0px #333333;
+            transition: all 0.1s ease-in-out;
+        }
+        .neu-button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #FFFFFF;
+            background-color: #F0F0F0;
+        }
+        .neu-button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000000;
+        }
+        .neu-badge {
+            border: 2px solid #FFFFFF;
+            box-shadow: 2px 2px 0px #FFFFFF;
+            font-weight: 700;
+        }
+        .neu-inset {
+            background-color: #000000;
+            border: 2px solid #333333;
+            box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        /* Scrubber thumb */
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: #2563EB;
+            background: #FFFFFF;
+            border: 2px solid #000000;
             cursor: pointer;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
         }
         input[type="range"]::-moz-range-thumb {
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: #2563EB;
+            background: #FFFFFF;
+            border: 2px solid #000000;
             cursor: pointer;
-            border: none;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
         }
+        /* Equalizer Bouncing Animation */
         .eq-bar {
             width: 3px;
-            background-color: #3b82f6;
+            background-color: #FFFFFF;
+            border-radius: 1px;
             animation: bounce 1.2s infinite ease-in-out alternate;
         }
-        .eq-bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
+        .eq-bar:nth-child(1) { height: 50%; animation-delay: 0.1s; }
         .eq-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
-        .eq-bar:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+        .eq-bar:nth-child(3) { height: 35%; animation-delay: 0.2s; }
         .eq-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
         @keyframes bounce {
-            0% { transform: scaleY(0.3); }
+            0% { transform: scaleY(0.2); }
             100% { transform: scaleY(1.1); }
+        }
+        /* Spinning Disc Animation */
+        .spin-vinyl {
+            animation: spin 8s linear infinite;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div x-data="playerApp()" class="h-screen flex flex-col overflow-hidden pb-16 md:pb-0">
+    <div x-data="playerApp()" x-init="init()" class="h-screen flex flex-col overflow-hidden pb-16 md:pb-0">
         <div class="flex flex-1 overflow-hidden">
-            <!-- Sidebar Navigation (Desktop) -->
-            <aside class="hidden md:flex flex-col w-64 sidebar-bg p-6">
+            <!-- Sidebar Navigation (Desktop Neubrutalism Spotify Dark) -->
+            <aside class="hidden md:flex flex-col w-64 bg-[#000000] border-r-2 border-white p-6 text-white">
+                <!-- Minimalist Branding & Pi Disc Logo -->
                 <div class="mb-8 flex items-center justify-between">
-                    <h1 class="text-2xl font-bold flex items-center gap-2">
-                        <i class="fas fa-compact-disc accent-color text-3xl"></i>
-                        PiPlayer
+                    <h1 class="text-2xl font-black flex items-center gap-3 tracking-tighter uppercase">
+                        <div class="relative w-10 h-10 rounded-full bg-black border-2 border-white flex items-center justify-center shadow-[2px_2px_0px_#ffffff] overflow-hidden" :class="{'spin-vinyl': !playerState.paused}">
+                            <div class="absolute inset-0 rounded-full border border-white/40 m-1"></div>
+                            <div class="w-3 h-3 rounded-full bg-white shadow-[0_0_8px_#ffffff]"></div>
+                        </div>
+                        <span>PIPLAYER</span>
                     </h1>
                 </div>
-                <nav class="space-y-4">
-                    <button @click="activeTab = 'home'" :class="{'text-blue-400 font-bold': activeTab === 'home', 'text-gray-400': activeTab !== 'home'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
-                        <i class="fas fa-home w-6 text-lg"></i>
-                        Home
+
+                <nav class="space-y-2.5 font-extrabold text-sm">
+                    <button @click="switchTab('home')" :class="activeTab === 'home' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="home" class="w-5 h-5"></i>
+                        <span>Home</span>
                     </button>
-                    <button @click="activeTab = 'search'" :class="{'text-blue-400 font-bold': activeTab === 'search', 'text-gray-400': activeTab !== 'search'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
-                        <i class="fas fa-search w-6 text-lg"></i>
-                        Search Songs
+                    <button @click="switchTab('search')" :class="activeTab === 'search' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                        <span>Search Songs</span>
                     </button>
-                    <button @click="activeTab = 'playlists'; loadPlaylists()" :class="{'text-blue-400 font-bold': activeTab === 'playlists', 'text-gray-400': activeTab !== 'playlists'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
-                        <i class="fas fa-list-music w-6 text-lg"></i>
-                        Playlists
+                    <button @click="switchTab('lyrics')" :class="activeTab === 'lyrics' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="align-left" class="w-5 h-5"></i>
+                        <span>Live Lyrics</span>
                     </button>
-                    <button @click="activeTab = 'library'" :class="{'text-blue-400 font-bold': activeTab === 'library', 'text-gray-400': activeTab !== 'library'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
-                        <i class="fas fa-heart w-6 text-lg"></i>
-                        Favorites & History
+                    <button @click="switchTab('equalizer')" :class="activeTab === 'equalizer' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="sliders" class="w-5 h-5"></i>
+                        <span>Audio Equalizer</span>
                     </button>
-                    <button @click="activeTab = 'sound'" :class="{'text-blue-400 font-bold': activeTab === 'sound', 'text-gray-400': activeTab !== 'sound'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
-                        <i class="fas fa-bluetooth w-6 text-lg"></i>
-                        BT Receiver & Sound
+                    <button @click="switchTab('sound')" :class="activeTab === 'sound' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="bluetooth" class="w-5 h-5"></i>
+                        <span>BT Receiver & Sound</span>
                     </button>
-                    <button @click="activeTab = 'equalizer'" :class="{'text-blue-400 font-bold': activeTab === 'equalizer', 'text-gray-400': activeTab !== 'equalizer'}" class="flex items-center gap-3 w-full text-left hover:text-white transition">
-                        <i class="fas fa-sliders-h w-6 text-lg"></i>
-                        Audio Equalizer
+                    <button @click="switchTab('playlists')" :class="activeTab === 'playlists' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="list-music" class="w-5 h-5"></i>
+                        <span>Playlists</span>
+                    </button>
+                    <button @click="switchTab('library')" :class="activeTab === 'library' ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#888888]' : 'text-white hover:bg-neutral-900 border-2 border-transparent'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all">
+                        <i data-lucide="heart" class="w-5 h-5"></i>
+                        <span>Favorites & History</span>
                     </button>
                 </nav>
+
+                <!-- BT Quick Status in Sidebar -->
+                <div class="mt-auto pt-6 border-t-2 border-neutral-800">
+                    <div class="p-3.5 rounded-xl bg-neutral-900 border-2 border-white shadow-[2px_2px_0px_#ffffff] flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full border border-black" :class="btStatus.powered ? 'bg-white shadow-[0_0_6px_#ffffff]' : 'bg-neutral-700'"></div>
+                            <span class="font-bold text-white uppercase tracking-wider text-[11px]" x-text="btStatus.powered ? 'BT Receiver ON' : 'BT Disabled'"></span>
+                        </div>
+                        <button @click="switchTab('sound')" class="text-white hover:scale-110 transition">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
             </aside>
 
             <!-- Main Content Container -->
-            <main class="flex-1 overflow-y-auto p-4 md:p-8">
-                <!-- PWA Install Banner -->
-                <div x-show="deferredPrompt" class="mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 border border-blue-500/40 flex items-center justify-between shadow-lg">
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-[#0A0A0A]">
+                <!-- PWA Banner -->
+                <div x-show="deferredPrompt" class="mb-6 p-4 rounded-2xl bg-white text-black border-2 border-white shadow-[4px_4px_0px_#ffffff] flex items-center justify-between font-bold">
                     <div class="flex items-center gap-3">
-                        <i class="fas fa-mobile-screen-button text-2xl text-blue-400"></i>
+                        <i data-lucide="smartphone" class="w-6 h-6 text-black"></i>
                         <div>
-                            <h4 class="font-bold text-xs md:text-sm text-white">Install PiPlayer App</h4>
-                            <p class="text-[11px] text-gray-300">Run as a standalone app on your phone</p>
+                            <h4 class="font-black text-sm uppercase">Install PiPlayer Standalone App</h4>
+                            <p class="text-xs font-semibold text-neutral-700">Install native app on mobile & desktop</p>
                         </div>
                     </div>
-                    <button @click="installPWA()" class="px-3.5 py-1.5 rounded-full accent-bg font-bold text-xs text-white shadow hover:scale-105 transition">
-                        Install App
+                    <button @click="installPWA()" class="px-4 py-2 rounded-xl bg-black text-white font-black text-xs border-2 border-black shadow-[2px_2px_0px_#000000] hover:scale-105 transition">
+                        Install
                     </button>
                 </div>
 
                 <!-- Mobile Header -->
                 <div class="flex md:hidden items-center justify-between mb-4">
-                    <h1 class="text-xl font-bold flex items-center gap-2">
-                        <i class="fas fa-compact-disc accent-color text-2xl"></i>
-                        PiPlayer
+                    <h1 class="text-xl font-black flex items-center gap-2 text-white uppercase tracking-tight">
+                        <div class="w-8 h-8 rounded-full bg-black border-2 border-white flex items-center justify-center shadow-[2px_2px_0px_#ffffff]">
+                            <div class="w-2.5 h-2.5 rounded-full bg-white"></div>
+                        </div>
+                        <span>PiPlayer</span>
                     </h1>
-                    <button @click="toggleSleepTimerModal()" class="text-gray-400 hover:text-blue-400 relative">
-                        <i class="fas fa-moon text-lg" :class="{'text-blue-400': sleepTimerMinutes > 0}"></i>
-                        <span x-show="sleepTimerMinutes > 0" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="`${sleepTimerMinutes}m`"></span>
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button @click="toggleSleepTimerModal()" class="text-white hover:text-neutral-300 relative">
+                            <i data-lucide="moon" class="w-6 h-6" :class="{'text-white fill-current': sleepTimerMinutes > 0}"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Search Bar -->
+                <!-- Global Search Bar -->
                 <div class="mb-6" x-show="activeTab === 'search' || activeTab === 'home'">
                     <div class="relative max-w-2xl mx-auto">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                         <input 
                             type="text" 
                             x-model="searchQuery"
                             @input.debounce.400ms="searchSongs()"
-                            placeholder="Search songs, artists, playlists..."
-                            class="w-full pl-12 pr-10 py-3 rounded-full card-bg border border-gray-700 focus:outline-none focus:border-blue-500 transition text-sm"
+                            placeholder="Search songs, artists, YouTube audio..."
+                            class="w-full pl-12 pr-10 py-3.5 rounded-2xl bg-neutral-900 border-2 border-white shadow-[4px_4px_0px_#ffffff] focus:outline-none text-white text-sm font-extrabold transition placeholder-neutral-500"
                         >
-                        <i x-show="isSearching" class="fas fa-spinner fa-spin absolute right-4 top-1/2 -translate-y-1/2 text-blue-400"></i>
+                        <i x-show="isSearching" data-lucide="loader-2" class="w-5 h-5 animate-spin absolute right-4 top-1/2 -translate-y-1/2 text-white"></i>
                     </div>
                 </div>
 
                 <!-- Home Tab -->
-                <div x-show="activeTab === 'home'">
-                    <div class="flex items-center justify-between mb-4 md:mb-6">
-                        <h2 class="text-xl md:text-2xl font-bold">Recently Played</h2>
-                        <div x-show="!playerState.paused" class="flex items-end gap-1 h-5 px-3 py-1 rounded-full bg-blue-950 border border-blue-800">
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <div class="eq-bar"></div>
-                            <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider ml-1">Playing</span>
+                <div x-show="activeTab === 'home'" class="space-y-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h2 class="text-2xl font-black text-white uppercase tracking-tight">Recently Played</h2>
+                            <p class="text-xs font-semibold text-neutral-400">Your recent music sessions</p>
+                        </div>
+                        <div x-show="!playerState.paused" class="flex items-end gap-1 h-5 px-3 py-1 rounded-full bg-white text-black border-2 border-black font-bold">
+                            <div class="eq-bar bg-black"></div>
+                            <div class="eq-bar bg-black"></div>
+                            <div class="eq-bar bg-black"></div>
+                            <div class="eq-bar bg-black"></div>
+                            <span class="text-[10px] font-black uppercase tracking-wider ml-1">Playing</span>
                         </div>
                     </div>
 
-                    <div x-show="recentSongs.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                    <div x-show="recentSongs.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         <template x-for="song in recentSongs" :key="song.id || song.url">
-                            <div class="card-bg rounded-xl p-3 md:p-4 hover:bg-opacity-80 transition cursor-pointer group relative" @click="playSong(song)">
-                                <div class="relative aspect-square rounded-lg overflow-hidden mb-2.5 bg-gray-800">
+                            <div class="neu-card-interactive rounded-2xl p-3.5 group relative" @click="playSong(song)">
+                                <div class="relative aspect-square rounded-xl overflow-hidden mb-3 border-2 border-white bg-black">
                                     <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" class="w-full h-full object-cover">
-                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-2">
-                                        <button class="w-10 h-10 rounded-full accent-bg flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition">
-                                            <i class="fas fa-play text-white ml-0.5 text-xs"></i>
+                                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-2">
+                                        <button class="w-10 h-10 rounded-full neu-button flex items-center justify-center">
+                                            <i data-lucide="play" class="w-5 h-5 text-black fill-current ml-0.5"></i>
                                         </button>
-                                        <button @click.stop="openAddToPlaylistModal(song)" class="w-10 h-10 rounded-full bg-gray-800/80 hover:bg-blue-600 flex items-center justify-center shadow transition" title="Add to Playlist">
-                                            <i class="fas fa-folder-plus text-white text-xs"></i>
+                                        <button @click.stop="openAddToPlaylistModal(song)" class="w-10 h-10 rounded-full bg-neutral-900 border-2 border-white flex items-center justify-center" title="Add to Playlist">
+                                            <i data-lucide="folder-plus" class="w-4 h-4 text-white"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <h3 class="font-semibold text-xs md:text-sm truncate" x-text="song.title"></h3>
-                                <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
+                                <h3 class="font-extrabold text-xs md:text-sm truncate text-white" x-text="song.title"></h3>
+                                <p class="text-neutral-400 font-semibold text-[11px] truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
                             </div>
                         </template>
+                    </div>
+
+                    <div x-show="recentSongs.length === 0" class="neu-card rounded-2xl p-8 text-center">
+                        <i data-lucide="disc" class="w-12 h-12 mx-auto mb-3 text-white"></i>
+                        <h3 class="font-black text-white uppercase text-lg">No recent tracks</h3>
+                        <p class="text-xs font-semibold text-neutral-400 mt-1">Search or play a track to start building your library</p>
                     </div>
                 </div>
 
                 <!-- Search Tab -->
                 <div x-show="activeTab === 'search'">
                     <div x-show="searchResults.length > 0">
-                        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6">Search Results</h2>
-                        <div class="space-y-2.5 md:space-y-3">
+                        <h2 class="text-2xl font-black text-white uppercase tracking-tight mb-4">Search Results</h2>
+                        <div class="space-y-3">
                             <template x-for="song in searchResults" :key="song.id || song.url">
-                                <div class="card-bg rounded-xl p-3 flex items-center gap-3.5 hover:bg-gray-800/80 transition border border-gray-800">
-                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover bg-gray-800 flex-shrink-0">
+                                <div class="neu-card-interactive rounded-2xl p-3.5 flex items-center gap-4">
+                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-14 h-14 rounded-xl object-cover border-2 border-white bg-black flex-shrink-0">
                                     <div class="flex-1 min-w-0">
-                                        <h3 class="font-semibold text-sm md:text-base truncate text-white" x-text="song.title"></h3>
-                                        <p class="text-gray-400 text-xs truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
-                                        <span x-show="song.duration" class="text-[10px] md:text-[11px] text-blue-400 font-mono" x-text="formatTime(song.duration)"></span>
+                                        <h3 class="font-extrabold text-sm md:text-base truncate text-white" x-text="song.title"></h3>
+                                        <p class="text-neutral-400 text-xs font-semibold truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
+                                        <span x-show="song.duration" class="text-[11px] text-white font-mono font-bold" x-text="formatTime(song.duration)"></span>
                                     </div>
-                                    <div class="flex items-center gap-1.5 md:gap-2">
-                                        <button @click="playSong(song)" class="w-9 h-9 md:w-10 md:h-10 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition shadow" title="Play Now">
-                                            <i class="fas fa-play text-white ml-0.5 text-xs md:text-sm"></i>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="playSong(song)" class="w-10 h-10 rounded-full neu-button flex items-center justify-center" title="Play Now">
+                                            <i data-lucide="play" class="w-5 h-5 text-black fill-current ml-0.5"></i>
                                         </button>
-                                        <button @click="openAddToPlaylistModal(song)" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-700 hover:bg-blue-600 flex items-center justify-center transition" title="Add to Playlist">
-                                            <i class="fas fa-folder-plus text-white text-xs md:text-sm"></i>
+                                        <button @click="fetchLyricsForSong(song)" class="w-10 h-10 rounded-full bg-neutral-900 border-2 border-white flex items-center justify-center" title="View Lyrics">
+                                            <i data-lucide="align-left" class="w-4 h-4 text-white"></i>
+                                        </button>
+                                        <button @click="openAddToPlaylistModal(song)" class="w-10 h-10 rounded-full bg-neutral-900 border-2 border-white flex items-center justify-center" title="Add to Playlist">
+                                            <i data-lucide="folder-plus" class="w-4 h-4 text-white"></i>
                                         </button>
                                     </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Synchronized Lyrics Screen -->
+                <div x-show="activeTab === 'lyrics'" class="max-w-3xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-black text-white uppercase tracking-tight">Synchronized On-Screen Lyrics</h2>
+                            <p class="text-xs font-semibold text-neutral-400">Live timed lyric display & LRC scrolling</p>
+                        </div>
+                        <button @click="fetchLyrics()" class="px-4 py-2.5 rounded-xl neu-button text-xs flex items-center gap-2">
+                            <i data-lucide="refresh-cw" class="w-4 h-4" :class="{'animate-spin': lyricsState.loading}"></i>
+                            <span>Reload Lyrics</span>
+                        </button>
+                    </div>
+
+                    <div class="neu-card rounded-2xl p-6 md:p-8 min-h-[400px] flex flex-col justify-between">
+                        <!-- Song Banner -->
+                        <div class="flex items-center gap-4 pb-6 border-b-2 border-white">
+                            <img :src="getSongImage(currentSong)" class="w-16 h-16 rounded-xl object-cover border-2 border-white bg-black">
+                            <div>
+                                <h3 class="font-black text-lg text-white truncate" x-text="currentSong?.title || 'No Song Selected'"></h3>
+                                <p class="text-neutral-400 text-xs font-semibold mt-0.5" x-text="currentSong?.artist || 'Select a track to view lyrics'"></p>
+                            </div>
+                        </div>
+
+                        <!-- Lyrics Container -->
+                        <div class="py-8 my-auto text-center space-y-4 max-h-[350px] overflow-y-auto pr-2" id="lyrics-container">
+                            <template x-if="lyricsState.loading">
+                                <div class="py-12 space-y-3">
+                                    <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-white"></i>
+                                    <p class="text-neutral-400 text-xs font-bold uppercase">Fetching lyrics from LRCLIB...</p>
+                                </div>
+                            </template>
+
+                            <template x-if="!lyricsState.loading && lyricsState.parsedLines.length > 0">
+                                <div class="space-y-4">
+                                    <template x-for="(line, idx) in lyricsState.parsedLines" :key="idx">
+                                        <p 
+                                            class="text-base md:text-lg transition-all duration-200 font-extrabold px-4 py-2 rounded-xl cursor-pointer"
+                                            :class="lyricsState.activeIndex === idx ? 'bg-white text-black text-xl md:text-2xl scale-105 border-2 border-white shadow-[3px_3px_0px_#ffffff]' : 'text-neutral-400 hover:text-white'"
+                                            @click="seekTo(line.time)"
+                                            x-text="line.text"
+                                        ></p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template x-if="!lyricsState.loading && lyricsState.parsedLines.length === 0 && lyricsState.plainLyrics">
+                                <div class="whitespace-pre-line text-white leading-relaxed text-sm md:text-base font-bold">
+                                    <p x-text="lyricsState.plainLyrics"></p>
+                                </div>
+                            </template>
+
+                            <template x-if="!lyricsState.loading && !lyricsState.plainLyrics && lyricsState.parsedLines.length === 0">
+                                <div class="py-12 text-center text-neutral-400 font-bold">
+                                    <i data-lucide="file-x" class="w-10 h-10 mx-auto mb-2 text-white"></i>
+                                    <p class="text-sm uppercase">No synchronized lyrics available for this track.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom 10-Band Equalizer Tab -->
+                <div x-show="activeTab === 'equalizer'" class="max-w-4xl mx-auto space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-white uppercase tracking-tight">Custom Audio Equalizer</h2>
+                        <p class="text-xs font-semibold text-neutral-400">10-band precision sound curve & presets</p>
+                    </div>
+
+                    <!-- Equalizer Presets Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
+                        <template x-for="preset in eqPresetList" :key="preset.id">
+                            <button 
+                                @click="applyEqPreset(preset.id)"
+                                class="p-3 rounded-xl border-2 text-center transition font-black text-xs uppercase"
+                                :class="selectedEqPreset === preset.id ? 'bg-white text-black border-white shadow-[3px_3px_0px_#ffffff]' : 'bg-neutral-900 text-white border-neutral-700 hover:border-white'"
+                                x-text="preset.name"
+                            ></button>
+                        </template>
+                    </div>
+
+                    <!-- 10-Band Sliders -->
+                    <div class="neu-card rounded-2xl p-6 md:p-8 space-y-6">
+                        <div class="flex items-center justify-between border-b-2 border-white pb-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="sliders" class="w-5 h-5 text-white"></i>
+                                <h3 class="font-black text-white text-base uppercase">10-Band Frequency Controls</h3>
+                            </div>
+                            <button @click="applyEqPreset('flat')" class="text-xs font-black text-white uppercase underline hover:scale-105 transition">Reset to Flat</button>
+                        </div>
+
+                        <div class="grid grid-cols-5 md:grid-cols-10 gap-3 md:gap-4 h-64 items-center pt-4">
+                            <template x-for="(band, idx) in eqBands" :key="band.freq">
+                                <div class="flex flex-col items-center h-full justify-between">
+                                    <span class="text-[11px] font-mono font-bold text-white" x-text="`${band.gain > 0 ? '+' : ''}${band.gain}dB`"></span>
+                                    <div class="h-44 flex items-center justify-center">
+                                        <input 
+                                            type="range" 
+                                            min="-12" 
+                                            max="12" 
+                                            step="1"
+                                            :value="band.gain"
+                                            @input="updateEqBand(idx, $event.target.value)"
+                                            class="h-36 w-2 accent-white rounded-lg appearance-none bg-neutral-800 cursor-pointer -rotate-90"
+                                        >
+                                    </div>
+                                    <span class="text-[10px] font-black uppercase text-neutral-400" x-text="band.freq"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bluetooth Receiver & Sound Hub -->
+                <div x-show="activeTab === 'sound'" class="max-w-4xl mx-auto space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-white uppercase tracking-tight">Sound Settings & Bluetooth Hub</h2>
+                        <p class="text-xs font-semibold text-neutral-400">Control Raspberry Pi hardware gain, music player volume, & Bluetooth modes</p>
+                    </div>
+
+                    <!-- Dual Volume & Gain Control Panel -->
+                    <div class="neu-card rounded-2xl p-6 space-y-6">
+                        <div class="border-b-2 border-white pb-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="volume-2" class="w-6 h-6 text-white"></i>
+                                <h3 class="font-black text-lg text-white uppercase">Dual Sound & Gain Controls</h3>
+                            </div>
+                            <p class="text-xs font-semibold text-neutral-400 mt-1">Separate controls for Raspberry Pi hardware audio gain and software music player stream</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- 1. Raspberry Pi Device Hardware Sound (ALSA Master) -->
+                            <div class="p-4 rounded-xl bg-neutral-900 border-2 border-white space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-9 h-9 rounded-lg bg-white text-black flex items-center justify-center font-bold">
+                                            <i data-lucide="cpu" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-black text-sm text-white uppercase">Pi Hardware Gain</h4>
+                                            <p class="text-[10px] font-semibold text-neutral-400">Physical ALSA Master Sound</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-lg bg-white text-black font-black text-xs border border-white" x-text="`${masterVolume}%`"></span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    min="0" 
+                                    max="100" 
+                                    :value="masterVolume"
+                                    @input="setMasterVolume($event.target.value)"
+                                    class="w-full h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-white border border-white"
+                                >
+                            </div>
+
+                            <!-- 2. Music Player Software Volume -->
+                            <div class="p-4 rounded-xl bg-neutral-900 border-2 border-white space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-9 h-9 rounded-lg bg-white text-black flex items-center justify-center font-bold">
+                                            <i data-lucide="music" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-black text-sm text-white uppercase">Music Stream Sound</h4>
+                                            <p class="text-[10px] font-semibold text-neutral-400">Player Output Volume</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-lg bg-white text-black font-black text-xs border border-white" x-text="`${playerState.volume}%`"></span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    min="0" 
+                                    max="100" 
+                                    :value="playerState.volume"
+                                    @input="setVolume($event.target.value)"
+                                    class="w-full h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-white border border-white"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Power & Dual Mode Card -->
+                    <div class="neu-card rounded-2xl p-6 space-y-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-white pb-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl border-2 border-white flex items-center justify-center" :class="btStatus.powered ? 'bg-white text-black' : 'bg-neutral-900 text-white'">
+                                    <i data-lucide="bluetooth" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-lg text-white uppercase">Bluetooth Module Power</h3>
+                                    <p class="text-xs font-semibold text-neutral-400" x-text="btStatus.powered ? 'Bluetooth is active and discoverable on-demand' : 'Disabled by default for security & privacy'"></p>
+                                </div>
+                            </div>
+                            
+                            <button 
+                                @click="toggleBTPower()" 
+                                class="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 justify-center"
+                                :class="btStatus.powered ? 'bg-white text-black border-2 border-white shadow-[3px_3px_0px_#ffffff]' : 'bg-neutral-900 text-white border-2 border-white hover:bg-neutral-800'"
+                            >
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                                <span x-text="btStatus.powered ? 'Turn Off Bluetooth' : 'Enable Bluetooth'"></span>
+                            </button>
+                        </div>
+
+                        <!-- Dedicated Receiver Status Banner -->
+                        <div class="space-y-3" x-show="btStatus.powered">
+                            <div class="p-4 rounded-xl border-2 border-white bg-white text-black shadow-[4px_4px_0px_#ffffff] flex items-start gap-3.5">
+                                <i data-lucide="speaker" class="w-6 h-6 flex-shrink-0 mt-0.5 text-black"></i>
+                                <div>
+                                    <h5 class="font-black text-sm uppercase">Dedicated Wireless BT Sound Receiver (A2DP Sink) Active</h5>
+                                    <p class="text-xs font-bold text-neutral-800 mt-1">Your Raspberry Pi is ready to receive audio. Connect your smartphone, laptop, or PC via Bluetooth to stream audio instantly with 0 delay.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connected Device Details Card -->
+                    <div x-show="btStatus.powered && btStatus.connected_device" class="neu-card rounded-2xl p-6 bg-white text-black">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-black text-white flex items-center justify-center border-2 border-black">
+                                    <i data-lucide="smartphone" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-3 h-3 rounded-full bg-black animate-ping"></span>
+                                        <h4 class="font-black text-black text-base uppercase" x-text="btStatus.connected_device?.name || 'Connected Device'"></h4>
+                                    </div>
+                                    <p class="text-xs font-mono font-bold text-neutral-700 mt-0.5" x-text="`MAC: ${btStatus.connected_device?.mac || 'N/A'}`"></p>
+                                </div>
+                            </div>
+                            <button @click="disconnectBTDevice(btStatus.connected_device?.mac)" class="px-4 py-2 rounded-xl bg-black text-white text-xs font-black uppercase hover:bg-neutral-800 transition">
+                                Disconnect
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scanner & Available Devices -->
+                    <div x-show="btStatus.powered" class="neu-card rounded-2xl p-6 space-y-4">
+                        <div class="flex items-center justify-between border-b-2 border-white pb-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="radar" class="w-5 h-5 text-white"></i>
+                                <h3 class="font-black text-white text-base uppercase">Nearby Bluetooth Devices</h3>
+                            </div>
+                            <button @click="scanBTDevices()" class="px-4 py-2 rounded-xl neu-button text-xs flex items-center gap-1.5">
+                                <i data-lucide="search" class="w-4 h-4" :class="{'animate-spin': isScanningBT}"></i>
+                                <span>Scan Devices</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-2">
+                            <template x-for="dev in btDevices" :key="dev.mac">
+                                <div class="p-3.5 rounded-xl bg-neutral-900 border-2 border-white flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="bluetooth" class="w-5 h-5 text-white"></i>
+                                        <div>
+                                            <h4 class="font-extrabold text-white text-xs md:text-sm" x-text="dev.name"></h4>
+                                            <span class="text-[10px] text-neutral-400 font-mono font-bold" x-text="dev.mac"></span>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        @click="connectBTDevice(dev.mac)" 
+                                        class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition"
+                                        :class="dev.connected ? 'bg-white text-black border-2 border-white' : 'neu-button'"
+                                        x-text="dev.connected ? 'Connected' : 'Pair & Connect'"
+                                    ></button>
                                 </div>
                             </template>
                         </div>
@@ -210,68 +581,69 @@
                 <div x-show="activeTab === 'playlists'" class="space-y-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-xl md:text-2xl font-bold">Your Playlists</h2>
-                            <p class="text-gray-400 text-xs md:text-sm mt-0.5">Organize your music collections</p>
+                            <h2 class="text-2xl font-black text-white uppercase tracking-tight">Your Playlists</h2>
+                            <p class="text-xs font-semibold text-neutral-400">Custom music collections & playlists</p>
                         </div>
-                        <button @click="showAddPlaylistModal = true" class="px-3.5 py-2 rounded-full accent-bg hover:bg-blue-700 transition flex items-center gap-1.5 font-medium text-xs md:text-sm">
-                            <i class="fas fa-plus"></i> New Playlist
+                        <button @click="showAddPlaylistModal = true" class="px-4 py-2.5 rounded-xl neu-button text-xs flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>New Playlist</span>
                         </button>
                     </div>
 
-                    <div x-show="!selectedPlaylist" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                    <div x-show="!selectedPlaylist" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         <template x-for="pl in playlists" :key="pl.id">
-                            <div class="card-bg rounded-xl p-4 md:p-5 border border-gray-800 hover:border-blue-500/50 transition cursor-pointer flex flex-col justify-between group" @click="openPlaylist(pl.id)">
-                                <div class="flex items-start justify-between">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-lg md:text-xl mb-2.5">
-                                        <i class="fas fa-music"></i>
+                            <div class="neu-card-interactive rounded-2xl p-5 flex flex-col justify-between" @click="openPlaylist(pl.id)">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 rounded-xl bg-white text-black flex items-center justify-center border-2 border-white">
+                                        <i data-lucide="music" class="w-6 h-6"></i>
                                     </div>
-                                    <button @click.stop="deletePlaylist(pl.id)" class="text-gray-500 hover:text-red-400 transition" title="Delete Playlist">
-                                        <i class="fas fa-trash-can text-sm"></i>
+                                    <button @click.stop="deletePlaylist(pl.id)" class="text-neutral-400 hover:text-white transition" title="Delete Playlist">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                                 <div>
-                                    <h3 class="font-bold text-base md:text-lg text-white" x-text="pl.name"></h3>
-                                    <p class="text-gray-400 text-xs mt-0.5" x-text="`${pl.song_count || 0} Songs`"></p>
+                                    <h3 class="font-black text-base text-white uppercase" x-text="pl.name"></h3>
+                                    <p class="text-neutral-400 text-xs font-bold mt-0.5" x-text="`${pl.song_count || 0} Tracks`"></p>
                                 </div>
-                                <div class="mt-3 pt-2.5 border-t border-gray-800/80 flex items-center justify-between">
-                                    <span class="text-xs text-blue-400 font-semibold group-hover:underline">View Tracks</span>
-                                    <button @click.stop="playPlaylist(pl.id)" class="w-8 h-8 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition" title="Play Playlist">
-                                        <i class="fas fa-play text-white text-xs ml-0.5"></i>
+                                <div class="mt-4 pt-3 border-t-2 border-white flex items-center justify-between">
+                                    <span class="text-xs text-white font-black uppercase">View Tracks</span>
+                                    <button @click.stop="playPlaylist(pl.id)" class="w-8 h-8 rounded-full neu-button flex items-center justify-center" title="Play Playlist">
+                                        <i data-lucide="play" class="w-4 h-4 text-black fill-current ml-0.5"></i>
                                     </button>
                                 </div>
                             </div>
                         </template>
                     </div>
 
-                    <div x-show="selectedPlaylist" class="space-y-4 md:space-y-6">
-                        <div class="flex items-center gap-3.5 card-bg p-4 md:p-6 rounded-2xl border border-gray-800">
-                            <button @click="selectedPlaylist = null" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition">
-                                <i class="fas fa-arrow-left text-gray-300 text-sm"></i>
+                    <div x-show="selectedPlaylist" class="space-y-6">
+                        <div class="flex items-center gap-4 neu-card p-6 rounded-2xl">
+                            <button @click="selectedPlaylist = null" class="w-10 h-10 rounded-xl bg-neutral-900 border-2 border-white flex items-center justify-center hover:bg-neutral-800 transition">
+                                <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                             </button>
                             <div class="flex-1 min-w-0">
-                                <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Playlist</span>
-                                <h2 class="text-xl md:text-3xl font-bold text-white truncate" x-text="selectedPlaylist?.name"></h2>
-                                <p class="text-gray-400 text-xs mt-0.5" x-text="`${selectedPlaylist?.songs?.length || 0} Tracks`"></p>
+                                <span class="text-[10px] text-neutral-400 font-black uppercase tracking-wider">Playlist</span>
+                                <h2 class="text-2xl font-black text-white uppercase truncate" x-text="selectedPlaylist?.name"></h2>
+                                <p class="text-neutral-400 text-xs font-bold mt-0.5" x-text="`${selectedPlaylist?.songs?.length || 0} Tracks`"></p>
                             </div>
-                            <button x-show="selectedPlaylist?.songs?.length > 0" @click="playPlaylist(selectedPlaylist.id)" class="px-4 py-2.5 md:px-6 md:py-3 rounded-full accent-bg hover:bg-blue-700 font-bold flex items-center gap-2 text-xs md:text-sm shadow-lg transition">
-                                <i class="fas fa-play"></i> Play All
+                            <button x-show="selectedPlaylist?.songs?.length > 0" @click="playPlaylist(selectedPlaylist.id)" class="px-5 py-2.5 rounded-xl neu-button text-xs flex items-center gap-2 uppercase">
+                                <i data-lucide="play" class="w-4 h-4 fill-current"></i> Play All
                             </button>
                         </div>
 
                         <div class="space-y-2.5">
                             <template x-for="song in selectedPlaylist?.songs || []" :key="song.id">
-                                <div class="card-bg rounded-xl p-3 flex items-center gap-3.5 border border-gray-800 hover:bg-gray-800/60 transition">
-                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-11 h-11 rounded-lg object-cover bg-gray-800 flex-shrink-0">
+                                <div class="neu-card-interactive rounded-xl p-3.5 flex items-center gap-4">
+                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-12 h-12 rounded-xl object-cover border-2 border-white bg-black flex-shrink-0">
                                     <div class="flex-1 min-w-0">
-                                        <h4 class="font-semibold text-xs md:text-sm truncate text-white" x-text="song.title"></h4>
-                                        <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
+                                        <h4 class="font-extrabold text-sm text-white truncate" x-text="song.title"></h4>
+                                        <p class="text-neutral-400 text-xs font-semibold truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <button @click="playSong(song)" class="w-8 h-8 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition" title="Play">
-                                            <i class="fas fa-play text-white text-[11px] ml-0.5"></i>
+                                        <button @click="playSong(song)" class="w-9 h-9 rounded-full neu-button flex items-center justify-center" title="Play">
+                                            <i data-lucide="play" class="w-4 h-4 text-black fill-current ml-0.5"></i>
                                         </button>
-                                        <button @click="removeSongFromPlaylist(selectedPlaylist.id, song.id)" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-red-600/30 hover:text-red-400 text-gray-400 flex items-center justify-center transition" title="Remove">
-                                            <i class="fas fa-minus text-[11px]"></i>
+                                        <button @click="removeSongFromPlaylist(selectedPlaylist.id, song.id)" class="w-9 h-9 rounded-full bg-neutral-900 border-2 border-white text-neutral-400 hover:text-white flex items-center justify-center transition" title="Remove">
+                                            <i data-lucide="minus" class="w-4 h-4"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -282,78 +654,13 @@
 
                 <!-- Favorites & History Tab -->
                 <div x-show="activeTab === 'library'" class="space-y-6">
-                    <h2 class="text-xl md:text-2xl font-bold">Favorites</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tight">Favorites & History</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         <template x-for="song in favorites" :key="song.id">
-                            <div class="card-bg rounded-xl p-3 md:p-4 hover:bg-opacity-80 transition cursor-pointer" @click="playSong(song)">
-                                <img :src="getSongImage(song)" class="w-full aspect-square rounded-lg object-cover mb-2.5 bg-gray-800">
-                                <h3 class="font-semibold text-xs md:text-sm truncate" x-text="song.title"></h3>
-                                <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="song.artist"></p>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- BT Receiver & Sound Tab -->
-                <div x-show="activeTab === 'sound'" class="space-y-6 md:space-y-8 max-w-4xl mx-auto">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-bold mb-1">Bluetooth Speaker Receiver & Sound Controls</h2>
-                        <p class="text-gray-400 text-xs md:text-sm">Stream audio from your phone, laptop, or tablet to your Raspberry Pi speaker with 0 latency.</p>
-                    </div>
-
-                    <div class="p-5 md:p-6 rounded-2xl bg-gradient-to-br from-blue-900/60 to-indigo-950 border border-blue-500/40 shadow-xl space-y-4">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-blue-600/30 flex items-center justify-center text-blue-400 flex-shrink-0">
-                                <i class="fas fa-bluetooth-b text-2xl md:text-3xl animate-pulse"></i>
-                            </div>
-                            <div>
-                                <span class="px-2.5 py-0.5 rounded-full bg-green-950 text-green-400 border border-green-800 text-[9px] md:text-[10px] font-bold uppercase tracking-wider">Bluetooth Receiver Active</span>
-                                <h3 class="text-lg md:text-xl font-bold text-white mt-0.5">PiPlayer Bluetooth Speaker</h3>
-                                <p class="text-[11px] md:text-xs text-blue-200 mt-0.5">Discoverable as "<span class="font-semibold text-white">aamps-raspberrypi</span>"</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-bg rounded-xl p-5 md:p-6 border border-gray-800 space-y-4 shadow-md">
-                        <h3 class="font-semibold text-base md:text-lg flex items-center gap-2">
-                            <i class="fas fa-volume-high accent-color"></i>
-                            Master Volume Controls
-                        </h3>
-                        <div class="bg-gray-900/60 p-4 md:p-5 rounded-xl border border-gray-800 space-y-3">
-                            <div class="flex justify-between items-center text-xs md:text-sm font-medium">
-                                <span class="flex items-center gap-2 text-gray-300">
-                                    <i class="fas fa-sliders text-blue-400"></i> Raspberry Pi ALSA Master Gain
-                                </span>
-                                <span class="accent-color font-bold text-base md:text-lg" x-text="`${masterVolume}%`"></span>
-                            </div>
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max="100" 
-                                :value="masterVolume"
-                                @input="setMasterVolume($event.target.value)"
-                                class="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer"
-                            >
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Equalizer Tab -->
-                <div x-show="activeTab === 'equalizer'" class="space-y-6 max-w-4xl mx-auto">
-                    <h2 class="text-xl md:text-2xl font-bold">Sound Equalizer Presets</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                        <template x-for="eq in eqPresets" :key="eq.id">
-                            <div 
-                                @click="selectEqualizer(eq.id)"
-                                class="p-4 md:p-5 rounded-xl border cursor-pointer transition flex flex-col items-center gap-2.5 text-center"
-                                :class="playerState.equalizer === eq.id ? 'border-blue-500 bg-blue-600/10 text-white font-semibold' : 'border-gray-800 card-bg text-gray-400 hover:border-gray-600'"
-                            >
-                                <i class="fas text-2xl md:text-3xl" :class="[eq.icon, playerState.equalizer === eq.id ? 'text-blue-400' : 'text-gray-500']"></i>
-                                <div>
-                                    <h4 class="font-bold text-sm md:text-base text-white" x-text="eq.name"></h4>
-                                    <p class="text-[11px] md:text-xs text-gray-400 mt-0.5" x-text="eq.desc"></p>
-                                </div>
-                                <span x-show="playerState.equalizer === eq.id" class="text-[10px] md:text-xs px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold">Active</span>
+                            <div class="neu-card-interactive rounded-2xl p-3.5" @click="playSong(song)">
+                                <img :src="getSongImage(song)" class="w-full aspect-square rounded-xl object-cover mb-3 border-2 border-white bg-black">
+                                <h3 class="font-extrabold text-xs md:text-sm truncate text-white" x-text="song.title"></h3>
+                                <p class="text-neutral-400 font-semibold text-[11px] truncate mt-0.5" x-text="song.artist"></p>
                             </div>
                         </template>
                     </div>
@@ -361,41 +668,37 @@
             </main>
         </div>
 
-        <!-- Sticky Footer Player Bar (Desktop & Mobile) -->
-        <footer class="h-20 md:h-24 sidebar-bg border-t border-gray-800 flex items-center px-3 md:px-8 gap-3 md:gap-8 z-40 fixed bottom-16 md:bottom-0 left-0 right-0">
-            <div class="flex items-center gap-3 w-1/2 md:w-1/4 min-w-0 cursor-pointer" @click="showMobilePlayer = true">
-                <img :src="getSongImage(currentSong)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'" class="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover bg-gray-800 flex-shrink-0 shadow">
+        <!-- Sticky Footer Player Bar (Neubrutalism Black & White Spotify Theme) -->
+        <footer class="h-20 md:h-24 bg-black border-t-2 border-white flex items-center px-4 md:px-8 gap-4 md:gap-8 z-40 fixed bottom-16 md:bottom-0 left-0 right-0 text-white shadow-[0px_-4px_0px_#ffffff]">
+            <div class="flex items-center gap-3.5 w-1/2 md:w-1/4 min-w-0 cursor-pointer" @click="switchTab('lyrics')">
+                <img :src="getSongImage(currentSong)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'" class="w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover border-2 border-white bg-black flex-shrink-0">
                 <div class="min-w-0">
-                    <h4 class="font-semibold text-xs md:text-sm truncate text-white" x-text="currentSong?.title || 'No song playing'"></h4>
-                    <p class="text-gray-400 text-[11px] md:text-xs truncate mt-0.5" x-text="currentSong?.artist || 'Select a song to play'"></p>
+                    <h4 class="font-extrabold text-xs md:text-sm truncate text-white" x-text="currentSong?.title || 'No track selected'"></h4>
+                    <p class="text-neutral-400 text-[11px] font-semibold truncate mt-0.5" x-text="currentSong?.artist || 'Select a track to play'"></p>
                 </div>
             </div>
 
-            <!-- YouTube-Style Full Player Controls (Previous, -10s, Play/Pause, +10s, Next, Up Next Queue) -->
-            <div class="flex-1 flex flex-col items-center gap-1 md:gap-2">
-                <div class="flex items-center gap-3 md:gap-4">
-                    <button @click="playPrevious()" class="text-gray-400 hover:text-white transition" title="Previous Track">
-                        <i class="fas fa-step-backward text-xs md:text-base"></i>
+            <!-- Central Transport Player Controls -->
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+                <div class="flex items-center gap-4">
+                    <button @click="playPrevious()" class="text-neutral-400 hover:text-white transition" title="Previous">
+                        <i data-lucide="skip-back" class="w-5 h-5"></i>
                     </button>
-                    <button @click="seekRelative(-10)" class="text-gray-400 hover:text-blue-400 transition" title="Rewind 10 Seconds">
-                        <i class="fas fa-rotate-left text-xs md:text-base"></i>
+                    <button @click="seekRelative(-10)" class="text-neutral-400 hover:text-white transition" title="Rewind 10s">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
                     </button>
-                    <button @click="togglePlay()" class="w-10 h-10 md:w-12 md:h-12 rounded-full accent-bg flex items-center justify-center hover:scale-105 transition shadow-lg">
-                        <i :class="playerState.paused ? 'fas fa-play ml-0.5' : 'fas fa-pause'" class="text-white text-xs md:text-base"></i>
+                    <button @click="togglePlay()" class="w-11 h-11 md:w-12 md:h-12 rounded-full neu-button flex items-center justify-center">
+                        <i :data-lucide="playerState.paused ? 'play' : 'pause'" class="w-5 h-5 text-black fill-current"></i>
                     </button>
-                    <button @click="seekRelative(10)" class="text-gray-400 hover:text-blue-400 transition" title="Forward 10 Seconds">
-                        <i class="fas fa-rotate-right text-xs md:text-base"></i>
+                    <button @click="seekRelative(10)" class="text-neutral-400 hover:text-white transition" title="Forward 10s">
+                        <i data-lucide="rotate-cw" class="w-5 h-5"></i>
                     </button>
-                    <button @click="playNext()" class="text-gray-400 hover:text-white transition" title="Next Track">
-                        <i class="fas fa-step-forward text-xs md:text-base"></i>
-                    </button>
-                    <button @click="showQueueModal = !showQueueModal" class="text-gray-400 hover:text-blue-400 transition relative" title="Up Next Queue">
-                        <i class="fas fa-list text-xs md:text-base"></i>
-                        <span x-show="queue.length > 0" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="queue.length"></span>
+                    <button @click="playNext()" class="text-neutral-400 hover:text-white transition" title="Next">
+                        <i data-lucide="skip-forward" class="w-5 h-5"></i>
                     </button>
                 </div>
 
-                <!-- YouTube-Style Timeline (1:24 / 4:18 Format) -->
+                <!-- Timeline Bar -->
                 <div class="hidden md:flex w-full max-w-xl items-center gap-3">
                     <input 
                         type="range" 
@@ -403,238 +706,108 @@
                         :max="getEffectiveDuration()"
                         :value="playerState.position"
                         @input="seekTo($event.target.value)"
-                        class="flex-1 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer transition-all"
+                        class="flex-1 h-1.5 bg-neutral-800 rounded-full appearance-none cursor-pointer border border-white"
                     >
-                    <span class="text-xs text-gray-400 font-mono min-w-max" x-text="`${formatTime(playerState.position)} / ${formatTime(getEffectiveDuration())}`"></span>
+                    <span class="text-xs text-white font-mono font-bold min-w-max" x-text="`${formatTime(playerState.position)} / ${formatTime(getEffectiveDuration())}`"></span>
                 </div>
             </div>
 
-            <div class="hidden md:flex items-center gap-4 w-1/4 justify-end">
-                <button @click="toggleSleepTimerModal()" class="text-gray-400 hover:text-blue-400 transition relative" title="Sleep Timer">
-                    <i class="fas fa-moon text-lg" :class="{'text-blue-400': sleepTimerMinutes > 0}"></i>
-                    <span x-show="sleepTimerMinutes > 0" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center" x-text="`${sleepTimerMinutes}m`"></span>
+            <!-- Volume & Utilities -->
+            <div class="hidden md:flex items-center gap-4 w-1/3 justify-end">
+                <button @click="switchTab('lyrics')" class="text-neutral-400 hover:text-white transition" title="Live Synchronized Lyrics">
+                    <i data-lucide="align-left" class="w-5 h-5"></i>
                 </button>
-
-                <div class="flex items-center gap-1.5" title="Raspberry Pi Master Hardware Volume">
-                    <i class="fas fa-sliders text-blue-400 text-xs"></i>
+                <div class="flex items-center gap-1.5" title="Raspberry Pi Physical Hardware Master Volume (ALSA)">
+                    <i data-lucide="cpu" class="w-4 h-4 text-white"></i>
                     <input 
                         type="range" 
                         min="0" 
                         max="100"
                         :value="masterVolume"
                         @input="setMasterVolume($event.target.value)"
-                        class="w-20 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                        class="w-20 h-1.5 bg-neutral-800 rounded-full appearance-none cursor-pointer border border-white"
                     >
                 </div>
-
-                <div class="flex items-center gap-1.5" title="Music Stream Player Volume">
-                    <i class="fas fa-music text-blue-400 text-xs"></i>
+                <div class="flex items-center gap-1.5" title="Music Stream Software Volume">
+                    <i data-lucide="music" class="w-4 h-4 text-white"></i>
                     <input 
                         type="range" 
                         min="0" 
                         max="100"
                         :value="playerState.volume"
                         @input="setVolume($event.target.value)"
-                        class="w-20 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                        class="w-20 h-1.5 bg-neutral-800 rounded-full appearance-none cursor-pointer border border-white"
                     >
                 </div>
             </div>
         </footer>
 
-        <!-- Mobile Bottom Navigation Bar (Echo Music App Style) -->
-        <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 sidebar-bg border-t border-gray-800/80 flex items-center justify-around z-50 text-xs">
-            <button @click="activeTab = 'home'" :class="{'text-blue-400 font-bold': activeTab === 'home', 'text-gray-400': activeTab !== 'home'}" class="flex flex-col items-center gap-1">
-                <i class="fas fa-home text-base"></i> Home
+        <!-- Mobile Bottom Nav -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-black border-t-2 border-white flex items-center justify-around z-50 text-[10px] font-black uppercase text-neutral-400">
+            <button @click="switchTab('home')" :class="{'text-white font-black': activeTab === 'home'}" class="flex flex-col items-center gap-1">
+                <i data-lucide="home" class="w-5 h-5"></i> Home
             </button>
-            <button @click="activeTab = 'search'" :class="{'text-blue-400 font-bold': activeTab === 'search', 'text-gray-400': activeTab !== 'search'}" class="flex flex-col items-center gap-1">
-                <i class="fas fa-search text-base"></i> Search
+            <button @click="switchTab('search')" :class="{'text-white font-black': activeTab === 'search'}" class="flex flex-col items-center gap-1">
+                <i data-lucide="search" class="w-5 h-5"></i> Search
             </button>
-            <button @click="activeTab = 'playlists'; loadPlaylists()" :class="{'text-blue-400 font-bold': activeTab === 'playlists', 'text-gray-400': activeTab !== 'playlists'}" class="flex flex-col items-center gap-1">
-                <i class="fas fa-list-music text-base"></i> Playlists
+            <button @click="switchTab('lyrics')" :class="{'text-white font-black': activeTab === 'lyrics'}" class="flex flex-col items-center gap-1">
+                <i data-lucide="align-left" class="w-5 h-5"></i> Lyrics
             </button>
-            <button @click="activeTab = 'library'" :class="{'text-blue-400 font-bold': activeTab === 'library', 'text-gray-400': activeTab !== 'library'}" class="flex flex-col items-center gap-1">
-                <i class="fas fa-heart text-base"></i> Favorites
+            <button @click="switchTab('equalizer')" :class="{'text-white font-black': activeTab === 'equalizer'}" class="flex flex-col items-center gap-1">
+                <i data-lucide="sliders" class="w-5 h-5"></i> EQ
             </button>
-            <button @click="activeTab = 'sound'" :class="{'text-blue-400 font-bold': activeTab === 'sound', 'text-gray-400': activeTab !== 'sound'}" class="flex flex-col items-center gap-1">
-                <i class="fas fa-bluetooth text-base"></i> Sound
+            <button @click="switchTab('sound')" :class="{'text-white font-black': activeTab === 'sound'}" class="flex flex-col items-center gap-1">
+                <i data-lucide="bluetooth" class="w-5 h-5"></i> Sound
             </button>
         </nav>
+    </div>
 
-        <!-- Up Next Queue Modal -->
-        <div x-show="showQueueModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-            <div @click.away="showQueueModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i class="fas fa-list text-blue-400"></i> Up Next Queue
-                    </h3>
-                    <button @click="showQueueModal = false" class="text-gray-400 hover:text-white">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="space-y-2 max-h-72 overflow-y-auto">
-                    <template x-for="(song, idx) in queue" :key="idx">
-                        <div class="p-3 rounded-xl border border-gray-800 bg-gray-900/60 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <img :src="getSongImage(song)" class="w-10 h-10 rounded-lg object-cover bg-gray-800 flex-shrink-0">
-                                <div class="min-w-0">
-                                    <h4 class="font-semibold text-xs truncate text-white" x-text="song.title"></h4>
-                                    <p class="text-gray-400 text-[10px] truncate" x-text="song.artist"></p>
-                                </div>
-                            </div>
-                            <button @click="playSong(song)" class="px-2.5 py-1 rounded-full accent-bg text-xs font-semibold">Play</button>
-                        </div>
-                    </template>
-                    <div x-show="queue.length === 0" class="text-center py-6 text-gray-400 text-xs">
-                        No upcoming songs in queue. Search and tap '+' to add.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Fullscreen Mobile Player Drawer Overlay (Echo Music PWA Style) -->
-        <div x-show="showMobilePlayer" class="fixed inset-0 z-50 sidebar-bg flex flex-col p-6 space-y-6 md:hidden">
-            <div class="flex items-center justify-between">
-                <button @click="showMobilePlayer = false" class="text-gray-400 hover:text-white">
-                    <i class="fas fa-chevron-down text-xl"></i>
-                </button>
-                <span class="text-xs text-blue-400 font-bold uppercase tracking-wider">Now Playing</span>
-                <button @click="toggleSleepTimerModal()" class="text-gray-400 hover:text-blue-400 relative">
-                    <i class="fas fa-moon text-lg" :class="{'text-blue-400': sleepTimerMinutes > 0}"></i>
+    <!-- Modals -->
+    <!-- Create Playlist Modal -->
+    <div x-cloak x-show="showAddPlaylistModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="neu-card rounded-2xl p-6 w-full max-w-md space-y-4">
+            <div class="flex items-center justify-between border-b-2 border-white pb-3">
+                <h3 class="font-black text-lg text-white uppercase">Create New Playlist</h3>
+                <button @click="showAddPlaylistModal = false" class="text-white hover:scale-110">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-
-            <div class="flex-1 flex flex-col items-center justify-center space-y-6">
-                <img :src="getSongImage(currentSong)" class="w-64 h-64 rounded-2xl object-cover shadow-2xl bg-gray-800">
-                <div class="text-center w-full max-w-xs">
-                    <h3 class="text-lg font-bold truncate text-white" x-text="currentSong?.title || 'No Song'"></h3>
-                    <p class="text-xs text-gray-400 truncate mt-1" x-text="currentSong?.artist || 'YouTube'"></p>
-                </div>
-
-                <div class="w-full space-y-1">
-                    <input 
-                        type="range" 
-                        min="0" 
-                        :max="getEffectiveDuration()"
-                        :value="playerState.position"
-                        @input="seekTo($event.target.value)"
-                        class="w-full h-1 bg-gray-700 rounded-full appearance-none cursor-pointer"
-                    >
-                    <div class="flex justify-between text-xs text-gray-400 font-mono">
-                        <span x-text="formatTime(playerState.position)"></span>
-                        <span x-text="formatTime(getEffectiveDuration())"></span>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-6">
-                    <button @click="playPrevious()" class="text-gray-400 text-xl">
-                        <i class="fas fa-step-backward"></i>
-                    </button>
-                    <button @click="seekRelative(-10)" class="text-gray-400 text-xl">
-                        <i class="fas fa-rotate-left"></i>
-                    </button>
-                    <button @click="togglePlay()" class="w-16 h-16 rounded-full accent-bg flex items-center justify-center text-2xl text-white shadow-xl">
-                        <i :class="playerState.paused ? 'fas fa-play ml-1' : 'fas fa-pause'"></i>
-                    </button>
-                    <button @click="seekRelative(10)" class="text-gray-400 text-xl">
-                        <i class="fas fa-rotate-right"></i>
-                    </button>
-                    <button @click="playNext()" class="text-gray-400 text-xl">
-                        <i class="fas fa-step-forward"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Volume Sliders on Mobile Player -->
-            <div class="space-y-3 pt-4 border-t border-gray-800">
-                <div class="flex items-center justify-between text-xs text-gray-300">
-                    <span class="flex items-center gap-2"><i class="fas fa-sliders text-blue-400"></i> Pi Hardware Gain</span>
-                    <span x-text="`${masterVolume}%`" class="font-bold text-blue-400"></span>
-                </div>
-                <input type="range" min="0" max="100" :value="masterVolume" @input="setMasterVolume($event.target.value)" class="w-full h-1.5 bg-gray-700 rounded-full appearance-none">
-
-                <div class="flex items-center justify-between text-xs text-gray-300 mt-2">
-                    <span class="flex items-center gap-2"><i class="fas fa-music text-blue-400"></i> Music Stream Volume</span>
-                    <span x-text="`${playerState.volume}%`" class="font-bold text-blue-400"></span>
-                </div>
-                <input type="range" min="0" max="100" :value="playerState.volume" @input="setVolume($event.target.value)" class="w-full h-1.5 bg-gray-700 rounded-full appearance-none">
-            </div>
-        </div>
-
-        <!-- New Playlist Modal -->
-        <div x-show="showAddPlaylistModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-            <div @click.away="showAddPlaylistModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-                <h3 class="text-lg font-bold">Create New Playlist</h3>
-                <input type="text" x-model="newPlaylistName" placeholder="Playlist Name..." class="w-full p-3 rounded-xl card-bg border border-gray-700 text-sm focus:outline-none focus:border-blue-500">
-                <div class="flex justify-end gap-3">
-                    <button @click="showAddPlaylistModal = false" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-                    <button @click="createPlaylist()" class="px-4 py-2 text-sm rounded-xl accent-bg font-semibold">Create</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add Song to Playlist Modal -->
-        <div x-show="showAddToPlaylistModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-            <div @click.away="showAddToPlaylistModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-                <h3 class="text-lg font-bold">Select Playlist</h3>
-                <p class="text-xs text-gray-400 truncate" x-text="`Adding: ${selectedSongForPlaylist?.title || ''}`"></p>
-                <div class="space-y-2 max-h-60 overflow-y-auto">
-                    <template x-for="pl in playlists" :key="pl.id">
-                        <button @click="addSongToPlaylist(pl.id)" class="w-full p-3 rounded-xl border border-gray-800 bg-gray-900/60 hover:border-blue-500 text-left font-medium text-sm flex items-center justify-between">
-                            <span x-text="pl.name"></span>
-                            <i class="fas fa-plus text-xs text-blue-400"></i>
-                        </button>
-                    </template>
-                </div>
-                <div class="flex justify-end">
-                    <button @click="showAddToPlaylistModal = false" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sleep Timer Modal -->
-        <div x-show="showSleepModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-            <div @click.away="showSleepModal = false" class="card-bg border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold flex items-center gap-2">
-                        <i class="fas fa-moon text-blue-400"></i> Sleep Timer
-                    </h3>
-                    <button @click="showSleepModal = false" class="text-gray-400 hover:text-white">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <template x-for="mins in [15, 30, 45, 60, 90, 0]" :key="mins">
-                        <button 
-                            @click="setSleepTimer(mins)"
-                            class="p-3 rounded-xl border text-sm font-semibold transition"
-                            :class="sleepTimerMinutes === mins ? 'border-blue-500 bg-blue-600/20 text-blue-400' : 'border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-600'"
-                        >
-                            <span x-text="mins === 0 ? 'Turn OFF' : `${mins} Minutes`"></span>
-                        </button>
-                    </template>
-                </div>
+            <input type="text" x-model="newPlaylistName" placeholder="Playlist Name..." class="w-full p-3.5 rounded-xl bg-neutral-900 border-2 border-white text-white font-extrabold text-sm focus:outline-none">
+            <div class="flex justify-end gap-2 pt-2">
+                <button @click="showAddPlaylistModal = false" class="px-4 py-2 rounded-xl bg-neutral-900 border-2 border-white text-white text-xs font-black uppercase">Cancel</button>
+                <button @click="createPlaylist()" class="px-4 py-2 rounded-xl neu-button text-xs uppercase">Create</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // Register PWA Service Worker for Phone Installation
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/sw.js')
-                    .then(reg => console.log('PWA ServiceWorker registered:', reg.scope))
-                    .catch(err => console.log('PWA ServiceWorker registration failed:', err));
-            });
-        }
+    <!-- Add To Playlist Modal -->
+    <div x-cloak x-show="showAddToPlaylistModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="neu-card rounded-2xl p-6 w-full max-w-md space-y-4">
+            <div class="flex items-center justify-between border-b-2 border-white pb-3">
+                <h3 class="font-black text-lg text-white uppercase">Add Track to Playlist</h3>
+                <button @click="showAddToPlaylistModal = false" class="text-white hover:scale-110">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+                <template x-for="pl in playlists" :key="pl.id">
+                    <button @click="addSongToPlaylist(pl.id)" class="w-full p-3.5 rounded-xl bg-neutral-900 hover:bg-white hover:text-black border-2 border-white text-left font-black text-white text-sm uppercase flex items-center justify-between transition">
+                        <span x-text="pl.name"></span>
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
 
+    <!-- Alpine App Logic -->
+    <script>
         function playerApp() {
             return {
                 activeTab: 'search',
                 showSleepModal: false,
                 showAddPlaylistModal: false,
                 showAddToPlaylistModal: false,
-                showMobilePlayer: false,
-                showQueueModal: false,
                 searchQuery: '',
                 searchResults: [],
                 recentSongs: [],
@@ -654,13 +827,45 @@
                     volume: 85,
                     equalizer: 'normal'
                 },
-                eqPresets: [
-                    { id: 'normal', name: 'Normal / Flat', desc: 'Balanced neutral sound response', icon: 'fa-music' },
-                    { id: 'bass', name: 'Bass Boost', desc: 'Enhanced low-frequency punch', icon: 'fa-drum' },
-                    { id: 'vocal', name: 'Vocal / Night', desc: 'Clear dialogue & acoustic clarity', icon: 'fa-microphone' },
-                    { id: 'treble', name: 'Treble Boost', desc: 'Crisp high frequencies & detail', icon: 'fa-bolt' },
-                    { id: 'party', name: 'Party / Club', desc: 'Full bass & energetic dynamics', icon: 'fa-compact-disc' }
+                lyricsState: {
+                    loading: false,
+                    syncedLyrics: null,
+                    plainLyrics: null,
+                    parsedLines: [],
+                    activeIndex: 0
+                },
+                eqPresetList: [
+                    { id: 'flat', name: 'Flat' },
+                    { id: 'bass', name: 'Bass Boost' },
+                    { id: 'vocal', name: 'Vocal' },
+                    { id: 'rock', name: 'Rock' },
+                    { id: 'pop', name: 'Pop' },
+                    { id: 'jazz', name: 'Jazz' },
+                    { id: 'edm', name: 'EDM' },
+                    { id: 'party', name: 'Party' }
                 ],
+                selectedEqPreset: 'flat',
+                eqBands: [
+                    { freq: '60Hz', gain: 0 },
+                    { freq: '170Hz', gain: 0 },
+                    { freq: '310Hz', gain: 0 },
+                    { freq: '600Hz', gain: 0 },
+                    { freq: '1kHz', gain: 0 },
+                    { freq: '3kHz', gain: 0 },
+                    { freq: '6kHz', gain: 0 },
+                    { freq: '12kHz', gain: 0 },
+                    { freq: '14kHz', gain: 0 },
+                    { freq: '16kHz', gain: 0 }
+                ],
+                btStatus: {
+                    powered: false,
+                    discoverable: false,
+                    mode: 'receiver',
+                    connected_device: null,
+                    adapter: 'hci0'
+                },
+                btDevices: [],
+                isScanningBT: false,
                 deferredPrompt: null,
                 masterVolume: 85,
                 ws: null,
@@ -676,17 +881,40 @@
                     this.loadFavorites();
                     this.loadHistory();
                     this.loadPlaylists();
+                    this.fetchBTStatus();
+
+                    this.refreshLucide();
 
                     setInterval(() => {
                         if (!this.playerState.paused) {
                             const maxDur = this.getEffectiveDuration();
                             if (maxDur > 0 && this.playerState.position < maxDur) {
                                 this.playerState.position += 1;
+                                this.updateActiveLyricIndex();
                             } else if (maxDur > 0 && this.playerState.position >= maxDur && (Date.now() - this.lastPlayTime > 5000)) {
                                 this.playNext();
                             }
                         }
                     }, 1000);
+                },
+
+                refreshLucide() {
+                    this.$nextTick(() => {
+                        if (window.lucide) {
+                            lucide.createIcons();
+                        }
+                    });
+                },
+
+                switchTab(tab) {
+                    this.activeTab = tab;
+                    if (tab === 'lyrics' && this.currentSong) {
+                        this.fetchLyrics();
+                    }
+                    if (tab === 'sound') {
+                        this.fetchBTStatus();
+                    }
+                    this.refreshLucide();
                 },
 
                 getSongImage(song) {
@@ -724,11 +952,13 @@
                             if (message.data.player_state) this.playerState = { ...this.playerState, ...message.data.player_state };
                             if (message.data.queue) this.queue = message.data.queue;
                             if (message.data.master_volume !== undefined) this.masterVolume = message.data.master_volume;
+                            if (message.data.bluetooth_status) this.btStatus = message.data.bluetooth_status;
                             break;
                         case 'song_changed':
                             this.currentSong = message.data;
                             this.playerState.position = 0;
                             if (message.data.duration) this.playerState.duration = message.data.duration;
+                            if (this.activeTab === 'lyrics') this.fetchLyrics();
                             break;
                         case 'player_state_changed':
                             if (message.data.paused !== undefined) this.playerState.paused = message.data.paused;
@@ -736,11 +966,10 @@
                                 this.playerState.position = message.data.position;
                             }
                             if (message.data.duration !== undefined && message.data.duration > 0) this.playerState.duration = message.data.duration;
-                            if (message.data.volume !== undefined) this.playerState.volume = message.data.volume;
-                            if (message.data.equalizer) this.playerState.equalizer = message.data.equalizer;
                             break;
-                        case 'master_volume_changed':
-                            this.masterVolume = message.data.volume;
+                        case 'bluetooth_status_changed':
+                            this.btStatus = message.data;
+                            this.refreshLucide();
                             break;
                     }
                 },
@@ -754,6 +983,7 @@
                     try {
                         const response = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
                         this.searchResults = await response.json();
+                        this.refreshLucide();
                     } catch (e) {
                         console.error("Search error:", e);
                     } finally {
@@ -775,23 +1005,24 @@
                             body: JSON.stringify(song)
                         });
                         const data = await res.json();
-                        if (data.status === 'cancelled_stale_request') {
-                            return;
-                        }
                         if (data.current_song) this.currentSong = data.current_song;
                     } catch (e) {
                         console.error("Play error:", e);
                     }
                     this.loadHistory();
+                    if (this.activeTab === 'lyrics') this.fetchLyrics();
+                    this.refreshLucide();
                 },
 
                 async togglePlay() {
                     this.playerState.paused = !this.playerState.paused;
                     await fetch('/api/toggle', { method: 'POST' });
+                    this.refreshLucide();
                 },
 
                 async seekTo(position) {
                     this.playerState.position = parseFloat(position);
+                    this.updateActiveLyricIndex();
                     await fetch('/api/seek', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -801,22 +1032,165 @@
 
                 async seekRelative(seconds) {
                     let target = Math.max(0, this.playerState.position + seconds);
-                    this.playerState.position = target;
-                    await fetch('/api/seek', {
+                    this.seekTo(target);
+                },
+
+                async fetchLyrics() {
+                    if (!this.currentSong) return;
+                    this.lyricsState.loading = true;
+                    this.lyricsState.parsedLines = [];
+                    this.lyricsState.plainLyrics = null;
+                    
+                    try {
+                        const res = await fetch(`/api/lyrics?title=${encodeURIComponent(this.currentSong.title)}&artist=${encodeURIComponent(this.currentSong.artist || '')}`);
+                        const data = await res.json();
+                        
+                        if (data.synced_lyrics) {
+                            this.lyricsState.syncedLyrics = data.synced_lyrics;
+                            this.parseLrc(data.synced_lyrics);
+                        } else if (data.plain_lyrics) {
+                            this.lyricsState.plainLyrics = data.plain_lyrics;
+                        }
+                    } catch (e) {
+                        console.error("Fetch lyrics error:", e);
+                    } finally {
+                        this.lyricsState.loading = false;
+                        this.refreshLucide();
+                    }
+                },
+
+                fetchLyricsForSong(song) {
+                    this.currentSong = song;
+                    this.switchTab('lyrics');
+                },
+
+                parseLrc(lrcText) {
+                    const lines = lrcText.split('\n');
+                    const parsed = [];
+                    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+                    
+                    for (const line of lines) {
+                        const match = timeRegex.exec(line);
+                        if (match) {
+                            const min = parseInt(match[1]);
+                            const sec = parseInt(match[2]);
+                            const ms = parseInt(match[3]);
+                            const time = min * 60 + sec + (ms > 99 ? ms / 1000 : ms / 100);
+                            const text = line.replace(timeRegex, '').trim();
+                            if (text) {
+                                parsed.push({ time, text });
+                            }
+                        }
+                    }
+                    this.lyricsState.parsedLines = parsed.sort((a, b) => a.time - b.time);
+                    this.updateActiveLyricIndex();
+                },
+
+                updateActiveLyricIndex() {
+                    if (!this.lyricsState.parsedLines.length) return;
+                    const pos = this.playerState.position;
+                    let idx = 0;
+                    for (let i = 0; i < this.lyricsState.parsedLines.length; i++) {
+                        if (pos >= this.lyricsState.parsedLines[i].time) {
+                            idx = i;
+                        } else {
+                            break;
+                        }
+                    }
+                    this.lyricsState.activeIndex = idx;
+                },
+
+                updateEqBand(index, gainVal) {
+                    this.eqBands[index].gain = parseInt(gainVal);
+                    this.selectedEqPreset = 'custom';
+                },
+
+                applyEqPreset(presetId) {
+                    this.selectedEqPreset = presetId;
+                    const presets = {
+                        flat: [0,0,0,0,0,0,0,0,0,0],
+                        bass: [6,5,4,2,0,0,1,2,3,3],
+                        vocal: [-2,-1,0,3,4,3,2,1,0,-1],
+                        rock: [5,3,1,-1,0,1,3,4,5,5],
+                        pop: [-1,1,3,4,3,0,-1,-1,1,2],
+                        jazz: [3,2,1,2,-1,-1,0,1,2,3],
+                        edm: [6,5,3,0,-1,1,3,5,4,4],
+                        party: [7,6,4,2,0,2,4,6,6,5]
+                    };
+                    const targetGains = presets[presetId] || presets.flat;
+                    this.eqBands.forEach((band, i) => band.gain = targetGains[i]);
+                    fetch('/api/equalizer', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ position: target })
+                        body: JSON.stringify({ preset: presetId })
                     });
                 },
 
-                async installPWA() {
-                    if (this.deferredPrompt) {
-                        this.deferredPrompt.prompt();
-                        const choice = await this.deferredPrompt.userChoice;
-                        if (choice.outcome === 'accepted') {
-                            this.deferredPrompt = null;
-                        }
+                async fetchBTStatus() {
+                    try {
+                        const res = await fetch('/api/bluetooth/status');
+                        this.btStatus = await res.json();
+                        this.refreshLucide();
+                    } catch (e) {}
+                },
+
+                async toggleBTPower() {
+                    const target = !this.btStatus.powered;
+                    try {
+                        const res = await fetch('/api/bluetooth/power', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ power: target })
+                        });
+                        const data = await res.json();
+                        this.btStatus.powered = data.powered;
+                        this.refreshLucide();
+                    } catch (e) {}
+                },
+
+                async setBTMode(mode) {
+                    try {
+                        await fetch('/api/bluetooth/mode', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ mode })
+                        });
+                        this.btStatus.mode = mode;
+                        this.refreshLucide();
+                    } catch (e) {}
+                },
+
+                async scanBTDevices() {
+                    this.isScanningBT = true;
+                    try {
+                        const res = await fetch('/api/bluetooth/devices');
+                        this.btDevices = await res.json();
+                        this.refreshLucide();
+                    } catch (e) {} finally {
+                        this.isScanningBT = false;
                     }
+                },
+
+                async connectBTDevice(mac) {
+                    try {
+                        await fetch('/api/bluetooth/connect', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ mac })
+                        });
+                        this.fetchBTStatus();
+                    } catch (e) {}
+                },
+
+                async disconnectBTDevice(mac) {
+                    try {
+                        await fetch('/api/bluetooth/disconnect', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ mac })
+                        });
+                        this.fetchBTStatus();
+                    } catch (e) {}
                 },
 
                 async setMasterVolume(volume) {
@@ -837,33 +1211,21 @@
                     });
                 },
 
-                async selectEqualizer(presetId) {
-                    this.playerState.equalizer = presetId;
-                    await fetch('/api/equalizer', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ preset: presetId })
-                    });
-                },
-
-                toggleSleepTimerModal() {
-                    this.showSleepModal = !this.showSleepModal;
-                },
-
-                async setSleepTimer(minutes) {
-                    this.sleepTimerMinutes = minutes;
-                    this.showSleepModal = false;
-                    await fetch('/api/sleep-timer', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ minutes: minutes })
-                    });
+                async installPWA() {
+                    if (this.deferredPrompt) {
+                        this.deferredPrompt.prompt();
+                        const { outcome } = await this.deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            this.deferredPrompt = null;
+                        }
+                    }
                 },
 
                 async loadPlaylists() {
                     try {
                         const res = await fetch('/api/playlists');
                         this.playlists = await res.json();
+                        this.refreshLucide();
                     } catch (e) {}
                 },
 
@@ -893,6 +1255,7 @@
                     try {
                         const res = await fetch(`/api/playlists/${id}`);
                         this.selectedPlaylist = await res.json();
+                        this.refreshLucide();
                     } catch (e) {}
                 },
 
@@ -907,6 +1270,7 @@
                     this.selectedSongForPlaylist = song;
                     this.loadPlaylists();
                     this.showAddToPlaylistModal = true;
+                    this.refreshLucide();
                 },
 
                 async addSongToPlaylist(playlistId) {
@@ -929,18 +1293,9 @@
                     } catch (e) {}
                 },
 
-                async addToQueue(song) {
-                    await fetch('/api/queue/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(song)
-                    });
-                },
-
                 async playNext() {
                     if (this.queue.length > 0) {
-                        const nextSong = this.queue[0];
-                        await this.playSong(nextSong);
+                        await this.playSong(this.queue[0]);
                     }
                 },
 
@@ -961,6 +1316,7 @@
                     try {
                         const response = await fetch('/api/history');
                         this.recentSongs = await response.json();
+                        this.refreshLucide();
                     } catch (e) {}
                 },
 
@@ -971,6 +1327,13 @@
                     return `${mins}:${secs.toString().padStart(2, '0')}`;
                 }
             }
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js').catch(err => console.log('SW registration error:', err));
+            });
         }
     </script>
 </body>
