@@ -117,11 +117,11 @@ class BluetoothService:
             return self.powered
 
         if power:
-            self._run_cmd(["rfkill", "unblock", "bluetooth"])
+            self._run_cmd(["sudo", "rfkill", "unblock", "bluetooth"])
             self._run_cmd(["bluetoothctl", "power", "on"])
-            # Set Bluetooth Class to Audio Speaker / Receiver (0x20041C)
-            self._run_cmd(["hciconfig", "hci0", "class", "0x20041C"])
-            self._run_cmd(["hciconfig", "hci0", "piscan"])
+            # Hardcode Bluetooth Device Class to Audio Speaker / Receiver (0x20041C)
+            self._run_cmd(["sudo", "hciconfig", "hci0", "class", "0x20041C"])
+            self._run_cmd(["sudo", "hciconfig", "hci0", "piscan"])
             self._start_agent()
             self._run_cmd(["bluetoothctl", "pairable", "on"])
             self._run_cmd(["bluetoothctl", "discoverable", "on"])
@@ -135,6 +135,7 @@ class BluetoothService:
             self.discoverable = False
 
         return self.powered
+
 
     def set_mode(self, mode: str) -> str:
         self.mode = "receiver"

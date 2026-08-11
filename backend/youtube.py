@@ -6,19 +6,37 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+import time
+
+_search_cache: Dict[str, Dict] = {}
+CACHE_TTL = 600  # 10 minutes cache TTL
+
+
 def search_songs(query: str, limit: int = 12) -> List[Dict]:
+    global _search_cache
+    query_key = f"{query.lower().strip()}_{limit}"
+    now = time.time()
+
+    if query_key in _search_cache:
+        cached_entry = _search_cache[query_key]
+        if now - cached_entry["time"] < CACHE_TTL:
+            return cached_entry["data"]
+
     ydl_opts = {
         "format": "bestaudio/best",
         "quiet": True,
-        "extract_flat": True,
-        "dump_single_json": True,
+        "extract_flat": "in_playlist",
+        "skip_download": True,
         "nocheckcertificate": True,
+        "youtube_include_dash_manifest": False,
+        "youtube_include_hls_manifest": False,
+        "ignoreerrors": True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             results = ydl.extract_info(f"ytsearch{limit}:{query}", download=False)
-            entries = results.get("entries", [])
+            entries = results.get("entries", []) if results else []
             songs = []
 
             for entry in entries:
@@ -43,10 +61,12 @@ def search_songs(query: str, limit: int = 12) -> List[Dict]:
                         "duration": entry.get("duration") or 0,
                     })
 
+            _search_cache[query_key] = {"time": now, "data": songs}
             return songs
         except Exception as e:
             logger.error(f"Error searching YouTube: {e}")
             return []
+
 
 
 def get_audio_url(youtube_url: str) -> str:

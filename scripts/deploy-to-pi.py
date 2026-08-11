@@ -4,18 +4,17 @@ import sys
 import zipfile
 import time
 
-# Configuration for Raspberry Pi Target
 PI_HOST = "192.168.18.159"
 PI_USER = "aamps"
 PI_PASS = "aamps"
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ZIP_PATH = os.path.join(PROJECT_DIR, "piplayer.zip")
 PI_REMOTE_ZIP = "/home/aamps/piplayer.zip"
-PI_TARGET_DIR = "/home/aamps/piplayer"
+PI_TARGET_DIR = "/home/aamps/raspberry-pi-music-player"
 
 
 def create_project_zip():
-    print("[1/5] Creating project archive (piplayer.zip)...")
+    print("[1/4] Packaging project files into piplayer.zip...")
     if os.path.exists(ZIP_PATH):
         os.remove(ZIP_PATH)
 
@@ -31,128 +30,59 @@ def create_project_zip():
                 rel_path = os.path.relpath(file_path, PROJECT_DIR)
                 zipf.write(file_path, rel_path)
 
-    print(f"      Zip file created successfully ({os.path.getsize(ZIP_PATH)} bytes).")
-
-
-def run_ssh_command(ssh, cmd, sudo_pass=None):
-    print(f"   --> {cmd[:90]}...")
-    if cmd.startswith("sudo ") and sudo_pass:
-        stdin, stdout, stderr = ssh.exec_command(cmd, get_pty=True)
-        stdin.write(sudo_pass + "\n")
-        stdin.flush()
-    else:
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-
-    exit_status = stdout.channel.recv_exit_status()
-    out = stdout.read().decode("utf-8", errors="ignore")
-    err = stderr.read().decode("utf-8", errors="ignore")
-
-    if exit_status != 0:
-        print(f"       Warning/Error (Exit Code {exit_status}): {err.strip() or out.strip()[:200]}")
-    else:
-        print("       [OK]")
-    return exit_status, out, err
+    print(f"      Archive created successfully ({os.path.getsize(ZIP_PATH)} bytes).")
 
 
 def main():
     print("=" * 60)
-    print("   Deploying Spotify-Style Bluetooth Receiver PiPlayer (192.168.18.159)")
+    print("   Deploying Aero-Glass White PiPlayer to 192.168.18.159")
     print("=" * 60)
 
     create_project_zip()
 
-    print("\n[2/5] Connecting via SSH to Raspberry Pi (aamps@192.168.18.159)...")
+    print("\n[2/4] Connecting via SSH to Raspberry Pi (aamps@192.168.18.159)...")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
         ssh.connect(PI_HOST, username=PI_USER, password=PI_PASS, timeout=15)
-        print("      SSH Connection established successfully!")
+        print("      SSH connection established!")
 
-        print("\n[3/5] Uploading project archive to Raspberry Pi...")
+        print("\n[3/4] Uploading project archive...")
         sftp = ssh.open_sftp()
         sftp.put(ZIP_PATH, PI_REMOTE_ZIP)
         sftp.close()
-        print("      Archive uploaded to /home/aamps/piplayer.zip.")
+        print("      Archive uploaded.")
 
-        print("\n[4/5] Updating packages, Python virtual environment & mpv player daemon...")
-        commands = [
-            "sudo pkill -f python3 || true",
-            "sudo pkill -f mpv || true",
-            "sudo apt-get update -y",
-            "sudo apt-get install -y python3 python3-pip python3-venv mpv bluetooth bluez rfkill alsa-utils bluez-tools pulseaudio-module-bluetooth unzip",
-            f"mkdir -p {PI_TARGET_DIR}",
-            f"unzip -o {PI_REMOTE_ZIP} -d {PI_TARGET_DIR}",
-            f"rm -f {PI_REMOTE_ZIP}",
-            f"cd {PI_TARGET_DIR} && python3 -m venv venv",
-            f"cd {PI_TARGET_DIR} && {PI_TARGET_DIR}/venv/bin/pip install --upgrade pip",
-            f"cd {PI_TARGET_DIR} && {PI_TARGET_DIR}/venv/bin/pip install -r requirements.txt",
-            # Set ALSA Master volume to 85% for loud clear sound
-            "amixer sset Master on && amixer sset Master 85%",
-            # Bluetooth A2DP Receiver Mode (Phone Discoverable)
-            "sudo rfkill unblock bluetooth",
-            "sudo bluetoothctl power on",
-            "sudo bluetoothctl discoverable on",
-            "sudo bluetoothctl pairable on",
-            # Ensure standalone yt-dlp is present
-            "sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp && sudo chmod a+rx /usr/local/bin/yt-dlp",
-            # Create mpv background daemon service targeting direct 3.5mm card alsa/plughw:CARD=Headphones,DEV=0
-            f'''sudo bash -c 'cat > /etc/systemd/system/mpv.service << "EOF"
-[Unit]
-Description=MPV Player Daemon for PiPlayer
-After=sound.target network.target bluetooth.target
+        print("\n[4/4] Extracting & executing installer script on Raspberry Pi...")
+        remote_script = f"""
+            mkdir -p {PI_TARGET_DIR}
+            unzip -o {PI_REMOTE_ZIP} -d {PI_TARGET_DIR}
+            rm -f {PI_REMOTE_ZIP}
+            cd {PI_TARGET_DIR}
+            chmod +x install.sh
+            echo '{PI_PASS}' | sudo -S bash install.sh
+        """
+        
+        stdin, stdout, stderr = ssh.exec_command(remote_script, get_pty=True)
+        
+        while not stdout.channel.exit_status_ready():
+            if stdout.channel.recv_ready():
+                line = stdout.channel.recv(1024).decode('utf-8', errors='ignore')
+                print(line, end="")
+            time.sleep(0.5)
 
-[Service]
-Type=simple
-User=aamps
-ExecStart=/usr/bin/mpv --idle=yes --ytdl=yes --ytdl-format=bestaudio/best --audio-device=alsa/plughw:CARD=Headphones,DEV=0 --cache=yes --demuxer-max-bytes=8M --demuxer-readahead-secs=8 --network-timeout=5 --input-ipc-server=/tmp/mpv.sock --no-video
-Restart=always
-RestartSec=3
+        exit_code = stdout.channel.recv_exit_status()
+        out = stdout.read().decode('utf-8', errors='ignore')
+        print(out)
 
-[Install]
-WantedBy=multi-user.target
-EOF' ''',
-            # Create piplayer web service
-            f'''sudo bash -c 'cat > /etc/systemd/system/piplayer.service << "EOF"
-[Unit]
-Description=PiPlayer Web Server & Sound Controller
-After=network-online.target sound.target bluetooth.target mpv.service
-Wants=network-online.target mpv.service
-
-[Service]
-Type=simple
-User=aamps
-WorkingDirectory={PI_TARGET_DIR}/backend
-ExecStart={PI_TARGET_DIR}/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
-Restart=always
-RestartSec=3
-Environment=PYTHONUNBUFFERED=1
-
-[Install]
-WantedBy=multi-user.target
-EOF' ''',
-            # Enable and start services
-            "sudo systemctl daemon-reload",
-            "sudo systemctl enable mpv.service",
-            "sudo systemctl enable piplayer.service",
-            "sudo systemctl restart mpv.service",
-            "sudo systemctl restart piplayer.service",
-            "sudo systemctl status piplayer.service --no-pager"
-        ]
-
-        for cmd in commands:
-            run_ssh_command(ssh, cmd, sudo_pass=PI_PASS)
-
-        print("\n[5/5] Service Status & Connectivity Check...")
-        time.sleep(3)
-        status, out, err = run_ssh_command(ssh, "sudo systemctl is-active piplayer.service", sudo_pass=PI_PASS)
-        if "active" in out:
-            print("\n" + "=" * 60)
-            print("  SUCCESS: Spotify-Style PiPlayer is running live on your Raspberry Pi!")
-            print(f"  Open in your browser:  http://{PI_HOST}:8000")
-            print("=" * 60 + "\n")
+        print("\n" + "=" * 60)
+        if exit_code == 0:
+            print("  SUCCESS: Minimalist Aero-Glass PiPlayer is live on your Raspberry Pi!")
+            print(f"  Access UI in your browser:  http://{PI_HOST}:8000")
         else:
-            print("\n[!] Service status:", out.strip())
+            print(f"  Deployment finished with exit code {exit_code}")
+        print("=" * 60 + "\n")
 
     except Exception as e:
         print(f"\n[!] Deployment error: {e}")
