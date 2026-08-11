@@ -2,7 +2,8 @@ import os
 
 # Server configuration
 HOST = "0.0.0.0"
-PORT = 8000
+DEFAULT_PORT = 8000
+PORT = int(os.environ.get("PORT", str(DEFAULT_PORT)))
 DEBUG = False
 
 # Base Directories

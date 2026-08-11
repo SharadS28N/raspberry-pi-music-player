@@ -62,10 +62,16 @@ def main():
     local_ip = get_local_ip()
     use_ssl = ensure_ssl_certs(local_ip)
 
-    # Determine port: 443 for HTTPS if root/setcap available, else 8443 / 8000
-    port = int(os.environ.get("PORT", "8000"))
+    sys.path.insert(0, BACKEND_DIR)
+    sys.path.insert(0, PROJECT_ROOT)
+    from backend import database
+    database.init_database()
+    db_port = database.get_setting("port")
+
+    port = int(db_port) if db_port else int(os.environ.get("PORT", "8000"))
     if use_ssl and os.environ.get("USE_DEFAULT_HTTPS_PORT") == "1":
         port = 443
+
 
     protocol = "https" if (use_ssl and os.path.exists(CERT_FILE)) else "http"
 

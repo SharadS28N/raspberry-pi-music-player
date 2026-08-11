@@ -89,6 +89,51 @@ class TestPiPlayerAPI(unittest.TestCase):
         res = self.client.delete(f"/api/playlists/{playlist_id}")
         self.assertEqual(res.status_code, 200)
 
+    def test_autoplay_api(self):
+        res = self.client.get("/api/autoplay/status")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("enabled", res.json())
+
+        res = self.client.post("/api/autoplay/toggle", json={"enabled": False})
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.json()["enabled"])
+
+        res = self.client.post("/api/autoplay/toggle", json={"enabled": True})
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.json()["enabled"])
+
+    def test_sleep_timer_api(self):
+        res = self.client.post("/api/sleep-timer", json={"minutes": 15, "mode": "duration"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["sleep_timer"], 15)
+
+        res = self.client.post("/api/sleep-timer", json={"minutes": 0, "mode": "end_of_track"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["mode"], "end_of_track")
+
+    def test_settings_and_port_api(self):
+        res = self.client.get("/api/settings")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("port", data)
+        self.assertIn("version", data)
+
+        res = self.client.post("/api/settings/port", json={"port": 8080})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["port"], 8080)
+
+        res = self.client.post("/api/settings/port", json={"port": 8000})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["port"], 8000)
+
+    def test_updates_api(self):
+        res = self.client.get("/api/updates/check")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("current_version", data)
+        self.assertIn("changelog", data)
+
 
 if __name__ == "__main__":
     unittest.main()
+

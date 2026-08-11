@@ -282,3 +282,23 @@ def get_playlist_songs(playlist_id: int) -> List[Dict]:
     conn.close()
     return [dict(row) for row in rows]
 
+
+def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    row = cursor.fetchone()
+    conn.close()
+    if row and row["value"] is not None:
+        return row["value"]
+    return default
+
+
+def set_setting(key: str, value: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, str(value)))
+    conn.commit()
+    conn.close()
+
+

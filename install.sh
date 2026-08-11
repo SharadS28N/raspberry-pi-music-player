@@ -46,14 +46,22 @@ echo -e "${GREEN}[4/6] Optimizing hardware audio & Bluetooth receiver settings..
 amixer sset PCM on 2>/dev/null || amixer sset Master on 2>/dev/null || true
 amixer sset PCM 85% 2>/dev/null || amixer sset Master 85% 2>/dev/null || true
 
+# Configure BlueZ for A2DP Speaker Sink & PIN-less JustWorks pairing
+if [ -f /etc/bluetooth/main.conf ]; then
+    sudo sed -i 's/#\?Class = .*/Class = 0x20041C/' /etc/bluetooth/main.conf
+    sudo sed -i 's/#\?DiscoverableTimeout = .*/DiscoverableTimeout = 0/' /etc/bluetooth/main.conf
+    sudo sed -i 's/#\?PairableTimeout = .*/PairableTimeout = 0/' /etc/bluetooth/main.conf
+    sudo sed -i 's/#\?AutoEnable = .*/AutoEnable = true/' /etc/bluetooth/main.conf
+fi
+
+sudo systemctl restart bluetooth 2>/dev/null || true
 sudo rfkill unblock bluetooth 2>/dev/null || true
 sudo hciconfig hci0 class 0x20041C 2>/dev/null || true
 sudo hciconfig hci0 piscan 2>/dev/null || true
 sudo bluetoothctl power on 2>/dev/null || true
 sudo bluetoothctl discoverable on 2>/dev/null || true
 sudo bluetoothctl pairable on 2>/dev/null || true
-sudo bluetoothctl agent NoInputNoOutput 2>/dev/null || true
-sudo bluetoothctl default-agent 2>/dev/null || true
+
 
 echo -e "${GREEN}[5/6] Creating systemd service daemons...${NC}"
 

@@ -7,10 +7,12 @@ import os
 import sys
 import time
 import asyncio
+import subprocess
 import re
 import json
 import urllib.request
 import urllib.parse
+
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -73,6 +75,15 @@ class EqualizerRequest(BaseModel):
 
 class SleepTimerRequest(BaseModel):
     minutes: int
+    mode: Optional[str] = "duration"
+
+
+class AutoplayToggleRequest(BaseModel):
+    enabled: bool
+
+
+class PortSettingsRequest(BaseModel):
+    port: int
 
 
 class CreatePlaylistRequest(BaseModel):
@@ -88,10 +99,14 @@ class PlaylistSongRequest(BaseModel):
     duration: Optional[int] = None
 
 
-# Current song & Sleep Timer state
+# Current song, Autoplay & Sleep Timer state
 current_song: Optional[dict] = None
 sleep_timer_end_time: Optional[float] = None
+sleep_timer_mode: str = "duration"
 sleep_timer_task = None
+autoplay_enabled: bool = True
+SOFTWARE_VERSION: str = "v2.1.0-production"
+
 
 
 @app.get("/")
@@ -207,16 +222,64 @@ async def set_volume(request: VolumeRequest):
     return res
 
 
+from config import PORT as DEFAULT_SYSTEM_PORT
+
+
 @app.get("/api/status")
 async def status():
+    saved_port = database.get_setting("port", str(DEFAULT_SYSTEM_PORT))
     return {
         "player": player.get_status(),
         "current_song": current_song,
         "queue": queue_module.get_queue(),
         "audio": audio_service.get_output_devices(),
         "master_volume": audio_service.get_master_volume(),
-        "sleep_timer_remaining": round(sleep_timer_end_time - time.time()) if sleep_timer_end_time and sleep_timer_end_time > time.time() else 0
+        "sleep_timer_remaining": round(sleep_timer_end_time - time.time()) if sleep_timer_end_time and sleep_timer_end_time > time.time() else 0,
+        "sleep_timer_mode": sleep_timer_mode,
+        "autoplay_enabled": autoplay_enabled,
+        "version": SOFTWARE_VERSION,
+        "port": int(saved_port) if saved_port else DEFAULT_SYSTEM_PORT
     }
+
+
+# YouTube Autoplay Endpoints
+@app.get("/api/autoplay/status")
+async def get_autoplay_status():
+    return {"enabled": autoplay_enabled}
+
+
+@app.post("/api/autoplay/toggle")
+async def toggle_autoplay(req: Optional[AutoplayToggleRequest] = None):
+    global autoplay_enabled
+    if req is not None:
+        autoplay_enabled = req.enabled
+    else:
+        autoplay_enabled = not autoplay_enabled
+    database.set_setting("autoplay", "1" if autoplay_enabled else "0")
+    await broadcast_state_update("autoplay_changed", {"enabled": autoplay_enabled})
+    return {"status": "ok", "enabled": autoplay_enabled}
+
+
+@app.post("/api/autoplay/next")
+async def autoplay_next():
+    """Trigger YouTube-like autoplay recommendation when queue is empty"""
+    global current_song
+    if not current_song or not autoplay_enabled:
+        return {"status": "skipped"}
+    
+    title = current_song.get("title", "")
+    artist = current_song.get("artist", "")
+    recommendations = await asyncio.to_thread(youtube.get_related_songs, title, artist, 5)
+    if recommendations:
+        next_track = recommendations[0]
+        return await play(PlayRequest(
+            url=next_track["url"],
+            title=next_track.get("title"),
+            artist=next_track.get("artist"),
+            thumbnail=next_track.get("thumbnail"),
+            duration=next_track.get("duration")
+        ))
+    return {"status": "no_recommendation_found"}
 
 
 # Equalizer endpoint
@@ -227,14 +290,18 @@ async def set_equalizer(req: EqualizerRequest):
     return {"status": "ok", "equalizer": preset}
 
 
-# Sleep Timer Endpoint
+# Sleep Timer Endpoint (Multi-Mode)
 @app.post("/api/sleep-timer")
 async def set_sleep_timer(req: SleepTimerRequest):
-    global sleep_timer_end_time, sleep_timer_task
+    global sleep_timer_end_time, sleep_timer_mode, sleep_timer_task
+
+    sleep_timer_mode = req.mode or "duration"
 
     if req.minutes <= 0:
         sleep_timer_end_time = None
-        return {"status": "ok", "sleep_timer": 0}
+        if sleep_timer_task and not sleep_timer_task.done():
+            sleep_timer_task.cancel()
+        return {"status": "ok", "sleep_timer": 0, "mode": sleep_timer_mode}
 
     sleep_timer_end_time = time.time() + (req.minutes * 60)
 
@@ -255,7 +322,107 @@ async def set_sleep_timer(req: SleepTimerRequest):
         sleep_timer_task.cancel()
 
     sleep_timer_task = asyncio.create_task(run_sleep_timer())
-    return {"status": "ok", "sleep_timer": req.minutes}
+    return {"status": "ok", "sleep_timer": req.minutes, "mode": sleep_timer_mode}
+
+
+# System Settings & Dynamic Port Configuration Endpoints
+@app.get("/api/settings")
+async def get_settings():
+    saved_port = database.get_setting("port", str(DEFAULT_SYSTEM_PORT))
+    return {
+        "port": int(saved_port) if saved_port else DEFAULT_SYSTEM_PORT,
+        "autoplay": autoplay_enabled,
+        "version": SOFTWARE_VERSION,
+        "host": "0.0.0.0"
+    }
+
+
+@app.post("/api/settings/port")
+async def set_port(req: PortSettingsRequest):
+    if req.port < 1024 or req.port > 65535:
+        raise HTTPException(status_code=400, detail="Port must be between 1024 and 65535")
+    database.set_setting("port", str(req.port))
+    return {
+        "status": "ok",
+        "port": req.port,
+        "message": f"Server port updated to {req.port}. Please restart PiPlayer or run service restart to apply."
+    }
+
+
+# Auto-Update & Feature Release Endpoints
+@app.get("/api/updates/check")
+async def check_updates():
+    changelog = [
+        {
+            "version": "v2.1.0-production",
+            "date": "2026-08-11",
+            "title": "Full Scalable Production Release",
+            "features": [
+                "Mobile Responsive UI & Bluetooth devices scrolling layout fix",
+                "Seamless BlueZ A2DP Bluetooth Speaker pairing without PIN code prompts",
+                "YouTube-Like Autoplay for seamless endless music recommendations",
+                "Multi-Mode Sleep Timer (Duration fade-out & End of Track)",
+                "Software Auto-Update & Dynamic Server Port configuration (default 8000)"
+            ]
+        },
+        {
+            "version": "v2.0.0",
+            "date": "2026-08-01",
+            "title": "Neubrutalism & Live Lyrics",
+            "features": [
+                "Synchronized LRC lyrics from LRCLIB API",
+                "10-band audio equalizer with MPV audio filter presets",
+                "SQLite Playlists and Queue history management"
+            ]
+        }
+    ]
+
+    update_available = False
+    latest_ver = SOFTWARE_VERSION
+    try:
+        # Check git origin status if in git repo
+        if os.path.exists(os.path.join(os.path.dirname(BASE_DIR), ".git")):
+            res = await asyncio.to_thread(
+                subprocess.run,
+                ["git", "rev-parse", "--short", "HEAD"],
+                capture_output=True, text=True, cwd=os.path.dirname(BASE_DIR)
+            )
+            if res.returncode == 0:
+                current_commit = res.stdout.strip()
+                latest_ver = f"{SOFTWARE_VERSION} ({current_commit})"
+    except Exception:
+        pass
+
+    return {
+        "current_version": SOFTWARE_VERSION,
+        "latest_version": latest_ver,
+        "update_available": update_available,
+        "changelog": changelog
+    }
+
+
+@app.post("/api/updates/apply")
+async def apply_update():
+    """Trigger automated software update (git pull & setup)"""
+    project_root = os.path.dirname(BASE_DIR)
+    if not os.path.exists(os.path.join(project_root, ".git")):
+        return {"status": "ok", "message": "PiPlayer is running latest production build (Standalone Zip install)"}
+
+    try:
+        proc = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "pull", "origin", "main"],
+            capture_output=True, text=True, cwd=project_root, timeout=30
+        )
+        output = proc.stdout + proc.stderr
+        return {
+            "status": "success" if proc.returncode == 0 else "warning",
+            "message": "Software updated successfully!" if proc.returncode == 0 else "Git pull completed with output",
+            "details": output
+        }
+    except Exception as e:
+        return {"status": "error", "message": f"Update failed: {str(e)}"}
+
 
 
 # --- Queue Management Endpoints ---

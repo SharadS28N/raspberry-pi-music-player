@@ -76,3 +76,14 @@ def get_audio_url(youtube_url: str) -> str:
         except Exception as e:
             logger.error(f"Error extracting direct audio URL: {e}")
             return youtube_url
+
+
+def get_related_songs(title: str, artist: Optional[str] = "", limit: int = 5) -> List[Dict]:
+    """Fetch related/recommended songs based on current track for YouTube-style autoplay"""
+    clean_title = title.replace("Official Video", "").replace("MV", "").strip()
+    query = f"{clean_title} {artist or ''} mix recommendations".strip()
+    results = search_songs(query, limit=limit+3)
+    # Filter out exact current song title if returned
+    filtered = [s for s in results if s["title"].lower() != title.lower()][:limit]
+    return filtered if filtered else results[:limit]
+
