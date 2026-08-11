@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PiPlayer - Minimalist Aero Glass Music Appliance</title>
+    <title>PiPlayer. — Tech-Minimalist Music Engine</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/static/manifest.json">
@@ -13,126 +13,94 @@
     <meta name="theme-color" content="#FFFFFF">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
 
-    <!-- Tailwind CSS, Alpine.js & Lucide Icons -->
+    <!-- Tailwind CSS, Alpine.js, Lucide Icons & Lenis.js Smooth Scroll -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Lenis.js Smooth Scrolling -->
+    <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.18/dist/lenis.css">
+    <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
         
         * {
             scrollbar-width: thin;
-            scrollbar-color: #CBD5E1 transparent;
+            scrollbar-color: #A3A3A3 transparent;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
             background-color: #FFFFFF;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(241, 245, 249, 0.9) 0px, transparent 50%), 
-                radial-gradient(at 100% 100%, rgba(248, 250, 252, 0.95) 0px, transparent 50%);
-            color: #0F172A;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #09090B;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
             user-select: none;
             touch-action: manipulation;
         }
 
-        /* Pure White Aero-Glassmorphism Classes */
-        .aero-glass {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(226, 232, 240, 0.85);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-            border-radius: 1.5rem;
+        /* Tech-Minimalist Card Borders & Elevations */
+        .tech-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E5E5;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+            border-radius: 0.75rem;
+            transition: all 0.2s ease-in-out;
         }
 
-        .aero-glass-interactive {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(226, 232, 240, 0.85);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
-            border-radius: 1.5rem;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            cursor: pointer;
+        .tech-card:hover {
+            border-color: #A3A3A3;
+            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
         }
 
-        .aero-glass-interactive:hover {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.92);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 8px 16px -4px rgba(0, 0, 0, 0.04);
-            border-color: rgba(203, 213, 225, 0.9);
-        }
-
-        .aero-glass-interactive:active {
-            transform: translateY(1px);
-            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        .aero-button {
-            background-color: #000000;
+        .tech-card-dark {
+            background: #09090B;
             color: #FFFFFF;
-            font-weight: 700;
-            border-radius: 1rem;
-            box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.15);
+            border: 1px solid #27272A;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-black {
+            background-color: #09090B;
+            color: #FFFFFF;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 0.5rem;
             transition: all 0.15s ease-in-out;
         }
 
-        .aero-button:hover {
+        .btn-black:hover {
+            background-color: #27272A;
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.22);
-            background-color: #18181B;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .aero-button:active {
+        .btn-black:active {
             transform: translateY(1px);
-            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
         }
 
-        .aero-button-secondary {
-            background: rgba(255, 255, 255, 0.9);
-            color: #000000;
-            border: 1px solid rgba(226, 232, 240, 1);
-            font-weight: 700;
-            border-radius: 1rem;
-            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+        .btn-outline {
+            background-color: #FFFFFF;
+            color: #09090B;
+            border: 1px solid #E5E5E5;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 0.5rem;
             transition: all 0.15s ease-in-out;
         }
 
-        .aero-button-secondary:hover {
-            background-color: #FFFFFF;
-            border-color: #CBD5E1;
-            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08);
+        .btn-outline:hover {
+            border-color: #09090B;
+            background-color: #F4F4F5;
         }
 
-        /* Custom minimal slider thumb */
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #000000;
-            border: 2px solid #FFFFFF;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #000000;
-            border: 2px solid #FFFFFF;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-        }
-
-        /* Equalizer Bouncing Animation */
+        /* Equalizer Bouncing Bars */
         .eq-bar {
             width: 3px;
-            background-color: #000000;
+            background-color: #09090B;
             border-radius: 1px;
             animation: bounce 1.2s infinite ease-in-out alternate;
         }
@@ -145,213 +113,251 @@
             100% { transform: scaleY(1.1); }
         }
 
-        /* Spinning Vinyl Disc Animation */
-        .spin-vinyl {
-            animation: spin 8s linear infinite;
+        /* Custom minimal slider thumb */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            background: #09090B;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
         }
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            background: #09090B;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
         }
 
-        /* Touch scrolling fix for mobile */
-        .touch-scroll-container {
+        .touch-scroll {
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
             overscroll-behavior-y: contain;
         }
     </style>
 </head>
-<body class="h-full">
-    <div x-data="playerApp()" x-init="init()" class="min-h-[100dvh] flex flex-col md:flex-row overflow-hidden text-slate-900">
+<body class="h-full bg-white text-neutral-900 antialiased selection:bg-black selection:text-white">
+    <div x-data="playerApp()" x-init="init()" class="min-h-[100dvh] flex flex-col md:flex-row overflow-x-hidden">
         
-        <!-- Sidebar Navigation (Desktop Aero Glass White) -->
-        <aside class="hidden md:flex flex-col w-64 bg-white/80 backdrop-blur-2xl border-r border-slate-200/80 p-6 text-slate-900 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-            <!-- Minimalist Aero Logo & Disc -->
+        <!-- Architectural Sidebar Navigation (Dedicated PiPlayer Branding) -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-neutral-200 p-6 z-30 flex-shrink-0">
+            <!-- Brand Logo -->
             <div class="mb-8 flex items-center justify-between">
-                <h1 class="text-xl font-black flex items-center gap-3 tracking-tight uppercase text-black">
-                    <div class="relative w-9 h-9 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow-md overflow-hidden" :class="{'spin-vinyl': !playerState.paused}">
-                        <div class="absolute inset-0 rounded-full border border-white/30 m-1"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"></div>
-                    </div>
-                    <span>PIPLAYER</span>
+                <h1 class="text-xl font-black tracking-tighter uppercase text-black flex items-center gap-2">
+                    <span class="w-3 h-3 bg-black inline-block"></span>
+                    <span>PIPLAYER.</span>
                 </h1>
+                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 border border-neutral-200 bg-neutral-50 text-neutral-600 rounded" x-text="updateInfo.current_version || 'v2.2.0'">v2.2.0</span>
             </div>
 
-            <nav class="space-y-1.5 font-bold text-sm">
-                <button @click="switchTab('home')" :class="activeTab === 'home' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="home" class="w-5 h-5 stroke-[2]" :class="activeTab === 'home' ? 'text-white' : 'text-black'"></i>
-                    <span>Home</span>
-                </button>
-                <button @click="switchTab('search')" :class="activeTab === 'search' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="search" class="w-5 h-5 stroke-[2]" :class="activeTab === 'search' ? 'text-white' : 'text-black'"></i>
-                    <span>Search Songs</span>
-                </button>
-                <button @click="switchTab('lyrics')" :class="activeTab === 'lyrics' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="align-left" class="w-5 h-5 stroke-[2]" :class="activeTab === 'lyrics' ? 'text-white' : 'text-black'"></i>
-                    <span>Live Lyrics</span>
-                </button>
-                <button @click="switchTab('equalizer')" :class="activeTab === 'equalizer' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="sliders" class="w-5 h-5 stroke-[2]" :class="activeTab === 'equalizer' ? 'text-white' : 'text-black'"></i>
-                    <span>Audio Equalizer</span>
-                </button>
-                <button @click="switchTab('sound')" :class="activeTab === 'sound' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="bluetooth" class="w-5 h-5 stroke-[2]" :class="activeTab === 'sound' ? 'text-white' : 'text-black'"></i>
-                    <span>BT Receiver & Sound</span>
-                </button>
-                <button @click="switchTab('playlists')" :class="activeTab === 'playlists' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="list-music" class="w-5 h-5 stroke-[2]" :class="activeTab === 'playlists' ? 'text-white' : 'text-black'"></i>
-                    <span>Playlists</span>
-                </button>
-                <button @click="switchTab('library')" :class="activeTab === 'library' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="heart" class="w-5 h-5 stroke-[2]" :class="activeTab === 'library' ? 'text-white' : 'text-black'"></i>
-                    <span>Favorites & History</span>
-                </button>
-                <button @click="switchTab('updates')" :class="activeTab === 'updates' ? 'bg-black text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/80 text-slate-900'" class="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all">
-                    <i data-lucide="git-branch" class="w-5 h-5 stroke-[2]" :class="activeTab === 'updates' ? 'text-white' : 'text-black'"></i>
-                    <span>Updates & System</span>
-                </button>
-            </nav>
+            <!-- Sidebar Navigation Groups -->
+            <div class="space-y-6 font-bold text-xs uppercase tracking-wider">
+                <!-- Group 1: MUSIC & LIBRARY -->
+                <div>
+                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-3">MUSIC & LIBRARY</h5>
+                    <nav class="space-y-1">
+                        <button @click="switchTab('home')" :class="activeTab === 'home' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="disc" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>LIBRARY</span>
+                        </button>
+                        <button @click="switchTab('search')" :class="activeTab === 'search' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="search" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>SEARCH</span>
+                        </button>
+                        <button @click="switchTab('lyrics')" :class="activeTab === 'lyrics' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="file-text" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>LYRICS</span>
+                        </button>
+                        <button @click="switchTab('playlists')" :class="activeTab === 'playlists' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="folder" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>PLAYLISTS</span>
+                        </button>
+                    </nav>
+                </div>
 
-            <!-- Quick Controls in Sidebar -->
-            <div class="mt-auto pt-6 border-t border-slate-200/80 space-y-3">
-                <!-- Autoplay Toggle Badge -->
-                <button @click="toggleAutoplay()" class="w-full p-3 rounded-2xl border transition flex items-center justify-between text-xs font-black uppercase" :class="autoplayEnabled ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="play-square" class="w-4 h-4 stroke-[2]" :class="autoplayEnabled ? 'text-white' : 'text-black'"></i>
-                        <span>Autoplay Mix</span>
-                    </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold" :class="autoplayEnabled ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'" x-text="autoplayEnabled ? 'ON' : 'OFF'"></span>
-                </button>
+                <!-- Group 2: SYSTEM & SOUND -->
+                <div>
+                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-3">SYSTEM & SOUND</h5>
+                    <nav class="space-y-1">
+                        <button @click="switchTab('equalizer')" :class="activeTab === 'equalizer' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="sliders" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>EQUALIZER</span>
+                        </button>
+                        <button @click="switchTab('sound')" :class="activeTab === 'sound' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="bluetooth" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>SETTINGS & BT</span>
+                        </button>
+                        <button @click="switchTab('updates')" :class="activeTab === 'updates' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
+                            <i data-lucide="git-branch" class="w-4 h-4 stroke-[2.2]"></i>
+                            <span>UPDATES</span>
+                        </button>
+                    </nav>
+                </div>
+            </div>
 
-                <!-- BT Receiver Status Badge -->
-                <div class="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between text-xs">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-3 h-3 rounded-full border border-slate-300" :class="btStatus.powered ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'"></div>
-                        <span class="font-bold text-slate-900 uppercase tracking-wider text-[11px]" x-text="btStatus.powered ? 'BT Receiver ON' : 'BT Disabled'"></span>
+            <!-- Sidebar User Profile Box -->
+            <div class="mt-auto pt-6 border-t border-neutral-200">
+                <div class="p-3 bg-neutral-100 rounded-lg flex items-center gap-3 border border-neutral-200">
+                    <div class="w-9 h-9 bg-black text-white font-mono font-black text-xs flex items-center justify-center rounded">
+                        PI
                     </div>
-                    <button @click="switchTab('sound')" class="text-black hover:scale-110 transition">
-                        <i data-lucide="settings" class="w-4 h-4 text-black"></i>
-                    </button>
+                    <div class="min-w-0">
+                        <h4 class="font-extrabold text-xs text-black uppercase tracking-tight truncate">Raspberry Pi</h4>
+                        <p class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">PIPLAYER ENGINE</p>
+                    </div>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content Scroll Area with Responsive Touch Padding -->
-        <main class="flex-1 overflow-y-auto touch-scroll-container p-4 md:p-8 pb-48 md:pb-36 bg-slate-50/60">
+        <!-- Main Content Area with Lenis Smooth Scroll Padding -->
+        <main class="flex-1 overflow-y-auto touch-scroll bg-white p-4 md:p-10 pb-48 md:pb-36 min-w-0" id="main-scroll-container">
             
-            <!-- PWA Installation Banner -->
-            <div x-show="deferredPrompt" class="mb-6 p-4 aero-glass flex items-center justify-between font-bold border-emerald-200/80">
+            <!-- Top Header Bar -->
+            <header class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-neutral-200 gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-black flex items-center gap-3">
+                        <span x-text="getTabTitle()">PIPLAYER MUSIC ENGINE</span>
+                    </h2>
+                    <p class="text-xs font-semibold text-neutral-500 mt-1 uppercase tracking-wider">
+                        High-performance audio streaming & wireless Bluetooth receiver appliance.
+                    </p>
+                </div>
+                
                 <div class="flex items-center gap-3">
-                    <i data-lucide="smartphone" class="w-6 h-6 text-black"></i>
-                    <div>
-                        <h4 class="font-black text-sm uppercase text-slate-900">Install PiPlayer App</h4>
-                        <p class="text-xs font-medium text-slate-500">Install standalone PWA app on mobile & desktop</p>
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 border border-neutral-200 rounded-md text-[11px] font-mono font-bold text-neutral-700">
+                        <span class="w-2 h-2 rounded-full" :class="btStatus.powered ? 'bg-emerald-600 animate-pulse' : 'bg-neutral-400'"></span>
+                        <span x-text="btStatus.powered ? 'ENGINE ONLINE' : 'ENGINE OFFLINE'">ENGINE ONLINE</span>
+                    </div>
+
+                    <div class="px-3 py-1.5 bg-neutral-100 border border-neutral-200 rounded-md text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1.5">
+                        <i data-lucide="git-branch" class="w-3.5 h-3.5 text-black"></i>
+                        <span x-text="updateInfo.current_version || 'v2.2.0'">v2.2.0</span>
                     </div>
                 </div>
-                <button @click="installPWA()" class="px-4 py-2 aero-button text-xs">
-                    Install
-                </button>
-            </div>
+            </header>
 
-            <!-- Mobile Top Header Bar -->
-            <div class="flex md:hidden items-center justify-between mb-4 pb-2 border-b border-slate-200/60">
-                <h1 class="text-lg font-black flex items-center gap-2 text-black uppercase tracking-tight">
-                    <div class="w-7 h-7 rounded-full bg-black flex items-center justify-center shadow-sm">
-                        <div class="w-2 h-2 rounded-full bg-white"></div>
-                    </div>
-                    <span>PiPlayer</span>
-                </h1>
-                <div class="flex items-center gap-2">
-                    <button @click="toggleAutoplay()" class="px-2.5 py-1.5 rounded-xl border text-[10px] font-black uppercase flex items-center gap-1 transition" :class="autoplayEnabled ? 'bg-black text-white border-black shadow-sm' : 'bg-white text-slate-600 border-slate-200'">
-                        <i data-lucide="play-square" class="w-3.5 h-3.5" :class="autoplayEnabled ? 'text-white' : 'text-black'"></i>
-                        <span x-text="autoplayEnabled ? 'Autoplay ON' : 'Autoplay OFF'"></span>
-                    </button>
-                    <button @click="showSleepModal = true" class="p-2 rounded-xl bg-white border border-slate-200 text-black shadow-sm hover:bg-slate-50 relative">
-                        <i data-lucide="moon" class="w-4 h-4 text-black" :class="{'fill-current text-black': sleepTimerMinutes > 0 || sleepTimerMode === 'end_of_track'}"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Global Universal Search Bar -->
-            <div class="mb-6">
-                <div class="relative max-w-2xl mx-auto">
-                    <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-black"></i>
+            <!-- Global Universal Search Field -->
+            <div class="mb-8 max-w-3xl">
+                <div class="relative">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"></i>
                     <input 
                         type="text" 
                         x-model="searchQuery"
                         @input.debounce.300ms="onSearchInput()"
-                        placeholder="Search songs, artists, YouTube audio..."
-                        class="w-full pl-12 pr-10 py-3.5 rounded-2xl bg-white/90 border border-slate-200/90 shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black text-slate-900 text-sm font-bold transition placeholder-slate-400"
+                        placeholder="Search songs, artists, or audio streams..."
+                        class="w-full pl-12 pr-10 py-3.5 bg-neutral-50 border border-neutral-200 rounded-lg text-black font-extrabold text-sm focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition"
                     >
                     <i x-show="isSearching" data-lucide="loader-2" class="w-5 h-5 animate-spin absolute right-4 top-1/2 -translate-y-1/2 text-black"></i>
                 </div>
             </div>
 
-            <!-- Home Tab -->
-            <div x-show="activeTab === 'home'" class="space-y-6">
-                <div class="flex items-center justify-between mb-2">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Recently Played</h2>
-                        <p class="text-xs font-semibold text-slate-500">Your recent music sessions</p>
+            <!-- TAB 1: HOME / FEATURED MUSIC & LOGS -->
+            <div x-show="activeTab === 'home'" class="space-y-10">
+                <!-- Section 1: Featured Music Grid -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-neutral-400">FEATURED TRACKS</h3>
+                        <span class="text-xs font-mono font-bold text-neutral-500">AUDIO STREAM</span>
                     </div>
-                    <div x-show="!playerState.paused" class="flex items-end gap-1 h-5 px-3 py-1 rounded-full bg-black text-white font-bold">
-                        <div class="eq-bar bg-white"></div>
-                        <div class="eq-bar bg-white"></div>
-                        <div class="eq-bar bg-white"></div>
-                        <div class="eq-bar bg-white"></div>
-                        <span class="text-[10px] font-black uppercase tracking-wider ml-1">Playing</span>
-                    </div>
-                </div>
 
-                <div x-show="recentSongs.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <template x-for="song in recentSongs" :key="song.id || song.url">
-                        <div class="aero-glass-interactive p-3.5 group relative" @click="playSong(song)">
-                            <div class="relative aspect-square rounded-2xl overflow-hidden mb-3 border border-slate-200 bg-slate-100">
-                                <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-2">
-                                    <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
-                                        <i data-lucide="play" class="w-5 h-5 text-black fill-current ml-0.5"></i>
-                                    </button>
-                                    <button @click.stop="openAddToPlaylistModal(song)" class="w-10 h-10 rounded-full bg-black/80 text-white flex items-center justify-center shadow-lg" title="Add to Playlist">
-                                        <i data-lucide="folder-plus" class="w-4 h-4 text-white"></i>
-                                    </button>
+                    <div x-show="recentSongs.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <template x-for="(song, idx) in recentSongs.slice(0, 3)" :key="song.id || idx">
+                            <div class="tech-card overflow-hidden flex flex-col justify-between group cursor-pointer" @click="playSong(song)">
+                                <div class="relative aspect-video bg-neutral-900 overflow-hidden">
+                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500'" class="w-full h-full object-cover opacity-85 group-hover:scale-105 transition duration-300">
+                                    <span class="absolute top-3 right-3 bg-black text-white font-mono font-black text-[9px] px-2 py-0.5 rounded tracking-widest uppercase">STREAM</span>
+                                </div>
+                                <div class="p-5 space-y-2">
+                                    <div class="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
+                                        <span>DURATION</span> — <span x-text="formatTime(song.duration)">3:45</span>
+                                    </div>
+                                    <h4 class="font-extrabold text-base text-black uppercase truncate group-hover:underline" x-text="song.title"></h4>
+                                    <p class="text-neutral-500 text-xs font-medium truncate" x-text="song.artist || 'YouTube Audio'"></p>
+                                </div>
+                                <div class="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-between text-xs font-black uppercase">
+                                    <span class="text-black">PLAY TRACK</span>
+                                    <i data-lucide="arrow-up-right" class="w-4 h-4 text-black"></i>
                                 </div>
                             </div>
-                            <h3 class="font-extrabold text-xs md:text-sm truncate text-slate-900" x-text="song.title"></h3>
-                            <p class="text-slate-500 font-semibold text-[11px] truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
 
-                <div x-show="recentSongs.length === 0" class="aero-glass p-8 text-center">
-                    <i data-lucide="disc" class="w-12 h-12 mx-auto mb-3 text-black"></i>
-                    <h3 class="font-black text-slate-900 uppercase text-lg">No recent tracks</h3>
-                    <p class="text-xs font-medium text-slate-500 mt-1">Search or play a track to start building your library</p>
+                <!-- Section 2: Data Table Layout -->
+                <div class="tech-card p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
+                        <div>
+                            <h3 class="text-lg font-black uppercase tracking-tight text-black">RECENT PLAYLIST HISTORY</h3>
+                            <p class="text-xs font-medium text-neutral-500 mt-0.5">Real-time log of recently played tracks and audio sessions.</p>
+                        </div>
+                        <button @click="loadHistory()" class="p-2 border border-neutral-200 rounded hover:bg-neutral-100">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-black"></i>
+                        </button>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="overflow-x-auto border border-neutral-200 rounded-lg">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-neutral-100 text-neutral-600 font-black tracking-wider uppercase border-b border-neutral-200 text-[10px]">
+                                <tr>
+                                    <th class="py-3 px-4">TRACK TITLE</th>
+                                    <th class="py-3 px-4">ARTIST</th>
+                                    <th class="py-3 px-4 text-center">STATUS</th>
+                                    <th class="py-3 px-4 text-right">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-200 font-semibold">
+                                <template x-for="(song, index) in recentSongs" :key="song.id || index">
+                                    <tr class="hover:bg-neutral-50 transition">
+                                        <td class="py-3 px-4 font-extrabold text-black uppercase flex items-center gap-3">
+                                            <div class="w-7 h-7 bg-black text-white font-mono text-[10px] flex items-center justify-center rounded uppercase" x-text="song.artist ? song.artist.substring(0,2) : 'YT'"></div>
+                                            <span class="truncate max-w-xs" x-text="song.title"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-neutral-600 truncate max-w-xs" x-text="song.artist || 'YouTube Stream'"></td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-block px-2.5 py-1 rounded text-[9px] font-mono font-black uppercase tracking-widest" :class="index === 0 && !playerState.paused ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-neutral-100 text-neutral-700 border border-neutral-200'" x-text="index === 0 && !playerState.paused ? 'PLAYING' : 'READY'"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-right">
+                                            <button @click="playSong(song)" class="p-1.5 hover:bg-neutral-200 rounded text-black" title="Play">
+                                                <i data-lucide="play" class="w-4 h-4 text-black"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- Search Tab -->
-            <div x-show="activeTab === 'search'">
-                <div x-show="searchResults.length > 0">
-                    <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Search Results</h2>
+            <!-- TAB 2: SEARCH RESULTS -->
+            <div x-show="activeTab === 'search'" class="space-y-6">
+                <div class="tech-card p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
+                        <h3 class="text-lg font-black uppercase tracking-tight text-black">SEARCH RESULTS</h3>
+                        <span class="text-xs font-mono font-bold text-neutral-500" x-text="`${searchResults.length} TRACKS FOUND`"></span>
+                    </div>
+
                     <div class="space-y-3">
                         <template x-for="song in searchResults" :key="song.id || song.url">
-                            <div class="aero-glass-interactive p-3.5 flex items-center gap-4">
-                                <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-14 h-14 rounded-2xl object-cover border border-slate-200 bg-slate-100 flex-shrink-0">
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-extrabold text-sm md:text-base truncate text-slate-900" x-text="song.title"></h3>
-                                    <p class="text-slate-500 text-xs font-semibold truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
-                                    <span x-show="song.duration" class="text-[11px] text-slate-700 font-mono font-bold" x-text="formatTime(song.duration)"></span>
+                            <div class="p-4 border border-neutral-200 rounded-lg hover:border-black transition flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div class="flex items-center gap-4 min-w-0">
+                                    <img :src="getSongImage(song)" class="w-12 h-12 rounded object-cover border border-neutral-200 bg-neutral-100 flex-shrink-0">
+                                    <div class="min-w-0">
+                                        <h4 class="font-extrabold text-sm text-black uppercase truncate" x-text="song.title"></h4>
+                                        <p class="text-xs font-semibold text-neutral-500 truncate" x-text="song.artist || 'YouTube'"></p>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <button @click="playSong(song)" class="w-10 h-10 rounded-full aero-button flex items-center justify-center" title="Play Now">
-                                        <i data-lucide="play" class="w-5 h-5 text-white fill-current ml-0.5"></i>
+                                <div class="flex items-center gap-2 justify-end">
+                                    <button @click="playSong(song)" class="btn-black px-4 py-2 text-xs flex items-center gap-1.5">
+                                        <i data-lucide="play" class="w-3.5 h-3.5 text-white"></i> PLAY NOW
                                     </button>
-                                    <button @click="fetchLyricsForSong(song)" class="w-10 h-10 rounded-full aero-button-secondary flex items-center justify-center" title="View Lyrics">
-                                        <i data-lucide="align-left" class="w-4 h-4 text-black"></i>
-                                    </button>
-                                    <button @click="openAddToPlaylistModal(song)" class="w-10 h-10 rounded-full aero-button-secondary flex items-center justify-center" title="Add to Playlist">
-                                        <i data-lucide="folder-plus" class="w-4 h-4 text-black"></i>
+                                    <button @click="openAddToPlaylistModal(song)" class="btn-outline px-3 py-2 text-xs">
+                                        + PLAYLIST
                                     </button>
                                 </div>
                             </div>
@@ -360,101 +366,47 @@
                 </div>
             </div>
 
-            <!-- Synchronized Lyrics Screen -->
+            <!-- TAB 3: SYNCHRONIZED LYRICS -->
             <div x-show="activeTab === 'lyrics'" class="max-w-3xl mx-auto space-y-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Synchronized On-Screen Lyrics</h2>
-                        <p class="text-xs font-semibold text-slate-500">Live timed lyric display & LRC scrolling</p>
-                    </div>
-                    <button @click="fetchLyrics()" class="px-4 py-2.5 aero-button-secondary text-xs flex items-center gap-2">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 text-black" :class="{'animate-spin': lyricsState.loading}"></i>
-                        <span>Reload Lyrics</span>
-                    </button>
-                </div>
-
-                <div class="aero-glass p-6 md:p-8 min-h-[400px] flex flex-col justify-between">
-                    <!-- Song Banner -->
-                    <div class="flex items-center gap-4 pb-6 border-b border-slate-200/80">
-                        <img :src="getSongImage(currentSong)" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 bg-slate-100">
+                <div class="tech-card p-8 space-y-6">
+                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
                         <div>
-                            <h3 class="font-black text-lg text-slate-900 truncate" x-text="currentSong?.title || 'No Song Selected'"></h3>
-                            <p class="text-slate-500 text-xs font-semibold mt-0.5" x-text="currentSong?.artist || 'Select a track to view lyrics'"></p>
+                            <h3 class="text-xl font-black uppercase text-black">SYNCHRONIZED LRC DISPLAY</h3>
+                            <p class="text-xs font-semibold text-neutral-500 mt-0.5" x-text="currentSong?.title || 'No Song Active'"></p>
                         </div>
+                        <button @click="fetchLyrics()" class="btn-outline px-4 py-2 text-xs">RELOAD</button>
                     </div>
 
-                    <!-- Lyrics Container -->
-                    <div class="py-8 my-auto text-center space-y-4 max-h-[350px] overflow-y-auto touch-scroll-container pr-2" id="lyrics-container">
-                        <template x-if="lyricsState.loading">
-                            <div class="py-12 space-y-3">
-                                <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-black"></i>
-                                <p class="text-slate-500 text-xs font-bold uppercase">Fetching lyrics from LRCLIB...</p>
-                            </div>
-                        </template>
-
-                        <template x-if="!lyricsState.loading && lyricsState.parsedLines.length > 0">
+                    <div class="py-10 text-center space-y-4 max-h-[400px] overflow-y-auto touch-scroll" id="lyrics-container">
+                        <template x-if="lyricsState.parsedLines.length > 0">
                             <div class="space-y-4">
                                 <template x-for="(line, idx) in lyricsState.parsedLines" :key="idx">
                                     <p 
-                                        class="text-base md:text-lg transition-all duration-200 font-extrabold px-4 py-2 rounded-2xl cursor-pointer"
-                                        :class="lyricsState.activeIndex === idx ? 'bg-black text-white text-xl md:text-2xl scale-105 shadow-md' : 'text-slate-400 hover:text-slate-900'"
+                                        class="text-base font-extrabold transition-all duration-150 cursor-pointer py-1.5 px-3 rounded"
+                                        :class="lyricsState.activeIndex === idx ? 'bg-black text-white text-xl font-black' : 'text-neutral-400 hover:text-black'"
                                         @click="seekTo(line.time)"
                                         x-text="line.text"
                                     ></p>
                                 </template>
                             </div>
                         </template>
-
-                        <template x-if="!lyricsState.loading && lyricsState.parsedLines.length === 0 && lyricsState.plainLyrics">
-                            <div class="whitespace-pre-line text-slate-800 leading-relaxed text-sm md:text-base font-bold">
-                                <p x-text="lyricsState.plainLyrics"></p>
-                            </div>
-                        </template>
-
-                        <template x-if="!lyricsState.loading && !lyricsState.plainLyrics && lyricsState.parsedLines.length === 0">
-                            <div class="py-12 text-center text-slate-400 font-bold">
-                                <i data-lucide="file-x" class="w-10 h-10 mx-auto mb-2 text-black"></i>
-                                <p class="text-sm uppercase">No synchronized lyrics available for this track.</p>
-                            </div>
-                        </template>
                     </div>
                 </div>
             </div>
 
-            <!-- Custom 10-Band Equalizer Tab -->
+            <!-- TAB 4: EQUALIZER -->
             <div x-show="activeTab === 'equalizer'" class="max-w-4xl mx-auto space-y-6">
-                <div>
-                    <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Custom Audio Equalizer</h2>
-                    <p class="text-xs font-semibold text-slate-500">10-band precision sound curve & presets</p>
-                </div>
-
-                <!-- Equalizer Presets Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
-                    <template x-for="preset in eqPresetList" :key="preset.id">
-                        <button 
-                            @click="applyEqPreset(preset.id)"
-                            class="p-3 rounded-2xl border text-center transition font-black text-xs uppercase"
-                            :class="selectedEqPreset === preset.id ? 'bg-black text-white border-black shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'"
-                            x-text="preset.name"
-                        ></button>
-                    </template>
-                </div>
-
-                <!-- 10-Band Sliders -->
-                <div class="aero-glass p-6 md:p-8 space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-4">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="sliders" class="w-5 h-5 text-black"></i>
-                            <h3 class="font-black text-slate-900 text-base uppercase">10-Band Frequency Controls</h3>
-                        </div>
-                        <button @click="applyEqPreset('flat')" class="text-xs font-black text-black uppercase underline hover:scale-105 transition">Reset to Flat</button>
+                <div class="tech-card p-6 space-y-6">
+                    <div class="border-b border-neutral-200 pb-4 flex items-center justify-between">
+                        <h3 class="text-lg font-black uppercase text-black">10-BAND EQUALIZER CURVE</h3>
+                        <button @click="applyEqPreset('flat')" class="text-xs font-mono font-bold underline uppercase">RESET FLAT</button>
                     </div>
 
-                    <div class="grid grid-cols-5 md:grid-cols-10 gap-3 md:gap-4 h-64 items-center pt-4">
+                    <div class="grid grid-cols-5 md:grid-cols-10 gap-4 h-64 items-center pt-4">
                         <template x-for="(band, idx) in eqBands" :key="band.freq">
                             <div class="flex flex-col items-center h-full justify-between">
-                                <span class="text-[11px] font-mono font-bold text-slate-800" x-text="`${band.gain > 0 ? '+' : ''}${band.gain}dB`"></span>
-                                <div class="h-44 flex items-center justify-center">
+                                <span class="text-[10px] font-mono font-bold text-neutral-700" x-text="`${band.gain > 0 ? '+' : ''}${band.gain}dB`"></span>
+                                <div class="h-40 flex items-center justify-center">
                                     <input 
                                         type="range" 
                                         min="-12" 
@@ -462,647 +414,278 @@
                                         step="1"
                                         :value="band.gain"
                                         @input="updateEqBand(idx, $event.target.value)"
-                                        class="h-36 w-2 accent-black rounded-lg appearance-none bg-slate-200 cursor-pointer -rotate-90"
+                                        class="h-32 w-2 accent-black rounded appearance-none bg-neutral-200 cursor-pointer -rotate-90"
                                     >
                                 </div>
-                                <span class="text-[10px] font-black uppercase text-slate-500" x-text="band.freq"></span>
+                                <span class="text-[10px] font-black uppercase text-neutral-500" x-text="band.freq"></span>
                             </div>
                         </template>
                     </div>
                 </div>
             </div>
 
-            <!-- Bluetooth Receiver & Sound Hub -->
-            <div x-show="activeTab === 'sound'" class="max-w-4xl mx-auto space-y-6">
-                <div>
-                    <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Sound Settings & Bluetooth Hub</h2>
-                    <p class="text-xs font-semibold text-slate-500">Control Raspberry Pi hardware gain, music player volume, & Bluetooth modes</p>
-                </div>
-
-                <!-- Dual Volume & Gain Control Panel -->
-                <div class="aero-glass p-6 space-y-6">
-                    <div class="border-b border-slate-200/80 pb-4">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="volume-2" class="w-6 h-6 text-black"></i>
-                            <h3 class="font-black text-lg text-slate-900 uppercase">Dual Sound & Gain Controls</h3>
+            <!-- TAB 5: SOUND & BLUETOOTH HUB -->
+            <div x-show="activeTab === 'sound'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left 2 Columns: Bluetooth Speaker Sink & Sound Gains -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Bluetooth Receiver Controls -->
+                    <div class="tech-card p-6 space-y-6">
+                        <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="bluetooth" class="w-5 h-5 text-black"></i>
+                                <h3 class="text-lg font-black uppercase text-black">BLUETOOTH AUDIO RECEIVER SINK</h3>
+                            </div>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-mono font-black text-[10px] uppercase rounded">RECEIVER ACTIVE</span>
                         </div>
-                        <p class="text-xs font-semibold text-slate-500 mt-1">Separate controls for Raspberry Pi hardware audio gain and software music player stream</p>
+
+                        <div class="space-y-5 text-xs font-bold uppercase">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-black font-extrabold">PIN-LESS JUSTWORKS AUTO-PAIRING</h4>
+                                    <p class="text-[10px] text-neutral-500 lowercase mt-0.5">Allows phones and PCs to connect instantly without pairing keys</p>
+                                </div>
+                                <button @click="toggleBTPower()" class="px-4 py-2 rounded font-black text-[11px] uppercase transition" :class="btStatus.powered ? 'bg-emerald-600 text-white' : 'bg-neutral-200 text-neutral-700'" x-text="btStatus.powered ? 'ENABLED' : 'DISABLED'"></button>
+                            </div>
+
+                            <div class="flex items-center justify-between border-t border-neutral-200 pt-4">
+                                <div>
+                                    <h4 class="text-black font-extrabold">YOUTUBE AUTOPLAY RECOMMENDATIONS</h4>
+                                    <p class="text-[10px] text-neutral-500 lowercase mt-0.5">Auto stream recommended tracks when queue ends</p>
+                                </div>
+                                <button @click="toggleAutoplay()" class="px-4 py-2 rounded font-black text-[11px] uppercase transition" :class="autoplayEnabled ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-700'" x-text="autoplayEnabled ? 'ENABLED' : 'DISABLED'"></button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 1. Raspberry Pi Device Hardware Sound (ALSA Master) -->
-                        <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-3">
-                            <div class="flex justify-between items-center">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-bold">
-                                        <i data-lucide="cpu" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-black text-sm text-slate-900 uppercase">Pi Hardware Gain</h4>
-                                        <p class="text-[10px] font-semibold text-slate-500">Physical ALSA Master Sound</p>
-                                    </div>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-lg bg-black text-white font-mono font-bold text-xs" x-text="`${masterVolume}%`"></span>
-                            </div>
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max="100" 
-                                :value="masterVolume"
-                                @input="setMasterVolume($event.target.value)"
-                                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-black"
-                            >
-                        </div>
-
-                        <!-- 2. Music Player Software Volume -->
-                        <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-3">
-                            <div class="flex justify-between items-center">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-9 h-9 rounded-lg bg-black text-white flex items-center justify-center font-bold">
-                                        <i data-lucide="music" class="w-5 h-5 text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-black text-sm text-slate-900 uppercase">Music Stream Sound</h4>
-                                        <p class="text-[10px] font-semibold text-slate-500">Player Output Volume</p>
-                                    </div>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-lg bg-black text-white font-mono font-bold text-xs" x-text="`${playerState.volume}%`"></span>
-                            </div>
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max="100" 
-                                :value="playerState.volume"
-                                @input="setVolume($event.target.value)"
-                                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-black"
-                            >
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Main Power & Bluetooth Speaker Receiver Card -->
-                <div class="aero-glass p-6 space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-2xl border border-slate-300 flex items-center justify-center shadow-sm" :class="btStatus.powered ? 'bg-black text-white' : 'bg-white text-black'">
-                                <i data-lucide="bluetooth" class="w-6 h-6" :class="btStatus.powered ? 'text-white' : 'text-black'"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-black text-lg text-slate-900 uppercase">Bluetooth Receiver Mode</h3>
-                                <p class="text-xs font-semibold text-slate-500" x-text="btStatus.powered ? 'Bluetooth Receiver active: Pair from phone without PIN code prompt' : 'Disabled by default for security'"></p>
-                            </div>
-                        </div>
+                    <!-- Dual Volume Sliders -->
+                    <div class="tech-card p-6 space-y-6">
+                        <h3 class="text-lg font-black uppercase text-black border-b border-neutral-200 pb-4">HARDWARE SOUND & STREAM GAIN</h3>
                         
-                        <button 
-                            @click="toggleBTPower()" 
-                            class="px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider transition flex items-center gap-2 justify-center"
-                            :class="btStatus.powered ? 'bg-black text-white shadow-md' : 'aero-button-secondary'"
-                        >
-                            <i data-lucide="power" class="w-4 h-4" :class="btStatus.powered ? 'text-white' : 'text-black'"></i>
-                            <span x-text="btStatus.powered ? 'Turn Off Bluetooth' : 'Enable Bluetooth Receiver'"></span>
-                        </button>
-                    </div>
-
-                    <!-- Dedicated Receiver Status Banner -->
-                    <div class="space-y-3" x-show="btStatus.powered">
-                        <div class="p-4 rounded-2xl border border-emerald-300 bg-emerald-50/80 text-emerald-950 shadow-sm flex items-start gap-3.5">
-                            <i data-lucide="speaker" class="w-6 h-6 flex-shrink-0 mt-0.5 text-emerald-900"></i>
+                        <div class="space-y-4">
                             <div>
-                                <h5 class="font-black text-sm uppercase">Dedicated Wireless BT Sound Speaker Receiver Active</h5>
-                                <p class="text-xs font-semibold text-emerald-900 mt-1">Your Raspberry Pi is ready to receive audio. Connect your smartphone, laptop, or PC via Bluetooth to stream audio instantly with 0 delay.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Connected Device Details Card -->
-                <div x-show="btStatus.powered && btStatus.connected_device" class="aero-glass p-6 bg-emerald-50/90 border-emerald-300">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center shadow-md">
-                                <i data-lucide="smartphone" class="w-6 h-6 text-white"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="w-3 h-3 rounded-full bg-emerald-600 animate-ping"></span>
-                                    <h4 class="font-black text-slate-900 text-base uppercase" x-text="btStatus.connected_device?.name || 'Connected Device'"></h4>
+                                <div class="flex justify-between text-xs font-extrabold uppercase mb-2">
+                                    <span>Raspberry Pi Hardware ALSA Master Volume</span>
+                                    <span class="font-mono" x-text="`${masterVolume}%`"></span>
                                 </div>
-                                <p class="text-xs font-mono font-bold text-slate-600 mt-0.5" x-text="`MAC: ${btStatus.connected_device?.mac || 'N/A'}`"></p>
+                                <input type="range" min="0" max="100" :value="masterVolume" @input="setMasterVolume($event.target.value)" class="w-full h-2 bg-neutral-200 rounded appearance-none accent-black cursor-pointer">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs font-extrabold uppercase mb-2">
+                                    <span>Music Stream Player Output Sound</span>
+                                    <span class="font-mono" x-text="`${playerState.volume}%`"></span>
+                                </div>
+                                <input type="range" min="0" max="100" :value="playerState.volume" @input="setVolume($event.target.value)" class="w-full h-2 bg-neutral-200 rounded appearance-none accent-black cursor-pointer">
                             </div>
                         </div>
-                        <button @click="disconnectBTDevice(btStatus.connected_device?.mac)" class="px-4 py-2 aero-button text-xs uppercase">
-                            Disconnect
-                        </button>
                     </div>
                 </div>
 
-                <!-- Scanner & Available Devices (Mobile Touch Scrollable List) -->
-                <div x-show="btStatus.powered" class="aero-glass p-6 space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-4">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="radar" class="w-5 h-5 text-black"></i>
-                            <h3 class="font-black text-slate-900 text-base uppercase">Nearby Bluetooth Devices</h3>
-                        </div>
-                        <button @click="scanBTDevices()" class="px-4 py-2 aero-button-secondary text-xs flex items-center gap-1.5">
-                            <i data-lucide="search" class="w-4 h-4 text-black" :class="{'animate-spin': isScanningBT}"></i>
-                            <span>Scan Devices</span>
-                        </button>
+                <!-- Right Column: Dark Bluetooth Devices Card -->
+                <div class="tech-card-dark p-6 space-y-6 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-black uppercase tracking-tight text-white mb-2">BLUETOOTH SCANNER</h3>
+                        <p class="text-xs text-neutral-400 font-medium">Scan and pair nearby Bluetooth audio transmitters and smartphones.</p>
                     </div>
 
-                    <div class="space-y-2.5 max-h-80 overflow-y-auto touch-scroll-container pr-1">
+                    <!-- Scan Trigger -->
+                    <button @click="scanBTDevices()" class="p-4 bg-neutral-900 border border-neutral-700 hover:border-white rounded-xl text-center font-mono font-bold text-xs text-white uppercase tracking-wider transition">
+                        SCAN NEARBY BLUETOOTH DEVICES
+                    </button>
+
+                    <!-- Devices List -->
+                    <div class="space-y-2 max-h-60 overflow-y-auto touch-scroll">
                         <template x-for="dev in btDevices" :key="dev.mac">
-                            <div class="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <i data-lucide="bluetooth" class="w-5 h-5 text-black flex-shrink-0"></i>
-                                    <div class="min-w-0">
-                                        <h4 class="font-extrabold text-slate-900 text-xs md:text-sm truncate" x-text="dev.name"></h4>
-                                        <span class="text-[10px] text-slate-500 font-mono font-bold block" x-text="dev.mac"></span>
-                                    </div>
+                            <div class="p-3 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-between text-xs font-mono">
+                                <div>
+                                    <span class="font-bold text-white uppercase block" x-text="dev.name"></span>
+                                    <span class="text-[10px] text-neutral-500" x-text="dev.mac"></span>
                                 </div>
-                                <button 
-                                    @click="connectBTDevice(dev.mac)" 
-                                    class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition shrink-0 ml-auto"
-                                    :class="dev.connected ? 'bg-black text-white shadow-sm' : 'aero-button-secondary'"
-                                    x-text="dev.connected ? 'Connected' : 'Pair & Connect'"
-                                ></button>
+                                <button @click="connectBTDevice(dev.mac)" class="px-3 py-1 bg-white text-black font-black text-[10px] uppercase rounded">
+                                    CONNECT
+                                </button>
                             </div>
                         </template>
                     </div>
                 </div>
-
-                <!-- Server Port Configuration Card -->
-                <div class="aero-glass p-6 space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="server" class="w-5 h-5 text-black"></i>
-                            <h3 class="font-black text-slate-900 text-base uppercase">Web Server Port Configuration</h3>
-                        </div>
-                        <span class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-mono font-bold text-xs" x-text="`Current: ${serverPort}`"></span>
-                    </div>
-                    <p class="text-xs font-semibold text-slate-500">Change software access port (Default: 8000). Enter custom port and click Save.</p>
-                    <div class="flex items-center gap-3 max-w-md">
-                        <input 
-                            type="number" 
-                            x-model="serverPort" 
-                            min="1024" 
-                            max="65535" 
-                            placeholder="8000" 
-                            class="p-3 rounded-2xl bg-white border border-slate-300 text-slate-900 font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-black flex-1"
-                        >
-                        <button @click="saveServerPort()" class="px-4 py-3 aero-button text-xs uppercase flex items-center gap-1">
-                            <i data-lucide="save" class="w-4 h-4 text-white"></i> Save Port
-                        </button>
-                    </div>
-                </div>
             </div>
 
-            <!-- Playlists Tab -->
+            <!-- TAB 6: PLAYLISTS -->
             <div x-show="activeTab === 'playlists'" class="space-y-6">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Your Playlists</h2>
-                        <p class="text-xs font-semibold text-slate-500">Custom music collections & playlists</p>
-                    </div>
-                    <button @click="showAddPlaylistModal = true" class="px-4 py-2.5 aero-button text-xs flex items-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4 text-white"></i>
-                        <span>New Playlist</span>
-                    </button>
+                    <h3 class="text-xl font-black uppercase text-black">YOUR PLAYLISTS</h3>
+                    <button @click="showAddPlaylistModal = true" class="btn-black px-4 py-2 text-xs">+ NEW PLAYLIST</button>
                 </div>
 
-                <div x-show="!selectedPlaylist" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <template x-for="pl in playlists" :key="pl.id">
-                        <div class="aero-glass-interactive p-5 flex flex-col justify-between" @click="openPlaylist(pl.id)">
-                            <div class="flex items-start justify-between mb-4">
-                                <div class="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center shadow-md">
-                                    <i data-lucide="music" class="w-6 h-6 text-white"></i>
-                                </div>
-                                <button @click.stop="deletePlaylist(pl.id)" class="text-slate-400 hover:text-black transition" title="Delete Playlist">
-                                    <i data-lucide="trash-2" class="w-4 h-4 text-black"></i>
-                                </button>
-                            </div>
+                        <div class="tech-card p-6 flex flex-col justify-between cursor-pointer" @click="openPlaylist(pl.id)">
                             <div>
-                                <h3 class="font-black text-base text-slate-900 uppercase" x-text="pl.name"></h3>
-                                <p class="text-slate-500 text-xs font-bold mt-0.5" x-text="`${pl.song_count || 0} Tracks`"></p>
+                                <h4 class="font-black text-lg text-black uppercase" x-text="pl.name"></h4>
+                                <p class="text-xs font-mono text-neutral-500 mt-1" x-text="`${pl.song_count || 0} TRACKS`"></p>
                             </div>
-                            <div class="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                                <span class="text-xs text-black font-black uppercase">View Tracks</span>
-                                <button @click.stop="playPlaylist(pl.id)" class="w-8 h-8 rounded-full aero-button flex items-center justify-center" title="Play Playlist">
-                                    <i data-lucide="play" class="w-4 h-4 text-white fill-current ml-0.5"></i>
-                                </button>
+                            <div class="mt-6 pt-4 border-t border-neutral-200 flex items-center justify-between text-xs font-black uppercase">
+                                <span>VIEW COLLECTION</span>
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 text-black"></i>
                             </div>
-                        </div>
-                    </template>
-                </div>
-
-                <div x-show="selectedPlaylist" class="space-y-6">
-                    <div class="flex items-center gap-4 aero-glass p-6">
-                        <button @click="selectedPlaylist = null" class="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition shadow-sm">
-                            <i data-lucide="arrow-left" class="w-5 h-5 text-black"></i>
-                        </button>
-                        <div class="flex-1 min-w-0">
-                            <span class="text-[10px] text-slate-500 font-black uppercase tracking-wider">Playlist</span>
-                            <h2 class="text-2xl font-black text-slate-900 uppercase truncate" x-text="selectedPlaylist?.name"></h2>
-                            <p class="text-slate-500 text-xs font-bold mt-0.5" x-text="`${selectedPlaylist?.songs?.length || 0} Tracks`"></p>
-                        </div>
-                        <button x-show="selectedPlaylist?.songs?.length > 0" @click="playPlaylist(selectedPlaylist.id)" class="px-5 py-2.5 aero-button text-xs flex items-center gap-2 uppercase">
-                            <i data-lucide="play" class="w-4 h-4 text-white fill-current"></i> Play All
-                        </button>
-                    </div>
-
-                    <div class="space-y-2.5">
-                        <template x-for="song in selectedPlaylist?.songs || []" :key="song.id">
-                            <div class="aero-glass-interactive p-3.5 flex items-center gap-4">
-                                <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200'" class="w-12 h-12 rounded-2xl object-cover border border-slate-200 bg-slate-100 flex-shrink-0">
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="font-extrabold text-sm text-slate-900 truncate" x-text="song.title"></h4>
-                                    <p class="text-slate-500 text-xs font-semibold truncate mt-0.5" x-text="song.artist || 'YouTube'"></p>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button @click="playSong(song)" class="w-9 h-9 rounded-full aero-button flex items-center justify-center" title="Play">
-                                        <i data-lucide="play" class="w-4 h-4 text-white fill-current ml-0.5"></i>
-                                    </button>
-                                    <button @click="removeSongFromPlaylist(selectedPlaylist.id, song.id)" class="w-9 h-9 rounded-full aero-button-secondary text-black hover:bg-slate-200 flex items-center justify-center transition" title="Remove">
-                                        <i data-lucide="minus" class="w-4 h-4 text-black"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Favorites & History Tab -->
-            <div x-show="activeTab === 'library'" class="space-y-6">
-                <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Favorites & History</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <template x-for="song in favorites" :key="song.id">
-                        <div class="aero-glass-interactive p-3.5" @click="playSong(song)">
-                            <img :src="getSongImage(song)" class="w-full aspect-square rounded-2xl object-cover mb-3 border border-slate-200 bg-slate-100">
-                            <h3 class="font-extrabold text-xs md:text-sm truncate text-slate-900" x-text="song.title"></h3>
-                            <p class="text-slate-500 font-semibold text-[11px] truncate mt-0.5" x-text="song.artist"></p>
                         </div>
                     </template>
                 </div>
             </div>
 
-            <!-- Updates & System Feature History Tab -->
+            <!-- TAB 7: UPDATES -->
             <div x-show="activeTab === 'updates'" class="max-w-4xl mx-auto space-y-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">Software Updates & Releases</h2>
-                        <p class="text-xs font-semibold text-slate-500">Manage PiPlayer versions & automatic software updates</p>
-                    </div>
-                    <button @click="checkUpdates()" class="px-4 py-2.5 aero-button-secondary text-xs flex items-center gap-2">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 text-black" :class="{'animate-spin': isCheckingUpdates}"></i>
-                        <span>Check Updates</span>
-                    </button>
-                </div>
-
-                <!-- Current Version Banner -->
-                <div class="aero-glass p-6 bg-slate-900 text-white space-y-3 shadow-lg">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-white text-black flex items-center justify-center font-bold">
-                                <i data-lucide="git-branch" class="w-5 h-5 text-black"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-black text-lg uppercase text-white">Installed Build: <span x-text="updateInfo.current_version"></span></h3>
-                                <p class="text-xs font-medium text-slate-400">Minimalist Aero-Glass Production Build</p>
-                            </div>
+                <div class="tech-card p-6 space-y-6">
+                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
+                        <div>
+                            <h3 class="text-xl font-black uppercase text-black">AUTOMATIC SOFTWARE UPDATES</h3>
+                            <p class="text-xs font-semibold text-neutral-500 mt-0.5">PiPlayer automatically checks & pulls latest git releases in background.</p>
                         </div>
-                        <button @click="applyUpdate()" class="px-5 py-2.5 bg-white text-black font-black text-xs uppercase rounded-xl hover:bg-slate-100 transition flex items-center justify-center gap-2 shadow-sm">
-                            <i data-lucide="download" class="w-4 h-4 text-black"></i>
-                            <span>Install / Curl Update</span>
-                        </button>
+                        <button @click="applyUpdate()" class="btn-black px-5 py-2.5 text-xs">PULL LATEST RELEASE</button>
                     </div>
-                </div>
 
-                <!-- Feature Updates List -->
-                <div class="aero-glass p-6 space-y-6">
-                    <h3 class="font-black text-slate-900 text-lg uppercase border-b border-slate-200/80 pb-3">What's New in this Release</h3>
-                    <div class="space-y-4">
-                        <template x-for="item in updateInfo.changelog" :key="item.version">
-                            <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="px-3 py-1 rounded-lg bg-black text-white font-mono font-black text-xs" x-text="item.version"></span>
-                                    <span class="text-xs text-slate-500 font-mono font-bold" x-text="item.date"></span>
-                                </div>
-                                <h4 class="font-black text-slate-900 text-base uppercase mt-1" x-text="item.title"></h4>
-                                <ul class="list-disc list-inside text-xs font-semibold text-slate-600 space-y-1 pt-1">
-                                    <template x-for="feat in item.features" :key="feat">
-                                        <li x-text="feat"></li>
-                                    </template>
-                                </ul>
-                            </div>
-                        </template>
+                    <div class="p-4 bg-neutral-50 border border-neutral-200 rounded-lg space-y-2">
+                        <div class="flex items-center justify-between text-xs font-mono font-bold">
+                            <span class="text-black uppercase">INSTALLED BUILD: <span x-text="updateInfo.current_version"></span></span>
+                            <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] font-black uppercase">UP TO DATE</span>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </main>
 
-        <!-- Floating Aero-Glass Player Bar -->
-        <footer class="fixed bottom-16 md:bottom-4 left-3 right-3 md:left-72 h-20 md:h-22 bg-white/90 backdrop-blur-2xl border border-slate-200/90 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] rounded-3xl flex items-center px-4 md:px-6 gap-4 z-40 text-slate-900">
-            <div class="flex items-center gap-3.5 w-1/2 md:w-1/4 min-w-0 cursor-pointer" @click="switchTab('lyrics')">
-                <img :src="getSongImage(currentSong)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'" class="w-12 h-12 md:w-14 md:h-14 rounded-2xl object-cover border border-slate-200 bg-slate-100 flex-shrink-0 shadow-sm">
+        <!-- Architectural Bottom Fixed Player Bar -->
+        <footer class="fixed bottom-16 md:bottom-0 left-0 right-0 h-20 bg-white/95 border-t border-neutral-200 backdrop-blur-xl px-4 md:px-8 z-40 flex items-center justify-between gap-4 text-black">
+            <div class="flex items-center gap-3 w-1/3 min-w-0">
+                <img :src="getSongImage(currentSong)" class="w-12 h-12 rounded object-cover border border-neutral-200 bg-neutral-100 flex-shrink-0">
                 <div class="min-w-0">
-                    <h4 class="font-extrabold text-xs md:text-sm truncate text-slate-900" x-text="currentSong?.title || 'No track selected'"></h4>
-                    <p class="text-slate-500 text-[11px] font-semibold truncate mt-0.5" x-text="currentSong?.artist || 'Select a track to play'"></p>
+                    <h4 class="font-extrabold text-xs md:text-sm uppercase text-black truncate" x-text="currentSong?.title || 'No active stream'"></h4>
+                    <p class="text-neutral-500 text-[11px] font-semibold truncate" x-text="currentSong?.artist || 'Select track to initialize'"></p>
                 </div>
             </div>
 
-            <!-- Central Transport Player Controls -->
-            <div class="flex-1 flex flex-col items-center gap-1.5">
-                <div class="flex items-center gap-4">
-                    <button @click="playPrevious()" class="text-slate-600 hover:text-black transition" title="Previous">
-                        <i data-lucide="skip-back" class="w-5 h-5 text-black"></i>
-                    </button>
-                    <button @click="seekRelative(-10)" class="text-slate-600 hover:text-black transition" title="Rewind 10s">
-                        <i data-lucide="rotate-ccw" class="w-5 h-5 text-black"></i>
-                    </button>
-                    <button @click="togglePlay()" class="w-11 h-11 md:w-12 md:h-12 rounded-full aero-button flex items-center justify-center">
+            <!-- Center Controls -->
+            <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl">
+                <div class="flex items-center gap-5">
+                    <button @click="playPrevious()" class="text-black hover:scale-110"><i data-lucide="skip-back" class="w-5 h-5 text-black"></i></button>
+                    <button @click="togglePlay()" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-neutral-800 transition">
                         <i :data-lucide="playerState.paused ? 'play' : 'pause'" class="w-5 h-5 text-white fill-current"></i>
                     </button>
-                    <button @click="seekRelative(10)" class="text-slate-600 hover:text-black transition" title="Forward 10s">
-                        <i data-lucide="rotate-cw" class="w-5 h-5 text-black"></i>
-                    </button>
-                    <button @click="playNext()" class="text-slate-600 hover:text-black transition" title="Next">
-                        <i data-lucide="skip-forward" class="w-5 h-5 text-black"></i>
-                    </button>
+                    <button @click="playNext()" class="text-black hover:scale-110"><i data-lucide="skip-forward" class="w-5 h-5 text-black"></i></button>
                 </div>
-
-                <!-- Timeline Bar -->
-                <div class="hidden md:flex w-full max-w-xl items-center gap-3">
-                    <input 
-                        type="range" 
-                        min="0" 
-                        :max="getEffectiveDuration()"
-                        :value="playerState.position"
-                        @input="seekTo($event.target.value)"
-                        class="flex-1 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-black"
-                    >
-                    <span class="text-xs text-slate-800 font-mono font-bold min-w-max" x-text="`${formatTime(playerState.position)} / ${formatTime(getEffectiveDuration())}`"></span>
+                <div class="hidden md:flex w-full items-center gap-3 text-xs font-mono font-bold">
+                    <input type="range" min="0" :max="getEffectiveDuration()" :value="playerState.position" @input="seekTo($event.target.value)" class="w-full h-1.5 bg-neutral-200 rounded appearance-none cursor-pointer accent-black">
+                    <span x-text="`${formatTime(playerState.position)} / ${formatTime(getEffectiveDuration())}`"></span>
                 </div>
             </div>
 
-            <!-- Volume & Utilities -->
-            <div class="hidden md:flex items-center gap-4 w-1/3 justify-end">
-                <button @click="toggleAutoplay()" class="text-slate-600 hover:text-black transition" :title="`YouTube Autoplay: ${autoplayEnabled ? 'ON' : 'OFF'}`">
-                    <i data-lucide="play-square" class="w-5 h-5 stroke-[2]" :class="{'text-black font-bold': autoplayEnabled, 'text-slate-400': !autoplayEnabled}"></i>
+            <!-- Right Utilities -->
+            <div class="hidden md:flex items-center gap-4 w-1/4 justify-end">
+                <button @click="switchTab('sound')" class="p-2 border border-neutral-200 rounded hover:bg-neutral-100" title="Settings">
+                    <i data-lucide="settings" class="w-4 h-4 text-black"></i>
                 </button>
-                <button @click="showSleepModal = true" class="text-slate-600 hover:text-black transition" title="Sleep Timer">
-                    <i data-lucide="moon" class="w-5 h-5 text-black" :class="{'fill-current text-black': sleepTimerMinutes > 0 || sleepTimerMode === 'end_of_track'}"></i>
-                </button>
-                <button @click="switchTab('lyrics')" class="text-slate-600 hover:text-black transition" title="Live Synchronized Lyrics">
-                    <i data-lucide="align-left" class="w-5 h-5 text-black"></i>
-                </button>
-                <div class="flex items-center gap-1.5" title="Raspberry Pi Hardware Master Volume (ALSA)">
-                    <i data-lucide="cpu" class="w-4 h-4 text-black"></i>
-                    <input 
-                        type="range" 
-                        min="0" 
-                        max="100"
-                        :value="masterVolume"
-                        @input="setMasterVolume($event.target.value)"
-                        class="w-20 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-black"
-                    >
-                </div>
-                <div class="flex items-center gap-1.5" title="Music Stream Software Volume">
-                    <i data-lucide="music" class="w-4 h-4 text-black"></i>
-                    <input 
-                        type="range" 
-                        min="0" 
-                        max="100"
-                        :value="playerState.volume"
-                        @input="setVolume($event.target.value)"
-                        class="w-20 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-black"
-                    >
-                </div>
             </div>
         </footer>
 
-        <!-- Mobile Bottom Aero Glass Navigation Bar -->
-        <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-2xl border-t border-slate-200 flex items-center justify-around z-50 text-[10px] font-extrabold uppercase text-slate-500 shadow-lg">
-            <button @click="switchTab('home')" :class="{'text-black font-black': activeTab === 'home'}" class="flex flex-col items-center gap-1">
-                <i data-lucide="home" class="w-5 h-5 text-black"></i> Home
+        <!-- Mobile Bottom Navigation Bar -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-neutral-200 flex items-center justify-around z-50 text-[9px] font-black uppercase text-neutral-500">
+            <button @click="switchTab('home')" :class="{'text-black border-t-2 border-black': activeTab === 'home'}" class="flex flex-col items-center gap-1 py-2">
+                <i data-lucide="disc" class="w-5 h-5 text-black"></i> LIBRARY
             </button>
-            <button @click="switchTab('search')" :class="{'text-black font-black': activeTab === 'search'}" class="flex flex-col items-center gap-1">
-                <i data-lucide="search" class="w-5 h-5 text-black"></i> Search
+            <button @click="switchTab('search')" :class="{'text-black border-t-2 border-black': activeTab === 'search'}" class="flex flex-col items-center gap-1 py-2">
+                <i data-lucide="search" class="w-5 h-5 text-black"></i> SEARCH
             </button>
-            <button @click="switchTab('lyrics')" :class="{'text-black font-black': activeTab === 'lyrics'}" class="flex flex-col items-center gap-1">
-                <i data-lucide="align-left" class="w-5 h-5 text-black"></i> Lyrics
-            </button>
-            <button @click="switchTab('sound')" :class="{'text-black font-black': activeTab === 'sound'}" class="flex flex-col items-center gap-1">
-                <i data-lucide="bluetooth" class="w-5 h-5 text-black"></i> Sound
-            </button>
-            <button @click="switchTab('updates')" :class="{'text-black font-black': activeTab === 'updates'}" class="flex flex-col items-center gap-1">
-                <i data-lucide="git-branch" class="w-5 h-5 text-black"></i> Updates
+            <button @click="switchTab('sound')" :class="{'text-black border-t-2 border-black': activeTab === 'sound'}" class="flex flex-col items-center gap-1 py-2">
+                <i data-lucide="settings" class="w-5 h-5 text-black"></i> SETTINGS
             </button>
         </nav>
     </div>
 
     <!-- Modals -->
     <!-- Create Playlist Modal -->
-    <div x-cloak x-show="showAddPlaylistModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="aero-glass p-6 w-full max-w-md space-y-4 bg-white">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h3 class="font-black text-lg text-slate-900 uppercase">Create New Playlist</h3>
-                <button @click="showAddPlaylistModal = false" class="text-black hover:scale-110">
-                    <i data-lucide="x" class="w-5 h-5 text-black"></i>
-                </button>
-            </div>
-            <input type="text" x-model="newPlaylistName" placeholder="Playlist Name..." class="w-full p-3.5 rounded-2xl bg-white border border-slate-300 text-slate-900 font-extrabold text-sm focus:outline-none focus:ring-2 focus:ring-black">
+    <div x-cloak x-show="showAddPlaylistModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="tech-card p-6 w-full max-w-md space-y-4 bg-white">
+            <h3 class="font-black text-base uppercase text-black">CREATE NEW PLAYLIST</h3>
+            <input type="text" x-model="newPlaylistName" placeholder="Playlist Title..." class="w-full p-3 border border-neutral-300 rounded font-bold text-xs uppercase focus:outline-none focus:ring-1 focus:ring-black">
             <div class="flex justify-end gap-2 pt-2">
-                <button @click="showAddPlaylistModal = false" class="px-4 py-2 aero-button-secondary text-xs uppercase">Cancel</button>
-                <button @click="createPlaylist()" class="px-4 py-2 aero-button text-xs uppercase">Create</button>
+                <button @click="showAddPlaylistModal = false" class="btn-outline px-4 py-2 text-xs">CANCEL</button>
+                <button @click="createPlaylist()" class="btn-black px-4 py-2 text-xs">CREATE</button>
             </div>
         </div>
     </div>
 
     <!-- Add To Playlist Modal -->
-    <div x-cloak x-show="showAddToPlaylistModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="aero-glass p-6 w-full max-w-md space-y-4 bg-white">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h3 class="font-black text-lg text-slate-900 uppercase">Add Track to Playlist</h3>
-                <button @click="showAddToPlaylistModal = false" class="text-black hover:scale-110">
-                    <i data-lucide="x" class="w-5 h-5 text-black"></i>
-                </button>
-            </div>
-            <div class="space-y-2 max-h-60 overflow-y-auto touch-scroll-container">
+    <div x-cloak x-show="showAddToPlaylistModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="tech-card p-6 w-full max-w-md space-y-4 bg-white">
+            <h3 class="font-black text-base uppercase text-black">ADD TRACK TO PLAYLIST</h3>
+            <div class="space-y-2 max-h-60 overflow-y-auto touch-scroll">
                 <template x-for="pl in playlists" :key="pl.id">
-                    <button @click="addSongToPlaylist(pl.id)" class="w-full p-3.5 rounded-2xl bg-slate-50 hover:bg-black hover:text-white border border-slate-200 text-left font-black text-slate-900 text-sm uppercase flex items-center justify-between transition">
-                        <span x-text="pl.name"></span>
-                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    <button @click="addSongToPlaylist(pl.id)" class="w-full p-3 border border-neutral-200 rounded text-left font-black text-xs uppercase hover:bg-black hover:text-white transition flex justify-between">
+                        <span x-text="pl.name"></span> +
                     </button>
                 </template>
             </div>
         </div>
     </div>
 
-    <!-- Multi-Mode Sleep Timer Modal -->
-    <div x-cloak x-show="showSleepModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="aero-glass p-6 w-full max-w-md space-y-4 bg-white">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="moon" class="w-5 h-5 text-black"></i>
-                    <h3 class="font-black text-lg text-slate-900 uppercase">Sleep Timer Modes</h3>
-                </div>
-                <button @click="showSleepModal = false" class="text-black hover:scale-110">
-                    <i data-lucide="x" class="w-5 h-5 text-black"></i>
-                </button>
-            </div>
-            
-            <p class="text-xs font-semibold text-slate-500">Select sleep timer mode. Smoothly turns off audio after target duration or current track.</p>
-            
-            <div class="grid grid-cols-2 gap-2">
-                <button @click="setSleepTimerMode('duration', 15)" class="p-3 rounded-2xl border text-center transition font-black text-xs uppercase" :class="sleepTimerMinutes === 15 && sleepTimerMode === 'duration' ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400'">
-                    15 Minutes
-                </button>
-                <button @click="setSleepTimerMode('duration', 30)" class="p-3 rounded-2xl border text-center transition font-black text-xs uppercase" :class="sleepTimerMinutes === 30 && sleepTimerMode === 'duration' ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400'">
-                    30 Minutes
-                </button>
-                <button @click="setSleepTimerMode('duration', 45)" class="p-3 rounded-2xl border text-center transition font-black text-xs uppercase" :class="sleepTimerMinutes === 45 && sleepTimerMode === 'duration' ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400'">
-                    45 Minutes
-                </button>
-                <button @click="setSleepTimerMode('duration', 60)" class="p-3 rounded-2xl border text-center transition font-black text-xs uppercase" :class="sleepTimerMinutes === 60 && sleepTimerMode === 'duration' ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400'">
-                    60 Minutes
-                </button>
-            </div>
-
-            <div class="pt-2 border-t border-slate-200 space-y-2">
-                <button @click="setSleepTimerMode('end_of_track', 0)" class="w-full p-3 rounded-2xl border text-center transition font-black text-xs uppercase flex items-center justify-center gap-2" :class="sleepTimerMode === 'end_of_track' ? 'bg-black text-white border-black shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400'">
-                    <i data-lucide="disc" class="w-4 h-4 text-black" :class="sleepTimerMode === 'end_of_track' ? 'text-white' : 'text-black'"></i>
-                    <span>Sleep at End of Current Track</span>
-                </button>
-
-                <button x-show="sleepTimerMinutes > 0 || sleepTimerMode === 'end_of_track'" @click="setSleepTimerMode('off', 0)" class="w-full p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 font-black text-xs uppercase hover:bg-rose-600 hover:text-white transition">
-                    Turn Off Sleep Timer
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alpine App Logic -->
+    <!-- Alpine App Logic with Lenis Smooth Scroll -->
     <script>
         function playerApp() {
             return {
-                activeTab: 'search',
+                activeTab: 'home',
                 showSleepModal: false,
                 showAddPlaylistModal: false,
                 showAddToPlaylistModal: false,
                 searchQuery: '',
                 searchResults: [],
                 recentSongs: [],
-                favorites: [],
                 playlists: [],
-                selectedPlaylist: null,
-                selectedSongForPlaylist: null,
-                newPlaylistName: '',
-                queue: [],
                 currentSong: null,
                 isSearching: false,
-                sleepTimerMinutes: 0,
-                sleepTimerMode: 'duration',
                 autoplayEnabled: true,
                 serverPort: 8000,
-                isCheckingUpdates: false,
-                updateInfo: {
-                    current_version: 'v2.2.0-aeroglass',
-                    latest_version: 'v2.2.0-aeroglass',
-                    update_available: false,
-                    changelog: [
-                        {
-                            version: "v2.2.0-aeroglass",
-                            date: "2026-08-11",
-                            title: "Minimalist Aero-Glass White Release",
-                            features: [
-                                "Minimalist Aero-Glass Pure White Theme with pure black line icons",
-                                "Mobile touch responsiveness fix (100dvh & touch-pan-y scrolling architecture)",
-                                "Sub-second YouTube search optimization with query caching",
-                                "Seamless BlueZ A2DP Bluetooth Speaker pairing & auto-trust",
-                                "YouTube Autoplay & Multi-Mode Sleep Timer"
-                            ]
-                        }
-                    ]
-                },
-                playerState: {
-                    paused: true,
-                    position: 0,
-                    duration: 0,
-                    volume: 85,
-                    equalizer: 'normal'
-                },
-                lyricsState: {
-                    loading: false,
-                    syncedLyrics: null,
-                    plainLyrics: null,
-                    parsedLines: [],
-                    activeIndex: 0
-                },
-                eqPresetList: [
-                    { id: 'flat', name: 'Flat' },
-                    { id: 'bass', name: 'Bass Boost' },
-                    { id: 'vocal', name: 'Vocal' },
-                    { id: 'rock', name: 'Rock' },
-                    { id: 'pop', name: 'Pop' },
-                    { id: 'jazz', name: 'Jazz' },
-                    { id: 'edm', name: 'EDM' },
-                    { id: 'party', name: 'Party' }
-                ],
-                selectedEqPreset: 'flat',
+                updateInfo: { current_version: 'v2.2.0-production' },
+                playerState: { paused: true, position: 0, duration: 0, volume: 85 },
+                lyricsState: { parsedLines: [], activeIndex: 0 },
                 eqBands: [
-                    { freq: '60Hz', gain: 0 },
-                    { freq: '170Hz', gain: 0 },
-                    { freq: '310Hz', gain: 0 },
-                    { freq: '600Hz', gain: 0 },
-                    { freq: '1kHz', gain: 0 },
-                    { freq: '3kHz', gain: 0 },
-                    { freq: '6kHz', gain: 0 },
-                    { freq: '12kHz', gain: 0 },
-                    { freq: '14kHz', gain: 0 },
-                    { freq: '16kHz', gain: 0 }
+                    { freq: '60Hz', gain: 0 }, { freq: '170Hz', gain: 0 }, { freq: '310Hz', gain: 0 },
+                    { freq: '600Hz', gain: 0 }, { freq: '1kHz', gain: 0 }, { freq: '3kHz', gain: 0 },
+                    { freq: '6kHz', gain: 0 }, { freq: '12kHz', gain: 0 }, { freq: '14kHz', gain: 0 }, { freq: '16kHz', gain: 0 }
                 ],
-                btStatus: {
-                    powered: false,
-                    discoverable: false,
-                    mode: 'receiver',
-                    connected_device: null,
-                    adapter: 'hci0'
-                },
+                btStatus: { powered: true, discoverable: true, connected_device: null },
                 btDevices: [],
-                isScanningBT: false,
-                deferredPrompt: null,
                 masterVolume: 85,
-                ws: null,
-                lastPlayTime: 0,
+                lenis: null,
 
                 init() {
-                    window.addEventListener('beforeinstallprompt', (e) => {
-                        e.preventDefault();
-                        this.deferredPrompt = e;
-                    });
+                    // Initialize Lenis Smooth Scrolling
+                    if (window.Lenis) {
+                        this.lenis = new Lenis({
+                            duration: 1.2,
+                            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                            smoothTouch: true
+                        });
+                        const raf = (time) => {
+                            this.lenis.raf(time);
+                            requestAnimationFrame(raf);
+                        };
+                        requestAnimationFrame(raf);
+                    }
 
-                    this.connectWebSocket();
-                    this.loadFavorites();
                     this.loadHistory();
                     this.loadPlaylists();
                     this.fetchBTStatus();
                     this.checkUpdates();
-
                     this.refreshLucide();
 
                     setInterval(() => {
-                        if (!this.playerState.paused) {
-                            const maxDur = this.getEffectiveDuration();
-                            if (maxDur > 0 && this.playerState.position < maxDur) {
+                        if (!this.playerState.paused && this.getEffectiveDuration() > 0) {
+                            if (this.playerState.position < this.getEffectiveDuration()) {
                                 this.playerState.position += 1;
-                                this.updateActiveLyricIndex();
-                            } else if (maxDur > 0 && this.playerState.position >= maxDur && (Date.now() - this.lastPlayTime > 5000)) {
-                                if (this.sleepTimerMode === 'end_of_track') {
-                                    this.togglePlay();
-                                    this.sleepTimerMode = 'off';
-                                } else {
-                                    this.playNext();
-                                }
+                            } else {
+                                this.playNext();
                             }
                         }
                     }, 1000);
@@ -1110,30 +693,31 @@
 
                 refreshLucide() {
                     this.$nextTick(() => {
-                        if (window.lucide) {
-                            lucide.createIcons();
-                        }
+                        if (window.lucide) lucide.createIcons();
                     });
+                },
+
+                getTabTitle() {
+                    const titles = {
+                        home: 'PIPLAYER MUSIC ENGINE',
+                        search: 'SEARCH ENGINE',
+                        lyrics: 'SYNCHRONIZED LYRICS',
+                        playlists: 'COLLECTIONS',
+                        equalizer: 'AUDIO EQUALIZER',
+                        sound: 'SYSTEM & SETTINGS',
+                        updates: 'AUTOMATIC UPDATES'
+                    };
+                    return titles[this.activeTab] || 'PIPLAYER MUSIC ENGINE';
                 },
 
                 switchTab(tab) {
                     this.activeTab = tab;
-                    if (tab === 'lyrics' && this.currentSong) {
-                        this.fetchLyrics();
-                    }
-                    if (tab === 'sound') {
-                        this.fetchBTStatus();
-                    }
-                    if (tab === 'updates') {
-                        this.checkUpdates();
-                    }
+                    if (this.lenis) this.lenis.scrollTo(0, { immediate: true });
                     this.refreshLucide();
                 },
 
                 onSearchInput() {
-                    if (this.searchQuery.trim() && this.activeTab !== 'search') {
-                        this.activeTab = 'search';
-                    }
+                    if (this.searchQuery.trim() && this.activeTab !== 'search') this.activeTab = 'search';
                     this.searchSongs();
                 },
 
@@ -1145,94 +729,31 @@
                 },
 
                 getEffectiveDuration() {
-                    if (this.currentSong && this.currentSong.duration && this.currentSong.duration > 0) return this.currentSong.duration;
-                    if (this.playerState.duration && this.playerState.duration > 0) return this.playerState.duration;
-                    return 0;
-                },
-
-                connectWebSocket() {
-                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    const wsUrl = `${protocol}//${window.location.host}/ws`;
-                    this.ws = new WebSocket(wsUrl);
-
-                    this.ws.onmessage = (event) => {
-                        const message = JSON.parse(event.data);
-                        this.handleMessage(message);
-                    };
-
-                    this.ws.onclose = () => {
-                        setTimeout(() => this.connectWebSocket(), 3000);
-                    };
-                },
-
-                handleMessage(message) {
-                    switch (message.type) {
-                        case 'init':
-                            if (message.data.current_song) this.currentSong = message.data.current_song;
-                            if (message.data.player_state) this.playerState = { ...this.playerState, ...message.data.player_state };
-                            if (message.data.queue) this.queue = message.data.queue;
-                            if (message.data.master_volume !== undefined) this.masterVolume = message.data.master_volume;
-                            if (message.data.bluetooth_status) this.btStatus = message.data.bluetooth_status;
-                            if (message.data.autoplay_enabled !== undefined) this.autoplayEnabled = message.data.autoplay_enabled;
-                            if (message.data.port !== undefined) this.serverPort = message.data.port;
-                            break;
-                        case 'song_changed':
-                            this.currentSong = message.data;
-                            this.playerState.position = 0;
-                            if (message.data.duration) this.playerState.duration = message.data.duration;
-                            if (this.activeTab === 'lyrics') this.fetchLyrics();
-                            break;
-                        case 'player_state_changed':
-                            if (message.data.paused !== undefined) this.playerState.paused = message.data.paused;
-                            if (message.data.position !== undefined && (Date.now() - this.lastPlayTime > 3000)) {
-                                this.playerState.position = message.data.position;
-                            }
-                            if (message.data.duration !== undefined && message.data.duration > 0) this.playerState.duration = message.data.duration;
-                            break;
-                        case 'bluetooth_status_changed':
-                            this.btStatus = message.data;
-                            this.refreshLucide();
-                            break;
-                    }
+                    return this.currentSong?.duration || this.playerState.duration || 0;
                 },
 
                 async searchSongs() {
-                    if (!this.searchQuery.trim()) {
-                        this.searchResults = [];
-                        return;
-                    }
+                    if (!this.searchQuery.trim()) return;
                     this.isSearching = true;
                     try {
-                        const response = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
-                        this.searchResults = await response.json();
+                        const res = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
+                        this.searchResults = await res.json();
                         this.refreshLucide();
-                    } catch (e) {
-                        console.error("Search error:", e);
-                    } finally {
-                        this.isSearching = false;
-                    }
+                    } catch (e) {} finally { this.isSearching = false; }
                 },
 
                 async playSong(song) {
                     this.currentSong = song;
                     this.playerState.paused = false;
                     this.playerState.position = 0;
-                    this.lastPlayTime = Date.now();
-                    if (song.duration) this.playerState.duration = song.duration;
-                    
                     try {
-                        const res = await fetch('/api/play', {
+                        await fetch('/api/play', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(song)
                         });
-                        const data = await res.json();
-                        if (data.current_song) this.currentSong = data.current_song;
-                    } catch (e) {
-                        console.error("Play error:", e);
-                    }
+                    } catch (e) {}
                     this.loadHistory();
-                    if (this.activeTab === 'lyrics') this.fetchLyrics();
                     this.refreshLucide();
                 },
 
@@ -1244,131 +765,55 @@
 
                 async toggleAutoplay() {
                     this.autoplayEnabled = !this.autoplayEnabled;
-                    try {
-                        await fetch('/api/autoplay/toggle', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ enabled: this.autoplayEnabled })
-                        });
-                    } catch (e) {}
-                },
-
-                async setSleepTimerMode(mode, minutes) {
-                    this.sleepTimerMode = mode;
-                    this.sleepTimerMinutes = minutes;
-                    this.showSleepModal = false;
-                    try {
-                        await fetch('/api/sleep-timer', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ minutes, mode })
-                        });
-                    } catch (e) {}
-                },
-
-                async seekTo(position) {
-                    this.playerState.position = parseFloat(position);
-                    this.updateActiveLyricIndex();
-                    await fetch('/api/seek', {
+                    await fetch('/api/autoplay/toggle', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ position: parseFloat(position) })
+                        body: JSON.stringify({ enabled: this.autoplayEnabled })
                     });
                 },
 
-                async seekRelative(seconds) {
-                    let target = Math.max(0, this.playerState.position + seconds);
-                    this.seekTo(target);
+                async seekTo(pos) {
+                    this.playerState.position = parseFloat(pos);
+                    await fetch('/api/seek', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ position: parseFloat(pos) })
+                    });
                 },
 
                 async fetchLyrics() {
                     if (!this.currentSong) return;
-                    this.lyricsState.loading = true;
-                    this.lyricsState.parsedLines = [];
-                    this.lyricsState.plainLyrics = null;
-                    
                     try {
                         const res = await fetch(`/api/lyrics?title=${encodeURIComponent(this.currentSong.title)}&artist=${encodeURIComponent(this.currentSong.artist || '')}`);
                         const data = await res.json();
-                        
-                        if (data.synced_lyrics) {
-                            this.lyricsState.syncedLyrics = data.synced_lyrics;
-                            this.parseLrc(data.synced_lyrics);
-                        } else if (data.plain_lyrics) {
-                            this.lyricsState.plainLyrics = data.plain_lyrics;
-                        }
-                    } catch (e) {
-                        console.error("Fetch lyrics error:", e);
-                    } finally {
-                        this.lyricsState.loading = false;
-                        this.refreshLucide();
-                    }
-                },
-
-                fetchLyricsForSong(song) {
-                    this.currentSong = song;
-                    this.switchTab('lyrics');
+                        if (data.synced_lyrics) this.parseLrc(data.synced_lyrics);
+                    } catch (e) {}
                 },
 
                 parseLrc(lrcText) {
                     const lines = lrcText.split('\n');
                     const parsed = [];
                     const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
-                    
                     for (const line of lines) {
                         const match = timeRegex.exec(line);
                         if (match) {
-                            const min = parseInt(match[1]);
-                            const sec = parseInt(match[2]);
-                            const ms = parseInt(match[3]);
-                            const time = min * 60 + sec + (ms > 99 ? ms / 1000 : ms / 100);
-                            const text = line.replace(timeRegex, '').trim();
-                            if (text) {
-                                parsed.push({ time, text });
-                            }
+                            const min = parseInt(match[1]), sec = parseInt(match[2]), ms = parseInt(match[3]);
+                            parsed.push({ time: min * 60 + sec + ms / 1000, text: line.replace(timeRegex, '').trim() });
                         }
                     }
-                    this.lyricsState.parsedLines = parsed.sort((a, b) => a.time - b.time);
-                    this.updateActiveLyricIndex();
+                    this.lyricsState.parsedLines = parsed;
                 },
 
-                updateActiveLyricIndex() {
-                    if (!this.lyricsState.parsedLines.length) return;
-                    const pos = this.playerState.position;
-                    let idx = 0;
-                    for (let i = 0; i < this.lyricsState.parsedLines.length; i++) {
-                        if (pos >= this.lyricsState.parsedLines[i].time) {
-                            idx = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    this.lyricsState.activeIndex = idx;
+                updateEqBand(idx, val) {
+                    this.eqBands[idx].gain = parseInt(val);
                 },
 
-                updateEqBand(index, gainVal) {
-                    this.eqBands[index].gain = parseInt(gainVal);
-                    this.selectedEqPreset = 'custom';
-                },
-
-                applyEqPreset(presetId) {
-                    this.selectedEqPreset = presetId;
-                    const presets = {
-                        flat: [0,0,0,0,0,0,0,0,0,0],
-                        bass: [6,5,4,2,0,0,1,2,3,3],
-                        vocal: [-2,-1,0,3,4,3,2,1,0,-1],
-                        rock: [5,3,1,-1,0,1,3,4,5,5],
-                        pop: [-1,1,3,4,3,0,-1,-1,1,2],
-                        jazz: [3,2,1,2,-1,-1,0,1,2,3],
-                        edm: [6,5,3,0,-1,1,3,5,4,4],
-                        party: [7,6,4,2,0,2,4,6,6,5]
-                    };
-                    const targetGains = presets[presetId] || presets.flat;
-                    this.eqBands.forEach((band, i) => band.gain = targetGains[i]);
+                applyEqPreset(preset) {
+                    this.eqBands.forEach(b => b.gain = 0);
                     fetch('/api/equalizer', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ preset: presetId })
+                        body: JSON.stringify({ preset })
                     });
                 },
 
@@ -1376,252 +821,127 @@
                     try {
                         const res = await fetch('/api/bluetooth/status');
                         this.btStatus = await res.json();
-                        this.refreshLucide();
                     } catch (e) {}
                 },
 
                 async toggleBTPower() {
                     const target = !this.btStatus.powered;
-                    try {
-                        const res = await fetch('/api/bluetooth/power', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ power: target })
-                        });
-                        const data = await res.json();
-                        this.btStatus.powered = data.powered;
-                        this.refreshLucide();
-                    } catch (e) {}
-                },
-
-                async setBTMode(mode) {
-                    try {
-                        await fetch('/api/bluetooth/mode', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ mode })
-                        });
-                        this.btStatus.mode = mode;
-                        this.refreshLucide();
-                    } catch (e) {}
+                    const res = await fetch('/api/bluetooth/power', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ power: target })
+                    });
+                    this.btStatus.powered = (await res.json()).powered;
                 },
 
                 async scanBTDevices() {
-                    this.isScanningBT = true;
                     try {
                         const res = await fetch('/api/bluetooth/devices');
                         this.btDevices = await res.json();
-                        this.refreshLucide();
-                    } catch (e) {} finally {
-                        this.isScanningBT = false;
-                    }
+                    } catch (e) {}
                 },
 
                 async connectBTDevice(mac) {
-                    try {
-                        await fetch('/api/bluetooth/connect', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ mac })
-                        });
-                        this.fetchBTStatus();
-                    } catch (e) {}
+                    await fetch('/api/bluetooth/connect', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mac })
+                    });
+                    this.fetchBTStatus();
                 },
 
-                async disconnectBTDevice(mac) {
-                    try {
-                        await fetch('/api/bluetooth/disconnect', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ mac })
-                        });
-                        this.fetchBTStatus();
-                    } catch (e) {}
-                },
-
-                async setMasterVolume(volume) {
-                    this.masterVolume = parseInt(volume);
+                async setMasterVolume(vol) {
+                    this.masterVolume = parseInt(vol);
                     await fetch('/api/audio/master-volume', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ volume: parseInt(volume) })
+                        body: JSON.stringify({ volume: parseInt(vol) })
                     });
                 },
 
-                async setVolume(volume) {
-                    this.playerState.volume = parseInt(volume);
+                async setVolume(vol) {
+                    this.playerState.volume = parseInt(vol);
                     await fetch('/api/volume', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ volume: parseInt(volume) })
+                        body: JSON.stringify({ volume: parseInt(vol) })
                     });
                 },
 
-                async saveServerPort() {
-                    try {
-                        const res = await fetch('/api/settings/port', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ port: parseInt(this.serverPort) })
-                        });
-                        const data = await res.json();
-                        alert(data.message || 'Server port updated successfully!');
-                    } catch (e) {
-                        alert('Port update error: ' + e);
-                    }
-                },
-
                 async checkUpdates() {
-                    this.isCheckingUpdates = true;
                     try {
                         const res = await fetch('/api/updates/check');
                         this.updateInfo = await res.json();
-                        this.refreshLucide();
-                    } catch (e) {} finally {
-                        this.isCheckingUpdates = false;
-                    }
+                    } catch (e) {}
                 },
 
                 async applyUpdate() {
-                    try {
-                        const res = await fetch('/api/updates/apply', { method: 'POST' });
-                        const data = await res.json();
-                        alert(data.message || 'Update request completed!');
-                        this.checkUpdates();
-                    } catch (e) {
-                        alert('Update error: ' + e);
-                    }
-                },
-
-                async installPWA() {
-                    if (this.deferredPrompt) {
-                        this.deferredPrompt.prompt();
-                        const { outcome } = await this.deferredPrompt.userChoice;
-                        if (outcome === 'accepted') {
-                            this.deferredPrompt = null;
-                        }
-                    }
+                    const res = await fetch('/api/updates/apply', { method: 'POST' });
+                    const data = await res.json();
+                    alert(data.message || 'Automatic git update completed');
+                    this.checkUpdates();
                 },
 
                 async loadPlaylists() {
                     try {
                         const res = await fetch('/api/playlists');
                         this.playlists = await res.json();
-                        this.refreshLucide();
                     } catch (e) {}
                 },
 
                 async createPlaylist() {
                     if (!this.newPlaylistName.trim()) return;
-                    try {
-                        await fetch('/api/playlists', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: this.newPlaylistName.trim() })
-                        });
-                        this.newPlaylistName = '';
-                        this.showAddPlaylistModal = false;
-                        this.loadPlaylists();
-                    } catch (e) {}
-                },
-
-                async deletePlaylist(id) {
-                    try {
-                        await fetch(`/api/playlists/${id}`, { method: 'DELETE' });
-                        if (this.selectedPlaylist && this.selectedPlaylist.id === id) this.selectedPlaylist = null;
-                        this.loadPlaylists();
-                    } catch (e) {}
-                },
-
-                async openPlaylist(id) {
-                    try {
-                        const res = await fetch(`/api/playlists/${id}`);
-                        this.selectedPlaylist = await res.json();
-                        this.refreshLucide();
-                    } catch (e) {}
-                },
-
-                async playPlaylist(id) {
-                    try {
-                        await fetch(`/api/playlists/${id}/play`, { method: 'POST' });
-                        this.openPlaylist(id);
-                    } catch (e) {}
+                    await fetch('/api/playlists', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: this.newPlaylistName.trim() })
+                    });
+                    this.newPlaylistName = '';
+                    this.showAddPlaylistModal = false;
+                    this.loadPlaylists();
                 },
 
                 openAddToPlaylistModal(song) {
                     this.selectedSongForPlaylist = song;
-                    this.loadPlaylists();
                     this.showAddToPlaylistModal = true;
-                    this.refreshLucide();
                 },
 
-                async addSongToPlaylist(playlistId) {
+                async addSongToPlaylist(id) {
                     if (!this.selectedSongForPlaylist) return;
-                    try {
-                        await fetch(`/api/playlists/${playlistId}/songs`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.selectedSongForPlaylist)
-                        });
-                        this.showAddToPlaylistModal = false;
-                        this.loadPlaylists();
-                    } catch (e) {}
-                },
-
-                async removeSongFromPlaylist(playlistId, songId) {
-                    try {
-                        await fetch(`/api/playlists/${playlistId}/songs/${songId}`, { method: 'DELETE' });
-                        this.openPlaylist(playlistId);
-                    } catch (e) {}
+                    await fetch(`/api/playlists/${id}/songs`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.selectedSongForPlaylist)
+                    });
+                    this.showAddToPlaylistModal = false;
                 },
 
                 async playNext() {
-                    if (this.queue.length > 0) {
-                        await this.playSong(this.queue[0]);
-                    } else if (this.autoplayEnabled && this.currentSong) {
-                        try {
-                            const res = await fetch('/api/autoplay/next', { method: 'POST' });
-                            const data = await res.json();
-                            if (data.current_song) this.currentSong = data.current_song;
-                        } catch (e) {}
-                    }
-                },
-
-                async playPrevious() {
                     if (this.recentSongs.length > 1) {
                         await this.playSong(this.recentSongs[1]);
                     }
                 },
 
-                async loadFavorites() {
-                    try {
-                        const response = await fetch('/api/favorites');
-                        this.favorites = await response.json();
-                    } catch (e) {}
+                async playPrevious() {
+                    if (this.recentSongs.length > 0) {
+                        await this.playSong(this.recentSongs[0]);
+                    }
                 },
 
                 async loadHistory() {
                     try {
-                        const response = await fetch('/api/history');
-                        this.recentSongs = await response.json();
+                        const res = await fetch('/api/history');
+                        this.recentSongs = await res.json();
                         this.refreshLucide();
                     } catch (e) {}
                 },
 
-                formatTime(seconds) {
-                    if (!seconds || isNaN(seconds) || seconds <= 0) return '0:00';
-                    const mins = Math.floor(seconds / 60);
-                    const secs = Math.floor(seconds % 60);
-                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                formatTime(sec) {
+                    if (!sec || isNaN(sec) || sec <= 0) return '0:00';
+                    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+                    return `${m}:${s.toString().padStart(2, '0')}`;
                 }
-            }
-        }
-    </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/sw.js').catch(err => console.log('SW registration error:', err));
-            });
+            };
         }
     </script>
 </body>

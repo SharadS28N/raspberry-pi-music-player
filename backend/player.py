@@ -27,7 +27,7 @@ class MPVPlayer:
         self.sock = None
         self.pipe_file = None
         self.process = None
-        self.current_audio_device = "alsa/plughw:CARD=Headphones,DEV=0"
+        self.current_audio_device = "pulse" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
         self.sim_paused = True
         self.sim_position = 0.0
         self.sim_duration = 0.0
@@ -41,12 +41,13 @@ class MPVPlayer:
             return
 
         try:
+            audio_dev = "pulse" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
             cmd = [
                 MPV_COMMAND,
                 "--idle=yes",
                 "--ytdl=yes",
                 "--ytdl-format=bestaudio/best",
-                "--audio-device=alsa/plughw:CARD=Headphones,DEV=0",
+                f"--audio-device={audio_dev}",
                 "--cache=yes",
                 "--demuxer-max-bytes=8M",
                 "--demuxer-readahead-secs=8",
@@ -54,6 +55,7 @@ class MPVPlayer:
                 f"--input-ipc-server={self.socket_path}",
                 "--no-video"
             ]
+
             logger.info(f"Auto-starting mpv process: {' '.join(cmd)}")
             creationflags = 0
             if sys.platform == "win32":

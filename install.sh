@@ -69,18 +69,19 @@ echo -e "${GREEN}[5/6] Creating systemd service daemons...${NC}"
 sudo bash -c "cat > /etc/systemd/system/mpv.service << 'EOF'
 [Unit]
 Description=MPV Audio Engine for PiPlayer
-After=sound.target network.target bluetooth.target
+After=sound.target network.target bluetooth.target pulseaudio.service
 
 [Service]
 Type=simple
 User=${INSTALL_USER}
-ExecStart=/usr/bin/mpv --idle=yes --ytdl=yes --ytdl-format=bestaudio/best --audio-device=alsa/plughw:CARD=Headphones,DEV=0 --cache=yes --demuxer-max-bytes=8M --demuxer-readahead-secs=8 --network-timeout=5 --input-ipc-server=/tmp/mpv.sock --no-video
+ExecStart=/usr/bin/mpv --idle=yes --ytdl=yes --ytdl-format=bestaudio/best --audio-device=pulse --cache=yes --demuxer-max-bytes=8M --demuxer-readahead-secs=8 --network-timeout=5 --input-ipc-server=/tmp/mpv.sock --no-video
 Restart=always
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF"
+
 
 # Create PiPlayer Web Server Service
 sudo bash -c "cat > /etc/systemd/system/piplayer.service << 'EOF'

@@ -125,6 +125,9 @@ class BluetoothService:
             self._start_agent()
             self._run_cmd(["bluetoothctl", "pairable", "on"])
             self._run_cmd(["bluetoothctl", "discoverable", "on"])
+            # Load PulseAudio Bluetooth Audio Sink Loopback
+            self._run_cmd(["pactl", "load-module", "module-loopback", "latency_msec=10"])
+            self._run_cmd(["pactl", "load-module", "module-switch-on-connect"])
             self.powered = True
             self.discoverable = True
         else:
@@ -135,6 +138,7 @@ class BluetoothService:
             self.discoverable = False
 
         return self.powered
+
 
 
     def set_mode(self, mode: str) -> str:
