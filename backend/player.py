@@ -77,6 +77,7 @@ class MPVPlayer:
             cmd = [
                 MPV_COMMAND,
                 "--idle=yes",
+                "--terminal=no",
                 "--ytdl=yes",
                 "--ytdl-format=bestaudio/best",
                 "--cache=yes",
@@ -94,8 +95,11 @@ class MPVPlayer:
 
             logger.info(f"Auto-starting mpv process: {' '.join(cmd)}")
             creationflags = 0
+            start_new_session = False
             if sys.platform == "win32":
                 creationflags = subprocess.CREATE_NO_WINDOW
+            else:
+                start_new_session = True
 
             env = os.environ.copy()
             if sys.platform.startswith("linux"):
@@ -105,11 +109,14 @@ class MPVPlayer:
 
             self.process = subprocess.Popen(
                 cmd,
+                stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 creationflags=creationflags,
+                start_new_session=start_new_session,
                 env=env
             )
+
             time.sleep(1.2)
         except Exception as e:
             logger.warning(f"Could not spawn mpv binary ({e}). Using integrated software player state.")
@@ -119,7 +126,7 @@ class MPVPlayer:
         if self.sock or self.pipe_file:
             return
 
-        attempts = 2 if AUTO_START_MPV else 1
+        attempts = 5 if AUTO_START_MPV else 1
         for attempt in range(attempts):
             try:
                 if sys.platform == "win32":
@@ -139,6 +146,9 @@ class MPVPlayer:
 
             if attempt == 0 and AUTO_START_MPV:
                 self._spawn_mpv()
+            else:
+                time.sleep(0.5)
+
 
     def _send_command(self, command: list) -> Optional[Dict]:
         self._connect()
@@ -272,7 +282,7 @@ class MPVPlayer:
 
 
     def _update_sim_pos(self):
-        if not self.sim_paused:
+        if not (self.sock or self.pipe_file) and not self.sim_paused:
             now = time.time()
             elapsed = now - self.sim_last_update
             self.sim_last_update = now
@@ -282,8 +292,6 @@ class MPVPlayer:
                 self.sim_paused = True
 
     def get_status(self) -> Dict:
-        self._update_sim_pos()
-
         status = {
             "paused": self.sim_paused,
             "position": round(self.sim_position, 1),
@@ -309,6 +317,12 @@ class MPVPlayer:
                         self.sim_position = status["position"]
                 except (ValueError, TypeError):
                     pass
+            elif pos_resp and pos_resp.get("data") is None and not status.get("paused"):
+                # MPV is connected but not actively playing audio stream
+                idle_resp = self._send_command(["get_property", "idle-active"])
+                if idle_resp and idle_resp.get("data") is True:
+                    status["paused"] = True
+                    self.sim_paused = True
 
             dur_resp = self._send_command(["get_property", "duration"])
             if dur_resp and "data" in dur_resp and dur_resp["data"] is not None and not isinstance(dur_resp["data"], bool):
@@ -319,9 +333,11 @@ class MPVPlayer:
                         self.sim_duration = status["duration"]
                 except (ValueError, TypeError):
                     pass
-
+        else:
+            self._update_sim_pos()
 
         return status
+
 
 
 player = MPVPlayer()
