@@ -41,12 +41,10 @@ class AudioService:
     def _set_alsa_hardware_volume(self, volume: int):
         if not self.is_linux:
             return
-        # Try PCM first (standard RPi 3.5mm jack ALSA control), fallback to Master
-        out_pcm = self._run_cmd(["amixer", "sset", "PCM", "on"])
-        out_pcm_vol = self._run_cmd(["amixer", "sset", "PCM", f"{volume}%"])
-        if "Unable to find simple control" in out_pcm_vol or not out_pcm_vol.strip():
-            self._run_cmd(["amixer", "sset", "Master", "on"])
-            self._run_cmd(["amixer", "sset", "Master", f"{volume}%"])
+        vol_str = f"{volume}%"
+        self._run_cmd(["amixer", "sset", "Master", vol_str, "unmute"])
+        self._run_cmd(["amixer", "sset", "Headphones", vol_str, "unmute"])
+        self._run_cmd(["amixer", "sset", "PCM", vol_str, "unmute"])
 
     def get_output_devices(self) -> List[Dict]:
         devices = []
@@ -69,27 +67,21 @@ class AudioService:
         self.current_output = device_id
         dev_info = AUDIO_OUTPUT_DEVICES[device_id]
 
-        alsa_target = dev_info["alsa_device"]
-        player.set_audio_device(alsa_target)
-
-        if self.is_linux:
-            self._set_alsa_hardware_volume(self.master_volume)
+        if "alsa_device" in dev_info:
+            player.set_audio_device(dev_info["alsa_device"])
 
         return {
             "status": "success",
-            "active_output": device_id,
-            "name": dev_info["name"]
+            "active_output": self.current_output,
+            "device_name": dev_info["name"]
         }
 
     def get_master_volume(self) -> int:
         if not self.is_linux:
             return self.master_volume
 
-        out = self._run_cmd(["amixer", "sget", "PCM"])
-        if "Unable to find simple control" in out or not out.strip():
-            out = self._run_cmd(["amixer", "sget", "Master"])
-
-        if "%" in out:
+        for ctrl in ["Master", "Headphones", "PCM"]:
+            out = self._run_cmd(["amixer", "sget", ctrl])
             match = re.search(r"\[(\d+)%\]", out)
             if match:
                 self.master_volume = int(match.group(1))
@@ -98,14 +90,15 @@ class AudioService:
         return self.master_volume
 
     def set_master_volume(self, volume: int) -> int:
-        volume = max(0, min(60, volume))
+        volume = max(0, min(100, volume))
         self.master_volume = volume
-        logger.info(f"Setting master hardware volume to: {volume}% (capped at 60% max)")
+        logger.info(f"Setting master hardware volume to: {volume}%")
 
         if self.is_linux:
             self._set_alsa_hardware_volume(volume)
 
         return self.master_volume
+
 
 
 

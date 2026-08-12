@@ -56,7 +56,7 @@ class MPVPlayer:
         self.sock = None
         self.pipe_file = None
         self.process = None
-        self.current_audio_device = "pulse" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
+        self.current_audio_device = "alsa/sysdefault:CARD=Headphones" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
         self.sim_paused = True
         self.sim_position = 0.0
         self.sim_duration = 0.0
@@ -73,7 +73,7 @@ class MPVPlayer:
             return
 
         try:
-            audio_dev = "pulse" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
+            audio_dev = "alsa/sysdefault:CARD=Headphones" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
             ytdl_path = "/home/aamps/raspberry-pi-music-player/venv/bin/yt-dlp"
             cmd = [
                 MPV_COMMAND,
@@ -88,6 +88,7 @@ class MPVPlayer:
                 f"--input-ipc-server={self.socket_path}",
                 "--no-video"
             ]
+
             if os.path.exists(ytdl_path):
                 cmd.append(f"--ytdl-path={ytdl_path}")
 
@@ -224,9 +225,10 @@ class MPVPlayer:
         return self.seek(seconds)
 
     def set_volume(self, volume: int):
-        volume = max(0, min(60, volume))
+        volume = max(0, min(100, volume))
         self.sim_volume = volume
         return self._send_command(["set_property", "volume", volume])
+
 
 
     def get_volume(self) -> int:

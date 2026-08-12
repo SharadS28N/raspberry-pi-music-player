@@ -329,16 +329,34 @@
                                 </button>
                             </div>
 
-                            <!-- Master Volume Control -->
-                            <div class="w-full flex items-center gap-3 mt-6 pt-4 border-t border-zinc-100">
-                                <i class="fa-solid fa-volume-high text-zinc-500 text-sm"></i>
-                                <input type="range" min="0" max="60" :value="playerState.volume || 60" 
-                                       @input="setVolume($event.target.value)" 
-                                       class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
-                                <span class="text-xs font-mono text-zinc-500 w-8" x-text="(playerState.volume || 60) + '%'"></span>
+                            <!-- Dual Volume Control Deck (Hardware Master + Music Stream) -->
+                            <div class="w-full space-y-3 mt-6 pt-4 border-t border-zinc-100">
+                                <!-- 1. Master Hardware Volume Controller -->
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-1.5 w-32 flex-shrink-0 text-left">
+                                        <i class="fa-solid fa-microchip text-zinc-500 text-xs"></i>
+                                        <span class="text-[11px] font-bold text-black uppercase tracking-wider">Hardware Vol</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" :value="masterVolume || 60" 
+                                           @input="setMasterHardwareVolume($event.target.value)" 
+                                           class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
+                                    <span class="text-xs font-mono text-zinc-600 w-10 text-right font-bold" x-text="(masterVolume || 60) + '%'"></span>
+                                </div>
 
+                                <!-- 2. Secondary Music Player Volume Controller -->
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-1.5 w-32 flex-shrink-0 text-left">
+                                        <i class="fa-solid fa-music text-zinc-500 text-xs"></i>
+                                        <span class="text-[11px] font-bold text-black uppercase tracking-wider">Music Stream</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" :value="playerState.volume || 60" 
+                                           @input="setVolume($event.target.value)" 
+                                           class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
+                                    <span class="text-xs font-mono text-zinc-600 w-10 text-right font-bold" x-text="(playerState.volume || 60) + '%'"></span>
+                                </div>
                             </div>
                         </div>
+
 
                         <!-- AI Track Insights & Acoustic Analytics Widget -->
                         <div class="tech-card p-5 space-y-3">
@@ -650,6 +668,8 @@
                 deferredPrompt: null,
 
                 playerState: { paused: true, position: 0, duration: 0, volume: 60 },
+                masterVolume: 60,
+
 
                 currentSong: null,
                 queue: [],
@@ -741,6 +761,7 @@
                         const res = await fetch('/api/status');
                         const data = await res.json();
                         this.playerState = data.player || this.playerState;
+                        if (data.master_volume !== undefined) this.masterVolume = data.master_volume;
                         this.currentSong = data.current_song;
                         this.queue = data.queue || [];
                         this.audioOutputs = data.audio || [];
@@ -749,6 +770,7 @@
                         if (this.currentSong) this.fetchAiInsights();
                     } catch (e) {}
                 },
+
 
                 async fetchMetrics() {
                     try {
@@ -846,6 +868,18 @@
                         });
                     } catch (e) {}
                 },
+
+                async setMasterHardwareVolume(vol) {
+                    this.masterVolume = parseInt(vol);
+                    try {
+                        await fetch('/api/audio/master-volume', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ volume: parseInt(vol) })
+                        });
+                    } catch (e) {}
+                },
+
 
                 async toggleHifiService(svc) {
                     const currentActive = this.hifiServices[svc]?.active || false;
