@@ -53,9 +53,15 @@ class TestPiPlayerAPI(unittest.TestCase):
         self.assertEqual(response.json()["active_output"], "hdmi")
 
     def test_master_volume(self):
-        response = self.client.post("/api/audio/master-volume", json={"volume": 75})
+        response = self.client.post("/api/audio/master-volume", json={"volume": 50})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["volume"], 75)
+        self.assertEqual(response.json()["volume"], 50)
+
+        # Capped at 60% max safety limit
+        response_capped = self.client.post("/api/audio/master-volume", json={"volume": 85})
+        self.assertEqual(response_capped.status_code, 200)
+        self.assertEqual(response_capped.json()["volume"], 60)
+
 
     def test_playlists_api(self):
         # Create playlist

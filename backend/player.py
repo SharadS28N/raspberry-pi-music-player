@@ -60,9 +60,10 @@ class MPVPlayer:
         self.sim_paused = True
         self.sim_position = 0.0
         self.sim_duration = 0.0
-        self.sim_volume = 85
+        self.sim_volume = 60
         self.sim_last_update = time.time()
         self.current_eq = "normal"
+
         self._connect()
 
     def _spawn_mpv(self):
@@ -205,9 +206,10 @@ class MPVPlayer:
         return self.seek(seconds)
 
     def set_volume(self, volume: int):
-        volume = max(0, min(100, volume))
+        volume = max(0, min(60, volume))
         self.sim_volume = volume
         return self._send_command(["set_property", "volume", volume])
+
 
     def get_volume(self) -> int:
         resp = self._send_command(["get_property", "volume"])

@@ -14,7 +14,7 @@ class AudioService:
     def __init__(self):
         self.is_linux = sys.platform.startswith("linux")
         self.current_output = "jack"  # Default output: 3.5mm Headphone Jack
-        self.master_volume = 85
+        self.master_volume = 60
         if self.is_linux:
             self._init_hardware_audio()
 
@@ -29,13 +29,14 @@ class AudioService:
             return ""
 
     def _init_hardware_audio(self):
-        logger.info("Initializing Raspberry Pi 3.5mm hardware audio output...")
-        self._set_alsa_hardware_volume(85)
-        player.set_volume(85)
+        logger.info("Initializing Raspberry Pi 3.5mm hardware audio output (capped at 60% max)...")
+        self._set_alsa_hardware_volume(60)
+        player.set_volume(60)
         
         dev_info = AUDIO_OUTPUT_DEVICES.get("jack", {})
         if "alsa_device" in dev_info:
             player.set_audio_device(dev_info["alsa_device"])
+
 
     def _set_alsa_hardware_volume(self, volume: int):
         if not self.is_linux:
@@ -97,14 +98,15 @@ class AudioService:
         return self.master_volume
 
     def set_master_volume(self, volume: int) -> int:
-        volume = max(0, min(100, volume))
+        volume = max(0, min(60, volume))
         self.master_volume = volume
-        logger.info(f"Setting master hardware volume to: {volume}%")
+        logger.info(f"Setting master hardware volume to: {volume}% (capped at 60% max)")
 
         if self.is_linux:
             self._set_alsa_hardware_volume(volume)
 
         return self.master_volume
+
 
 
 audio_service = AudioService()

@@ -332,10 +332,11 @@
                             <!-- Master Volume Control -->
                             <div class="w-full flex items-center gap-3 mt-6 pt-4 border-t border-zinc-100">
                                 <i class="fa-solid fa-volume-high text-zinc-500 text-sm"></i>
-                                <input type="range" min="0" max="100" :value="playerState.volume || 85" 
+                                <input type="range" min="0" max="60" :value="playerState.volume || 60" 
                                        @input="setVolume($event.target.value)" 
                                        class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
-                                <span class="text-xs font-mono text-zinc-500 w-8" x-text="(playerState.volume || 85) + '%'"></span>
+                                <span class="text-xs font-mono text-zinc-500 w-8" x-text="(playerState.volume || 60) + '%'"></span>
+
                             </div>
                         </div>
 
@@ -648,7 +649,8 @@
                 showSettingsModal: false,
                 deferredPrompt: null,
 
-                playerState: { paused: true, position: 0, duration: 0, volume: 85 },
+                playerState: { paused: true, position: 0, duration: 0, volume: 60 },
+
                 currentSong: null,
                 queue: [],
                 playlists: [],
