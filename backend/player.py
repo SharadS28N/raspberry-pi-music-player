@@ -88,9 +88,12 @@ class MPVPlayer:
                 f"--input-ipc-server={self.socket_path}",
                 "--no-video"
             ]
+            if sys.platform.startswith("linux"):
+                cmd.append("--ao=alsa")
 
             if os.path.exists(ytdl_path):
                 cmd.append(f"--ytdl-path={ytdl_path}")
+
 
             logger.info(f"Auto-starting mpv process: {' '.join(cmd)}")
             creationflags = 0
