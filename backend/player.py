@@ -63,6 +63,8 @@ class MPVPlayer:
         self.sim_volume = 60
         self.sim_last_update = time.time()
         self.current_eq = "normal"
+        self.req_counter = 1
+        self._buf = ""
 
         self._connect()
 
@@ -72,6 +74,7 @@ class MPVPlayer:
 
         try:
             audio_dev = "pulse" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
+            ytdl_path = "/home/aamps/raspberry-pi-music-player/venv/bin/yt-dlp"
             cmd = [
                 MPV_COMMAND,
                 "--idle=yes",
@@ -85,6 +88,8 @@ class MPVPlayer:
                 f"--input-ipc-server={self.socket_path}",
                 "--no-video"
             ]
+            if os.path.exists(ytdl_path):
+                cmd.append(f"--ytdl-path={ytdl_path}")
 
             logger.info(f"Auto-starting mpv process: {' '.join(cmd)}")
             creationflags = 0
@@ -117,7 +122,7 @@ class MPVPlayer:
                     if os.path.exists(self.socket_path):
                         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                         self.sock.connect(self.socket_path)
-                        self.sock.settimeout(5.0)
+                        self.sock.settimeout(3.0)
                         logger.info(f"Connected to mpv IPC socket at {self.socket_path}")
                         return
             except Exception as e:
@@ -131,7 +136,10 @@ class MPVPlayer:
         if not self.sock and not self.pipe_file:
             return None
 
-        msg = json.dumps({"command": command}) + "\n"
+        self.req_counter += 1
+        req_id = self.req_counter
+
+        msg = json.dumps({"command": command, "request_id": req_id}) + "\n"
         data_bytes = msg.encode("utf-8")
 
         try:
@@ -142,17 +150,26 @@ class MPVPlayer:
                     return json.loads(response.decode("utf-8").strip())
             elif self.sock:
                 self.sock.sendall(data_bytes)
-                response = b""
-                while True:
-                    chunk = self.sock.recv(4096)
-                    if not chunk:
+                start_time = time.time()
+                while time.time() - start_time < 3.0:
+                    try:
+                        chunk = self.sock.recv(4096).decode("utf-8", errors="ignore")
+                        if not chunk:
+                            break
+                        self._buf += chunk
+                        lines = self._buf.split("\n")
+                        self._buf = lines[-1]
+                        for line in lines[:-1]:
+                            if not line.strip():
+                                continue
+                            try:
+                                parsed = json.loads(line)
+                                if parsed.get("request_id") == req_id:
+                                    return parsed
+                            except Exception:
+                                pass
+                    except socket.timeout:
                         break
-                    response += chunk
-                    if b"\n" in chunk:
-                        break
-                if response:
-                    line = response.decode("utf-8", errors="ignore").split("\n")[0]
-                    return json.loads(line)
         except Exception as e:
             logger.error(f"Error sending command {command} to mpv: {e}")
             self.sock = None
@@ -160,6 +177,7 @@ class MPVPlayer:
             return None
 
         return None
+
 
     def play(self, url: str, duration: Optional[int] = None):
         logger.info(f"Playing media stream: {url}")
@@ -265,26 +283,30 @@ class MPVPlayer:
 
         if self.sock or self.pipe_file:
             paused_resp = self._send_command(["get_property", "pause"])
-            if paused_resp and "data" in paused_resp and paused_resp["data"] is not None:
+            if paused_resp and "data" in paused_resp and isinstance(paused_resp["data"], bool):
                 status["paused"] = paused_resp["data"]
                 self.sim_paused = paused_resp["data"]
 
             pos_resp = self._send_command(["get_property", "time-pos"])
-            if pos_resp and "data" in pos_resp and pos_resp["data"] is not None:
-                val = float(pos_resp["data"])
-                if val >= 0:
-                    status["position"] = round(val, 1)
-                    self.sim_position = status["position"]
+            if pos_resp and "data" in pos_resp and pos_resp["data"] is not None and not isinstance(pos_resp["data"], bool):
+                try:
+                    val = float(pos_resp["data"])
+                    if val >= 0:
+                        status["position"] = round(val, 1)
+                        self.sim_position = status["position"]
+                except (ValueError, TypeError):
+                    pass
 
             dur_resp = self._send_command(["get_property", "duration"])
-            if dur_resp and "data" in dur_resp and dur_resp["data"] is not None and float(dur_resp["data"]) > 0:
-                status["duration"] = round(float(dur_resp["data"]), 1)
-                self.sim_duration = status["duration"]
+            if dur_resp and "data" in dur_resp and dur_resp["data"] is not None and not isinstance(dur_resp["data"], bool):
+                try:
+                    val = float(dur_resp["data"])
+                    if val > 0:
+                        status["duration"] = round(val, 1)
+                        self.sim_duration = status["duration"]
+                except (ValueError, TypeError):
+                    pass
 
-            idle_resp = self._send_command(["get_property", "idle-active"])
-            if idle_resp and "data" in idle_resp and idle_resp["data"] is True:
-                status["paused"] = True
-                self.sim_paused = True
 
         return status
 
