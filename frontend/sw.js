@@ -1,10 +1,12 @@
-const CACHE_NAME = 'piplayer-v2-cache';
+const CACHE_NAME = 'pi-aamps-v2.5-cache';
 const ASSETS = [
   '/',
-  '/static/manifest.json',
+  '/manifest.json',
+  '/sw.js',
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
+  'https://unpkg.com/lenis@1.1.18/dist/lenis.min.js',
+  'https://unpkg.com/lenis@1.1.18/dist/lenis.css'
 ];
 
 self.addEventListener('install', (event) => {

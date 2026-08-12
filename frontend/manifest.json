@@ -1,12 +1,12 @@
 {
-  "name": "PiPlayer - Music & Speaker Controller",
-  "short_name": "PiPlayer",
-  "description": "Self-Hosted Spotify-Style Music Player & 0-Delay Bluetooth Receiver",
+  "name": "pi-aamps — Pi Advanced Audio & Music Player System",
+  "short_name": "pi-aamps",
+  "description": "High-Fidelity Audio & Streaming Web Operating System for Raspberry Pi",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#07111F",
-  "theme_color": "#07111F",
-  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "orientation": "any",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3844/3844724.png",

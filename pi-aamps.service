@@ -1,0 +1,19 @@
+[Unit]
+Description=pi-aamps — Pi Advanced Audio & Music Player System
+After=network.target sound.target bluetooth.target
+
+[Service]
+Type=simple
+User=aamps
+WorkingDirectory=/home/aamps/pi-aamps
+ExecStart=/home/aamps/raspberry-pi-music-player/venv/bin/python /home/aamps/pi-aamps/run.py
+Restart=always
+
+RestartSec=3
+Environment=PORT=8000
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

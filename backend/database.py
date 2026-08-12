@@ -283,6 +283,21 @@ def get_playlist_songs(playlist_id: int) -> List[Dict]:
     return [dict(row) for row in rows]
 
 
+def clear_database() -> bool:
+    """Clear all playback history, queue, playlists, and favorites while preserving system configuration."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM history")
+    cursor.execute("DELETE FROM queue")
+    cursor.execute("DELETE FROM playlist_songs")
+    cursor.execute("DELETE FROM playlists")
+    cursor.execute("DELETE FROM favorites")
+    cursor.execute("DELETE FROM songs")
+    conn.commit()
+    conn.close()
+    return True
+
+
 def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:
     conn = get_connection()
     cursor = conn.cursor()
@@ -300,5 +315,6 @@ def set_setting(key: str, value: str):
     cursor.execute("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, str(value)))
     conn.commit()
     conn.close()
+
 
 

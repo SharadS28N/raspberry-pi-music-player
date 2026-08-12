@@ -13,8 +13,12 @@ build/
 
 # Database & Storage
 database/*.db
+backend/*.db
+*.db
 database/*.db-journal
 *.sqlite
+scratch/
+
 
 # Logs & Temporary Files
 logs/*.log

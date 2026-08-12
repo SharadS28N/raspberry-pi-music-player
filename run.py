@@ -56,11 +56,11 @@ def ensure_ssl_certs(ip):
 
 def main():
     print("=" * 60)
-    print("           PiPlayer Music System & Controller")
+    print("      pi-aamps — Pi Advanced Audio & Music Player System")
     print("=" * 60)
 
     local_ip = get_local_ip()
-    use_ssl = ensure_ssl_certs(local_ip)
+    use_ssl = os.environ.get("USE_SSL") == "1" and os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE)
 
     sys.path.insert(0, BACKEND_DIR)
     sys.path.insert(0, PROJECT_ROOT)
@@ -69,17 +69,12 @@ def main():
     db_port = database.get_setting("port")
 
     port = int(db_port) if db_port else int(os.environ.get("PORT", "8000"))
-    if use_ssl and os.environ.get("USE_DEFAULT_HTTPS_PORT") == "1":
-        port = 443
-
-
-    protocol = "https" if (use_ssl and os.path.exists(CERT_FILE)) else "http"
+    protocol = "https" if use_ssl else "http"
 
     print(f"\n[+] Local Access URL:    {protocol}://localhost:{port}")
     print(f"[+] Network Access URL:  {protocol}://{local_ip}:{port}")
-    if port != 443 and port != 80:
-        print(f"[+] Direct Browser URL:  {protocol}://{local_ip}:{port}")
-    print(f"[+] IP Web Interface:    {protocol}://192.168.18.159:{port}\n")
+    print(f"[+] Direct Browser URL:  {protocol}://{local_ip}:{port}")
+    print(f"[+] pi-aamps Web OS:     {protocol}://192.168.18.159:{port}\n")
 
     sys.path.insert(0, BACKEND_DIR)
     sys.path.insert(0, PROJECT_ROOT)
@@ -91,18 +86,21 @@ def main():
         "reload": False
     }
 
-    if use_ssl and os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE):
+    if use_ssl:
         kwargs["ssl_keyfile"] = KEY_FILE
         kwargs["ssl_certfile"] = CERT_FILE
         print("[+] HTTPS SSL Enabled!")
+    else:
+        print("[+] Standard HTTP Server Started (No untrusted SSL warnings).")
 
     try:
         import uvicorn
         uvicorn.run(app, **kwargs)
     except KeyboardInterrupt:
-        print("\n[*] Stopping PiPlayer...")
+        print("\n[*] Stopping pi-aamps...")
     except Exception as e:
         print(f"\n[!] Error starting server: {e}")
+
 
 
 if __name__ == "__main__":

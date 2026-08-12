@@ -17,8 +17,37 @@ EQ_PRESETS = {
     "bass": "lavfi=[equalizer=f=60:width_type=h:width=50:g=7,equalizer=f=150:width_type=h:width=100:g=4]",
     "vocal": "lavfi=[highpass=f=80,lowpass=f=12000,equalizer=f=1000:width_type=h:width=500:g=4]",
     "treble": "lavfi=[equalizer=f=8000:width_type=h:width=2000:g=6,equalizer=f=12000:width_type=h:width=3000:g=4]",
-    "party": "lavfi=[equalizer=f=60:width_type=h:width=50:g=6,equalizer=f=10000:width_type=h:width=3000:g=5]"
+    "party": "lavfi=[equalizer=f=60:width_type=h:width=50:g=6,equalizer=f=10000:width_type=h:width=3000:g=5]",
+    "rock": "lavfi=[equalizer=f=60:width_type=h:width=40:g=5,equalizer=f=250:width_type=h:width=150:g=3,equalizer=f=4000:width_type=h:width=1000:g=4,equalizer=f=12000:width_type=h:width=3000:g=5]",
+    "jazz": "lavfi=[equalizer=f=100:width_type=h:width=50:g=3,equalizer=f=500:width_type=h:width=250:g=-2,equalizer=f=3000:width_type=h:width=1000:g=3,equalizer=f=10000:width_type=h:width=3000:g=4]",
+    "electronic": "lavfi=[equalizer=f=50:width_type=h:width=30:g=8,equalizer=f=120:width_type=h:width=60:g=5,equalizer=f=8000:width_type=h:width=2000:g=6]",
+    "acoustic": "lavfi=[equalizer=f=120:width_type=h:width=60:g=3,equalizer=f=1000:width_type=h:width=500:g=3,equalizer=f=6000:width_type=h:width=1500:g=4]"
 }
+
+
+def build_10band_eq_filter(bands: Dict[str, float]) -> str:
+    """Build MPV lavfi equalizer string for 10 frequency bands (31Hz, 62Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz)."""
+    freq_map = {
+        "31": (31, 20),
+        "62": (62, 40),
+        "125": (125, 80),
+        "250": (250, 150),
+        "500": (500, 300),
+        "1000": (1000, 500),
+        "2000": (2000, 1000),
+        "4000": (4000, 2000),
+        "8000": (8000, 3000),
+        "16000": (16000, 4000)
+    }
+    eq_parts = []
+    for key, (freq, width) in freq_map.items():
+        gain = float(bands.get(key, 0.0))
+        if gain != 0.0:
+            eq_parts.append(f"equalizer=f={freq}:width_type=h:width={width}:g={gain}")
+    if not eq_parts:
+        return ""
+    return f"lavfi=[{','.join(eq_parts)}]"
+
 
 
 class MPVPlayer:
@@ -200,6 +229,14 @@ class MPVPlayer:
         logger.info(f"Applying Equalizer Preset: {preset_name}")
         self._send_command(["set_property", "af", filter_str])
         return self.current_eq
+
+    def set_custom_equalizer(self, bands: Dict[str, float]) -> str:
+        self.current_eq = "custom"
+        filter_str = build_10band_eq_filter(bands)
+        logger.info(f"Applying 10-Band Custom Equalizer: {filter_str}")
+        self._send_command(["set_property", "af", filter_str])
+        return "custom"
+
 
     def _update_sim_pos(self):
         if not self.sim_paused:

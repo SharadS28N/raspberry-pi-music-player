@@ -133,7 +133,48 @@ class TestPiPlayerAPI(unittest.TestCase):
         self.assertIn("current_version", data)
         self.assertIn("changelog", data)
 
+    def test_system_metrics_api(self):
+        res = self.client.get("/api/system/metrics")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("cpu_usage_percent", data)
+        self.assertIn("memory", data)
+        self.assertIn("dacs", data)
+
+    def test_system_customization_api(self):
+        res = self.client.post("/api/system/customize", json={
+            "bluetooth_name": "pi-aamps Hi-Fi Speaker",
+            "hostname": "pi-aamps-studio"
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["customization"]["bluetooth_name"], "pi-aamps Hi-Fi Speaker")
+        self.assertEqual(res.json()["customization"]["hostname"], "pi-aamps-studio")
+
+    def test_custom_equalizer_api(self):
+        res = self.client.post("/api/equalizer/bands", json={
+            "bands": {"62": 3, "250": -1, "1000": 2, "4000": 4}
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["equalizer"], "custom")
+
+    def test_hifi_status_and_toggle_api(self):
+        res = self.client.get("/api/hifi/status")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("roon", data)
+        self.assertIn("airplay", data)
+
+        res = self.client.post("/api/hifi/toggle", json={"service": "roon", "enable": True})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["service"], "roon")
+
+    def test_reset_database_api(self):
+        res = self.client.post("/api/system/reset-db")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["status"], "ok")
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

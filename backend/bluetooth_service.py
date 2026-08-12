@@ -212,6 +212,22 @@ class BluetoothService:
         self._run_cmd(["bluetoothctl", "disconnect", mac])
         return True
 
+    def set_device_name(self, name: str) -> str:
+        """Customize Bluetooth advertising device name (e.g. pi-aamps Audio Receiver)."""
+        logger.info(f"Updating Bluetooth Device Name to: {name}")
+        if self.is_linux:
+            self._run_cmd(["bluetoothctl", "system-alias", name])
+            self._run_cmd(["sudo", "hciconfig", "hci0", "name", name])
+        return name
+
+    def set_system_hostname(self, hostname: str) -> str:
+        """Customize Raspberry Pi OS hostname (e.g. pi-aamps)."""
+        logger.info(f"Updating System Hostname to: {hostname}")
+        if self.is_linux:
+            self._run_cmd(["sudo", "hostnamectl", "set-hostname", hostname])
+        return hostname
+
 
 bluetooth_service = BluetoothService()
+
 

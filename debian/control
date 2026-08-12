@@ -1,0 +1,10 @@
+Package: pi-aamps
+Version: 2.5.0
+Section: sound
+Priority: optional
+Architecture: all
+Maintainer: Sharad S <admin@pi-aamps.local>
+Depends: python3 (>= 3.10), python3-pip, mpv, ffmpeg, alsa-utils, bluez, pulseaudio
+Description: Pi Advanced Audio & Music Player System (pi-aamps)
+ High-performance, zero-glitch Web OS music engine for Raspberry Pi.
+ Features Roon Endpoint, AirPlay Receiver, UPnP/DLNA, 10-Band EQ, and HAT DAC support.

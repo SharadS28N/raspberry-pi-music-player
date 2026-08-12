@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PiPlayer. — Tech-Minimalist Music Engine</title>
+    <title>pi-aamps — Pi Advanced Audio & Music Operating System</title>
     
     <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#FFFFFF">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3844/3844724.png">
 
-    <!-- Tailwind CSS, Alpine.js, Lucide Icons & Lenis.js Smooth Scroll -->
+    <!-- Tailwind CSS, Alpine.js, Lucide Icons, FontAwesome & Lenis.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Lenis.js Smooth Scrolling -->
+    <!-- Lenis.js Smooth Scroll -->
     <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.18/dist/lenis.css">
     <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
 
@@ -27,7 +28,7 @@
         
         * {
             scrollbar-width: thin;
-            scrollbar-color: #A3A3A3 transparent;
+            scrollbar-color: #D4D4D8 transparent;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -35,61 +36,47 @@
             background-color: #FFFFFF;
             color: #09090B;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
-            user-select: none;
-            touch-action: manipulation;
         }
 
-        /* Tech-Minimalist Card Borders & Elevations */
+        /* Tech-Minimalist Card & Studio Components */
         .tech-card {
-            background: #FFFFFF;
-            border: 1px solid #E5E5E5;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
-            border-radius: 0.75rem;
-            transition: all 0.2s ease-in-out;
+            background-color: #FFFFFF;
+            border: 1px solid #E4E4E7;
+            border-radius: 0.85rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .tech-card:hover {
-            border-color: #A3A3A3;
-            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
-        }
-
-        .tech-card-dark {
-            background: #09090B;
-            color: #FFFFFF;
-            border: 1px solid #27272A;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            border-color: #18181B;
+            box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.08);
         }
 
         .btn-black {
             background-color: #09090B;
             color: #FFFFFF;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-radius: 0.5rem;
-            transition: all 0.15s ease-in-out;
+            font-weight: 700;
+            border-radius: 0.6rem;
+            transition: all 0.15s ease;
         }
 
         .btn-black:hover {
             background-color: #27272A;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         }
 
         .btn-black:active {
-            transform: translateY(1px);
+            transform: translateY(0.5px);
         }
 
         .btn-outline {
             background-color: #FFFFFF;
             color: #09090B;
-            border: 1px solid #E5E5E5;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-radius: 0.5rem;
-            transition: all 0.15s ease-in-out;
+            border: 1px solid #E4E4E7;
+            font-weight: 700;
+            border-radius: 0.6rem;
+            transition: all 0.15s ease;
         }
 
         .btn-outline:hover {
@@ -104,785 +91,826 @@
             border-radius: 1px;
             animation: bounce 1.2s infinite ease-in-out alternate;
         }
-        .eq-bar:nth-child(1) { height: 50%; animation-delay: 0.1s; }
+        .eq-bar:nth-child(1) { height: 40%; animation-delay: 0.1s; }
         .eq-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
-        .eq-bar:nth-child(3) { height: 35%; animation-delay: 0.2s; }
-        .eq-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
+        .eq-bar:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+        .eq-bar:nth-child(4) { height: 85%; animation-delay: 0.4s; }
         @keyframes bounce {
             0% { transform: scaleY(0.2); }
             100% { transform: scaleY(1.1); }
         }
 
-        /* Custom minimal slider thumb */
+        /* Range Sliders */
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
             background: #09090B;
             cursor: pointer;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s ease;
         }
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 2px;
-            background: #09090B;
-            cursor: pointer;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .touch-scroll {
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y;
-            overscroll-behavior-y: contain;
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
         }
     </style>
 </head>
-<body class="h-full bg-white text-neutral-900 antialiased selection:bg-black selection:text-white">
-    <div x-data="playerApp()" x-init="init()" class="min-h-[100dvh] flex flex-col md:flex-row overflow-x-hidden">
+<body x-data="piAampsApp()" x-init="init()" class="h-full bg-white text-zinc-950 antialiased selection:bg-black selection:text-white overflow-x-hidden">
+
+    <div class="min-h-screen flex flex-col md:flex-row pb-24 md:pb-0">
         
-        <!-- Architectural Sidebar Navigation (Dedicated PiPlayer Branding) -->
-        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-neutral-200 p-6 z-30 flex-shrink-0">
-            <!-- Brand Logo -->
+        <!-- Architectural Sidebar Navigation (Desktop / Laptop Deck) -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-zinc-200 p-6 z-30 flex-shrink-0 sticky top-0 h-screen">
+            <!-- Brand Header -->
             <div class="mb-8 flex items-center justify-between">
-                <h1 class="text-xl font-black tracking-tighter uppercase text-black flex items-center gap-2">
-                    <span class="w-3 h-3 bg-black inline-block"></span>
-                    <span>PIPLAYER.</span>
-                </h1>
-                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 border border-neutral-200 bg-neutral-50 text-neutral-600 rounded" x-text="updateInfo.current_version || 'v2.2.0'">v2.2.0</span>
-            </div>
-
-            <!-- Sidebar Navigation Groups -->
-            <div class="space-y-6 font-bold text-xs uppercase tracking-wider">
-                <!-- Group 1: MUSIC & LIBRARY -->
-                <div>
-                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-3">MUSIC & LIBRARY</h5>
-                    <nav class="space-y-1">
-                        <button @click="switchTab('home')" :class="activeTab === 'home' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="disc" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>LIBRARY</span>
-                        </button>
-                        <button @click="switchTab('search')" :class="activeTab === 'search' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="search" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>SEARCH</span>
-                        </button>
-                        <button @click="switchTab('lyrics')" :class="activeTab === 'lyrics' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="file-text" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>LYRICS</span>
-                        </button>
-                        <button @click="switchTab('playlists')" :class="activeTab === 'playlists' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="folder" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>PLAYLISTS</span>
-                        </button>
-                    </nav>
-                </div>
-
-                <!-- Group 2: SYSTEM & SOUND -->
-                <div>
-                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-3">SYSTEM & SOUND</h5>
-                    <nav class="space-y-1">
-                        <button @click="switchTab('equalizer')" :class="activeTab === 'equalizer' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="sliders" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>EQUALIZER</span>
-                        </button>
-                        <button @click="switchTab('sound')" :class="activeTab === 'sound' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="bluetooth" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>SETTINGS & BT</span>
-                        </button>
-                        <button @click="switchTab('updates')" :class="activeTab === 'updates' ? 'border-l-4 border-black bg-neutral-100 text-black font-black pl-3' : 'text-neutral-600 hover:bg-neutral-50 pl-4'" class="flex items-center gap-3 w-full text-left py-2.5 rounded-r-lg transition-all">
-                            <i data-lucide="git-branch" class="w-4 h-4 stroke-[2.2]"></i>
-                            <span>UPDATES</span>
-                        </button>
-                    </nav>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black text-lg shadow-sm">
+                        <i class="fa-solid fa-compact-disc animate-spin" style="animation-duration: 6s" x-show="!playerState.paused"></i>
+                        <i class="fa-solid fa-music" x-show="playerState.paused"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-black tracking-tight text-black uppercase">pi-aamps</h1>
+                        <p class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest" x-text="metrics.hostname || 'pi-aamps.local'"></p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Sidebar User Profile Box -->
-            <div class="mt-auto pt-6 border-t border-neutral-200">
-                <div class="p-3 bg-neutral-100 rounded-lg flex items-center gap-3 border border-neutral-200">
-                    <div class="w-9 h-9 bg-black text-white font-mono font-black text-xs flex items-center justify-center rounded">
-                        PI
-                    </div>
-                    <div class="min-w-0">
-                        <h4 class="font-extrabold text-xs text-black uppercase tracking-tight truncate">Raspberry Pi</h4>
-                        <p class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">PIPLAYER ENGINE</p>
-                    </div>
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5 flex-1">
+                <button @click="activeNav = 'player'" :class="activeNav === 'player' ? 'bg-zinc-100 font-bold text-black border-l-2 border-black' : 'text-zinc-600 hover:bg-zinc-50 hover:text-black'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs tracking-wide transition">
+                    <i class="fa-solid fa-play text-sm"></i>
+                    <span>Studio Player Deck</span>
+                </button>
+                
+                <button @click="activeNav = 'queue'" :class="activeNav === 'queue' ? 'bg-zinc-100 font-bold text-black border-l-2 border-black' : 'text-zinc-600 hover:bg-zinc-50 hover:text-black'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs tracking-wide transition">
+                    <i class="fa-solid fa-list-ul text-sm"></i>
+                    <span>Queue & Playlists</span>
+                </button>
+
+                <button @click="showHifiModal = true" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-black transition">
+                    <i class="fa-solid fa-tower-broadcast text-sm"></i>
+                    <span>Hi-Fi Daemons Hub</span>
+                </button>
+
+                <button @click="showEqModal = true" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-black transition">
+                    <i class="fa-solid fa-sliders text-sm"></i>
+                    <span>10-Band Equalizer</span>
+                </button>
+
+                <button @click="showSettingsModal = true" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-black transition">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                    <span>System Customization</span>
+                </button>
+            </nav>
+
+            <!-- PWA Android App Install Banner -->
+            <div x-show="deferredPrompt" x-cloak class="p-3 rounded-xl bg-zinc-50 border border-zinc-200 mb-4 space-y-2">
+                <div class="flex items-center gap-2">
+                    <i class="fa-brands fa-android text-emerald-600 text-sm"></i>
+                    <span class="text-xs font-bold text-black">Install Mobile App</span>
+                </div>
+                <p class="text-[10px] text-zinc-500">Add pi-aamps to home screen as standalone app.</p>
+                <button @click="installPwa()" class="w-full py-1.5 bg-black text-white text-xs font-bold rounded-lg hover:bg-zinc-800 transition">
+                    Install Now
+                </button>
+            </div>
+
+            <!-- Telemetry Footer Badge -->
+            <div class="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1.5 font-mono text-[11px]">
+                <div class="flex justify-between">
+                    <span class="text-zinc-500">CPU LOAD</span>
+                    <span class="font-bold text-black" x-text="metrics.cpu_usage_percent + '%'"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-zinc-500">RAM USED</span>
+                    <span class="font-bold text-black" x-text="(metrics.memory ? metrics.memory.used_mb : 180) + ' MB'"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-zinc-500">TEMP</span>
+                    <span class="font-bold text-black" x-text="metrics.temperature_celsius + '°C'"></span>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content Area with Lenis Smooth Scroll Padding -->
-        <main class="flex-1 overflow-y-auto touch-scroll bg-white p-4 md:p-10 pb-48 md:pb-36 min-w-0" id="main-scroll-container">
+        <!-- Main Workspace View Deck -->
+        <div class="flex-1 flex flex-col min-w-0">
             
-            <!-- Top Header Bar -->
-            <header class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-neutral-200 gap-4 mb-8">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-black flex items-center gap-3">
-                        <span x-text="getTabTitle()">PIPLAYER MUSIC ENGINE</span>
-                    </h2>
-                    <p class="text-xs font-semibold text-neutral-500 mt-1 uppercase tracking-wider">
-                        High-performance audio streaming & wireless Bluetooth receiver appliance.
-                    </p>
+            <!-- Studio Header Bar -->
+            <header class="bg-white border-b border-zinc-200 sticky top-0 z-20 px-4 py-3 flex items-center justify-between gap-4">
+                <!-- Mobile Brand Title -->
+                <div class="flex md:hidden items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center font-black text-xs">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <span class="font-black text-sm uppercase tracking-tight text-black">pi-aamps</span>
                 </div>
-                
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 border border-neutral-200 rounded-md text-[11px] font-mono font-bold text-neutral-700">
-                        <span class="w-2 h-2 rounded-full" :class="btStatus.powered ? 'bg-emerald-600 animate-pulse' : 'bg-neutral-400'"></span>
-                        <span x-text="btStatus.powered ? 'ENGINE ONLINE' : 'ENGINE OFFLINE'">ENGINE ONLINE</span>
-                    </div>
 
-                    <div class="px-3 py-1.5 bg-neutral-100 border border-neutral-200 rounded-md text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1.5">
-                        <i data-lucide="git-branch" class="w-3.5 h-3.5 text-black"></i>
-                        <span x-text="updateInfo.current_version || 'v2.2.0'">v2.2.0</span>
-                    </div>
+                <!-- Hardware DAC Output Badge -->
+                <div class="flex items-center gap-2 font-mono text-xs">
+                    <span class="px-2.5 py-1 rounded-md bg-zinc-100 border border-zinc-200 text-zinc-800 font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-plug text-zinc-500"></i>
+                        <span x-text="activeDacName"></span>
+                    </span>
+
+                    <span class="hidden sm:inline-flex px-2.5 py-1 rounded-md bg-zinc-100 border border-zinc-200 text-zinc-800 font-bold" x-text="metrics.uptime || 'Up 1h'"></span>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex items-center gap-2">
+                    <button @click="showHifiModal = true" class="btn-outline px-3 py-1.5 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-tower-broadcast"></i>
+                        <span class="hidden sm:inline">Hi-Fi Hub</span>
+                    </button>
+                    
+                    <button @click="showEqModal = true" class="btn-outline px-3 py-1.5 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span class="hidden sm:inline">10-Band EQ</span>
+                    </button>
+
+                    <button @click="showSettingsModal = true" class="btn-outline p-1.5 text-xs">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
                 </div>
             </header>
 
-            <!-- Global Universal Search Field -->
-            <div class="mb-8 max-w-3xl">
-                <div class="relative">
-                    <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"></i>
-                    <input 
-                        type="text" 
-                        x-model="searchQuery"
-                        @input.debounce.300ms="onSearchInput()"
-                        placeholder="Search songs, artists, or audio streams..."
-                        class="w-full pl-12 pr-10 py-3.5 bg-neutral-50 border border-neutral-200 rounded-lg text-black font-extrabold text-sm focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition"
-                    >
-                    <i x-show="isSearching" data-lucide="loader-2" class="w-5 h-5 animate-spin absolute right-4 top-1/2 -translate-y-1/2 text-black"></i>
-                </div>
-            </div>
-
-            <!-- TAB 1: HOME / FEATURED MUSIC & LOGS -->
-            <div x-show="activeTab === 'home'" class="space-y-10">
-                <!-- Section 1: Featured Music Grid -->
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-black uppercase tracking-widest text-neutral-400">FEATURED TRACKS</h3>
-                        <span class="text-xs font-mono font-bold text-neutral-500">AUDIO STREAM</span>
-                    </div>
-
-                    <div x-show="recentSongs.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <template x-for="(song, idx) in recentSongs.slice(0, 3)" :key="song.id || idx">
-                            <div class="tech-card overflow-hidden flex flex-col justify-between group cursor-pointer" @click="playSong(song)">
-                                <div class="relative aspect-video bg-neutral-900 overflow-hidden">
-                                    <img :src="getSongImage(song)" @error="$event.target.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500'" class="w-full h-full object-cover opacity-85 group-hover:scale-105 transition duration-300">
-                                    <span class="absolute top-3 right-3 bg-black text-white font-mono font-black text-[9px] px-2 py-0.5 rounded tracking-widest uppercase">STREAM</span>
-                                </div>
-                                <div class="p-5 space-y-2">
-                                    <div class="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
-                                        <span>DURATION</span> — <span x-text="formatTime(song.duration)">3:45</span>
-                                    </div>
-                                    <h4 class="font-extrabold text-base text-black uppercase truncate group-hover:underline" x-text="song.title"></h4>
-                                    <p class="text-neutral-500 text-xs font-medium truncate" x-text="song.artist || 'YouTube Audio'"></p>
-                                </div>
-                                <div class="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-between text-xs font-black uppercase">
-                                    <span class="text-black">PLAY TRACK</span>
-                                    <i data-lucide="arrow-up-right" class="w-4 h-4 text-black"></i>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Section 2: Data Table Layout -->
-                <div class="tech-card p-6 space-y-4">
-                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
-                        <div>
-                            <h3 class="text-lg font-black uppercase tracking-tight text-black">RECENT PLAYLIST HISTORY</h3>
-                            <p class="text-xs font-medium text-neutral-500 mt-0.5">Real-time log of recently played tracks and audio sessions.</p>
-                        </div>
-                        <button @click="loadHistory()" class="p-2 border border-neutral-200 rounded hover:bg-neutral-100">
-                            <i data-lucide="refresh-cw" class="w-4 h-4 text-black"></i>
-                        </button>
-                    </div>
-
-                    <!-- Data Table -->
-                    <div class="overflow-x-auto border border-neutral-200 rounded-lg">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-neutral-100 text-neutral-600 font-black tracking-wider uppercase border-b border-neutral-200 text-[10px]">
-                                <tr>
-                                    <th class="py-3 px-4">TRACK TITLE</th>
-                                    <th class="py-3 px-4">ARTIST</th>
-                                    <th class="py-3 px-4 text-center">STATUS</th>
-                                    <th class="py-3 px-4 text-right">ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-neutral-200 font-semibold">
-                                <template x-for="(song, index) in recentSongs" :key="song.id || index">
-                                    <tr class="hover:bg-neutral-50 transition">
-                                        <td class="py-3 px-4 font-extrabold text-black uppercase flex items-center gap-3">
-                                            <div class="w-7 h-7 bg-black text-white font-mono text-[10px] flex items-center justify-center rounded uppercase" x-text="song.artist ? song.artist.substring(0,2) : 'YT'"></div>
-                                            <span class="truncate max-w-xs" x-text="song.title"></span>
-                                        </td>
-                                        <td class="py-3 px-4 text-neutral-600 truncate max-w-xs" x-text="song.artist || 'YouTube Stream'"></td>
-                                        <td class="py-3 px-4 text-center">
-                                            <span class="inline-block px-2.5 py-1 rounded text-[9px] font-mono font-black uppercase tracking-widest" :class="index === 0 && !playerState.paused ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-neutral-100 text-neutral-700 border border-neutral-200'" x-text="index === 0 && !playerState.paused ? 'PLAYING' : 'READY'"></span>
-                                        </td>
-                                        <td class="py-3 px-4 text-right">
-                                            <button @click="playSong(song)" class="p-1.5 hover:bg-neutral-200 rounded text-black" title="Play">
-                                                <i data-lucide="play" class="w-4 h-4 text-black"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 2: SEARCH RESULTS -->
-            <div x-show="activeTab === 'search'" class="space-y-6">
-                <div class="tech-card p-6 space-y-4">
-                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
-                        <h3 class="text-lg font-black uppercase tracking-tight text-black">SEARCH RESULTS</h3>
-                        <span class="text-xs font-mono font-bold text-neutral-500" x-text="`${searchResults.length} TRACKS FOUND`"></span>
-                    </div>
-
-                    <div class="space-y-3">
-                        <template x-for="song in searchResults" :key="song.id || song.url">
-                            <div class="p-4 border border-neutral-200 rounded-lg hover:border-black transition flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div class="flex items-center gap-4 min-w-0">
-                                    <img :src="getSongImage(song)" class="w-12 h-12 rounded object-cover border border-neutral-200 bg-neutral-100 flex-shrink-0">
-                                    <div class="min-w-0">
-                                        <h4 class="font-extrabold text-sm text-black uppercase truncate" x-text="song.title"></h4>
-                                        <p class="text-xs font-semibold text-neutral-500 truncate" x-text="song.artist || 'YouTube'"></p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 justify-end">
-                                    <button @click="playSong(song)" class="btn-black px-4 py-2 text-xs flex items-center gap-1.5">
-                                        <i data-lucide="play" class="w-3.5 h-3.5 text-white"></i> PLAY NOW
-                                    </button>
-                                    <button @click="openAddToPlaylistModal(song)" class="btn-outline px-3 py-2 text-xs">
-                                        + PLAYLIST
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 3: SYNCHRONIZED LYRICS -->
-            <div x-show="activeTab === 'lyrics'" class="max-w-3xl mx-auto space-y-6">
-                <div class="tech-card p-8 space-y-6">
-                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
-                        <div>
-                            <h3 class="text-xl font-black uppercase text-black">SYNCHRONIZED LRC DISPLAY</h3>
-                            <p class="text-xs font-semibold text-neutral-500 mt-0.5" x-text="currentSong?.title || 'No Song Active'"></p>
-                        </div>
-                        <button @click="fetchLyrics()" class="btn-outline px-4 py-2 text-xs">RELOAD</button>
-                    </div>
-
-                    <div class="py-10 text-center space-y-4 max-h-[400px] overflow-y-auto touch-scroll" id="lyrics-container">
-                        <template x-if="lyricsState.parsedLines.length > 0">
-                            <div class="space-y-4">
-                                <template x-for="(line, idx) in lyricsState.parsedLines" :key="idx">
-                                    <p 
-                                        class="text-base font-extrabold transition-all duration-150 cursor-pointer py-1.5 px-3 rounded"
-                                        :class="lyricsState.activeIndex === idx ? 'bg-black text-white text-xl font-black' : 'text-neutral-400 hover:text-black'"
-                                        @click="seekTo(line.time)"
-                                        x-text="line.text"
-                                    ></p>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 4: EQUALIZER -->
-            <div x-show="activeTab === 'equalizer'" class="max-w-4xl mx-auto space-y-6">
-                <div class="tech-card p-6 space-y-6">
-                    <div class="border-b border-neutral-200 pb-4 flex items-center justify-between">
-                        <h3 class="text-lg font-black uppercase text-black">10-BAND EQUALIZER CURVE</h3>
-                        <button @click="applyEqPreset('flat')" class="text-xs font-mono font-bold underline uppercase">RESET FLAT</button>
-                    </div>
-
-                    <div class="grid grid-cols-5 md:grid-cols-10 gap-4 h-64 items-center pt-4">
-                        <template x-for="(band, idx) in eqBands" :key="band.freq">
-                            <div class="flex flex-col items-center h-full justify-between">
-                                <span class="text-[10px] font-mono font-bold text-neutral-700" x-text="`${band.gain > 0 ? '+' : ''}${band.gain}dB`"></span>
-                                <div class="h-40 flex items-center justify-center">
-                                    <input 
-                                        type="range" 
-                                        min="-12" 
-                                        max="12" 
-                                        step="1"
-                                        :value="band.gain"
-                                        @input="updateEqBand(idx, $event.target.value)"
-                                        class="h-32 w-2 accent-black rounded appearance-none bg-neutral-200 cursor-pointer -rotate-90"
-                                    >
-                                </div>
-                                <span class="text-[10px] font-black uppercase text-neutral-500" x-text="band.freq"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 5: SOUND & BLUETOOTH HUB -->
-            <div x-show="activeTab === 'sound'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Page Content Grid -->
+            <main class="flex-1 p-4 md:p-8 max-w-6xl w-full mx-auto space-y-6">
                 
-                <!-- Left 2 Columns: Bluetooth Speaker Sink & Sound Gains -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- Bluetooth Receiver Controls -->
-                    <div class="tech-card p-6 space-y-6">
-                        <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="bluetooth" class="w-5 h-5 text-black"></i>
-                                <h3 class="text-lg font-black uppercase text-black">BLUETOOTH AUDIO RECEIVER SINK</h3>
-                            </div>
-                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-mono font-black text-[10px] uppercase rounded">RECEIVER ACTIVE</span>
-                        </div>
-
-                        <div class="space-y-5 text-xs font-bold uppercase">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="text-black font-extrabold">PIN-LESS JUSTWORKS AUTO-PAIRING</h4>
-                                    <p class="text-[10px] text-neutral-500 lowercase mt-0.5">Allows phones and PCs to connect instantly without pairing keys</p>
-                                </div>
-                                <button @click="toggleBTPower()" class="px-4 py-2 rounded font-black text-[11px] uppercase transition" :class="btStatus.powered ? 'bg-emerald-600 text-white' : 'bg-neutral-200 text-neutral-700'" x-text="btStatus.powered ? 'ENABLED' : 'DISABLED'"></button>
-                            </div>
-
-                            <div class="flex items-center justify-between border-t border-neutral-200 pt-4">
-                                <div>
-                                    <h4 class="text-black font-extrabold">YOUTUBE AUTOPLAY RECOMMENDATIONS</h4>
-                                    <p class="text-[10px] text-neutral-500 lowercase mt-0.5">Auto stream recommended tracks when queue ends</p>
-                                </div>
-                                <button @click="toggleAutoplay()" class="px-4 py-2 rounded font-black text-[11px] uppercase transition" :class="autoplayEnabled ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-700'" x-text="autoplayEnabled ? 'ENABLED' : 'DISABLED'"></button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Dual Volume Sliders -->
-                    <div class="tech-card p-6 space-y-6">
-                        <h3 class="text-lg font-black uppercase text-black border-b border-neutral-200 pb-4">HARDWARE SOUND & STREAM GAIN</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <div class="flex justify-between text-xs font-extrabold uppercase mb-2">
-                                    <span>Raspberry Pi Hardware ALSA Master Volume</span>
-                                    <span class="font-mono" x-text="`${masterVolume}%`"></span>
-                                </div>
-                                <input type="range" min="0" max="100" :value="masterVolume" @input="setMasterVolume($event.target.value)" class="w-full h-2 bg-neutral-200 rounded appearance-none accent-black cursor-pointer">
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between text-xs font-extrabold uppercase mb-2">
-                                    <span>Music Stream Player Output Sound</span>
-                                    <span class="font-mono" x-text="`${playerState.volume}%`"></span>
-                                </div>
-                                <input type="range" min="0" max="100" :value="playerState.volume" @input="setVolume($event.target.value)" class="w-full h-2 bg-neutral-200 rounded appearance-none accent-black cursor-pointer">
-                            </div>
-                        </div>
-                    </div>
+                <!-- Search Bar -->
+                <div class="tech-card p-2.5 flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-zinc-400 ml-2"></i>
+                    <form @submit.prevent="performSearch()" class="flex-1 flex gap-2">
+                        <input type="text" x-model="searchQuery" placeholder="Search tracks, artists, albums..." 
+                               class="w-full bg-transparent text-sm font-medium text-black placeholder-zinc-400 focus:outline-none px-2">
+                        <button type="submit" class="btn-black px-4 py-2 text-xs">Search</button>
+                    </form>
                 </div>
 
-                <!-- Right Column: Dark Bluetooth Devices Card -->
-                <div class="tech-card-dark p-6 space-y-6 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-black uppercase tracking-tight text-white mb-2">BLUETOOTH SCANNER</h3>
-                        <p class="text-xs text-neutral-400 font-medium">Scan and pair nearby Bluetooth audio transmitters and smartphones.</p>
-                    </div>
-
-                    <!-- Scan Trigger -->
-                    <button @click="scanBTDevices()" class="p-4 bg-neutral-900 border border-neutral-700 hover:border-white rounded-xl text-center font-mono font-bold text-xs text-white uppercase tracking-wider transition">
-                        SCAN NEARBY BLUETOOTH DEVICES
-                    </button>
-
-                    <!-- Devices List -->
-                    <div class="space-y-2 max-h-60 overflow-y-auto touch-scroll">
-                        <template x-for="dev in btDevices" :key="dev.mac">
-                            <div class="p-3 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-between text-xs font-mono">
-                                <div>
-                                    <span class="font-bold text-white uppercase block" x-text="dev.name"></span>
-                                    <span class="text-[10px] text-neutral-500" x-text="dev.mac"></span>
+                <!-- Search Results Section -->
+                <div x-show="searchResults.length > 0" class="tech-card p-4 space-y-2 max-h-80 overflow-y-auto">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-zinc-500 mb-2">Search Results</h3>
+                    <template x-for="song in searchResults" :key="song.id">
+                        <div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-zinc-50 transition group border border-transparent hover:border-zinc-200">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <img :src="song.thumbnail" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" alt="thumb">
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-bold text-black truncate" x-text="song.title"></h4>
+                                    <p class="text-[11px] text-zinc-500 truncate" x-text="song.artist"></p>
                                 </div>
-                                <button @click="connectBTDevice(dev.mac)" class="px-3 py-1 bg-white text-black font-black text-[10px] uppercase rounded">
-                                    CONNECT
-                                </button>
                             </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 6: PLAYLISTS -->
-            <div x-show="activeTab === 'playlists'" class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-black uppercase text-black">YOUR PLAYLISTS</h3>
-                    <button @click="showAddPlaylistModal = true" class="btn-black px-4 py-2 text-xs">+ NEW PLAYLIST</button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <template x-for="pl in playlists" :key="pl.id">
-                        <div class="tech-card p-6 flex flex-col justify-between cursor-pointer" @click="openPlaylist(pl.id)">
-                            <div>
-                                <h4 class="font-black text-lg text-black uppercase" x-text="pl.name"></h4>
-                                <p class="text-xs font-mono text-neutral-500 mt-1" x-text="`${pl.song_count || 0} TRACKS`"></p>
-                            </div>
-                            <div class="mt-6 pt-4 border-t border-neutral-200 flex items-center justify-between text-xs font-black uppercase">
-                                <span>VIEW COLLECTION</span>
-                                <i data-lucide="arrow-up-right" class="w-4 h-4 text-black"></i>
+                            <div class="flex items-center gap-1.5">
+                                <button @click="playSong(song)" class="btn-black px-3 py-1.5 text-xs">Play</button>
+                                <button @click="addToQueue(song)" class="btn-outline px-2.5 py-1.5 text-xs"><i class="fa-solid fa-plus"></i></button>
                             </div>
                         </div>
                     </template>
                 </div>
-            </div>
 
-            <!-- TAB 7: UPDATES -->
-            <div x-show="activeTab === 'updates'" class="max-w-4xl mx-auto space-y-6">
-                <div class="tech-card p-6 space-y-6">
-                    <div class="flex items-center justify-between border-b border-neutral-200 pb-4">
-                        <div>
-                            <h3 class="text-xl font-black uppercase text-black">AUTOMATIC SOFTWARE UPDATES</h3>
-                            <p class="text-xs font-semibold text-neutral-500 mt-0.5">PiPlayer automatically checks & pulls latest git releases in background.</p>
+                <!-- Workspace Grid: Player & AI Insights (Col 7) vs Queue & Playlists (Col 5) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left: Studio Player & AI Track Insights (Col 7) -->
+                    <div class="lg:col-span-7 space-y-6">
+                        
+                        <!-- Studio Player Card -->
+                        <div class="tech-card p-6 md:p-8 flex flex-col items-center text-center relative">
+                            
+                            <!-- Track Cover Art -->
+                            <div class="w-56 h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden shadow-xl mb-6 border border-zinc-200 relative group">
+                                <img :src="currentSong ? currentSong.thumbnail : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600&auto=format&fit=crop'" 
+                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Album Art">
+                                
+                                <div x-show="!playerState.paused" class="absolute bottom-3 right-3 px-2.5 py-1.5 rounded-lg bg-black/80 text-white flex items-end gap-1">
+                                    <div class="eq-bar bg-white"></div>
+                                    <div class="eq-bar bg-white"></div>
+                                    <div class="eq-bar bg-white"></div>
+                                </div>
+                            </div>
+
+                            <!-- Track Meta -->
+                            <div class="w-full mb-4">
+                                <h2 class="text-xl md:text-2xl font-black text-black tracking-tight line-clamp-1" x-text="currentSong ? currentSong.title : 'Ready to Stream'"></h2>
+                                <p class="text-xs md:text-sm text-zinc-500 font-medium mt-1" x-text="currentSong ? currentSong.artist : 'Search or select a track to play'"></p>
+                            </div>
+
+                            <!-- Live Progress Seeker -->
+                            <div class="w-full space-y-1 mb-6">
+                                <input type="range" min="0" :max="playerState.duration || 100" :value="playerState.position || 0" 
+                                       @input="seekTo($event.target.value)" 
+                                       class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
+                                <div class="flex justify-between text-xs font-mono text-zinc-500">
+                                    <span x-text="formatTime(playerState.position)">0:00</span>
+                                    <span x-text="formatTime(playerState.duration)">0:00</span>
+                                </div>
+                            </div>
+
+                            <!-- Playback Controls -->
+                            <div class="flex items-center justify-center gap-6 w-full">
+                                <button @click="toggleShuffle()" class="text-zinc-400 hover:text-black transition" :class="isShuffle ? 'text-black font-bold' : ''">
+                                    <i class="fa-solid fa-shuffle text-base"></i>
+                                </button>
+                                
+                                <button @click="previousSong()" class="p-3 rounded-full hover:bg-zinc-100 text-black transition">
+                                    <i class="fa-solid fa-backward-step text-xl"></i>
+                                </button>
+                                
+                                <button @click="togglePlay()" class="w-14 h-14 rounded-full bg-black hover:bg-zinc-800 text-white font-bold flex items-center justify-center shadow-lg transition active:scale-95">
+                                    <i class="fa-solid" :class="playerState.paused ? 'fa-play text-xl ml-1' : 'fa-pause text-xl'"></i>
+                                </button>
+                                
+                                <button @click="nextSong()" class="p-3 rounded-full hover:bg-zinc-100 text-black transition">
+                                    <i class="fa-solid fa-forward-step text-xl"></i>
+                                </button>
+                                
+                                <button @click="toggleAutoplay()" class="text-zinc-400 hover:text-black transition" :class="autoplayEnabled ? 'text-black font-bold' : ''">
+                                    <i class="fa-solid fa-repeat text-base"></i>
+                                </button>
+                            </div>
+
+                            <!-- Master Volume Control -->
+                            <div class="w-full flex items-center gap-3 mt-6 pt-4 border-t border-zinc-100">
+                                <i class="fa-solid fa-volume-high text-zinc-500 text-sm"></i>
+                                <input type="range" min="0" max="100" :value="playerState.volume || 85" 
+                                       @input="setVolume($event.target.value)" 
+                                       class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
+                                <span class="text-xs font-mono text-zinc-500 w-8" x-text="(playerState.volume || 85) + '%'"></span>
+                            </div>
                         </div>
-                        <button @click="applyUpdate()" class="btn-black px-5 py-2.5 text-xs">PULL LATEST RELEASE</button>
+
+                        <!-- AI Track Insights & Acoustic Analytics Widget -->
+                        <div class="tech-card p-5 space-y-3">
+                            <div class="flex items-center justify-between border-b border-zinc-100 pb-2">
+                                <h3 class="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
+                                    <i class="fa-solid fa-brain text-purple-600"></i>
+                                    AI Acoustic Track Insights
+                                </h3>
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold border border-purple-200">DEEPMIND AI</span>
+                            </div>
+
+                            <template x-if="aiInsights">
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center pt-1 font-mono">
+                                    <div class="p-2 bg-zinc-50 rounded-lg border border-zinc-200">
+                                        <span class="text-[10px] text-zinc-500 block">EST. BPM</span>
+                                        <span class="text-sm font-black text-black" x-text="aiInsights.bpm"></span>
+                                    </div>
+                                    <div class="p-2 bg-zinc-50 rounded-lg border border-zinc-200">
+                                        <span class="text-[10px] text-zinc-500 block">KEY</span>
+                                        <span class="text-sm font-black text-black" x-text="aiInsights.key"></span>
+                                    </div>
+                                    <div class="p-2 bg-zinc-50 rounded-lg border border-zinc-200">
+                                        <span class="text-[10px] text-zinc-500 block">ENERGY</span>
+                                        <span class="text-sm font-black text-black" x-text="(aiInsights.energy * 100) + '%'"></span>
+                                    </div>
+                                    <div class="p-2 bg-zinc-50 rounded-lg border border-zinc-200">
+                                        <span class="text-[10px] text-zinc-500 block">ACOUSTIC</span>
+                                        <span class="text-sm font-black text-black" x-text="(aiInsights.acousticness * 100) + '%'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-if="aiInsights && aiInsights.recommendation_summary">
+                                <p class="text-xs text-zinc-600 italic bg-zinc-50 p-2.5 rounded-lg border border-zinc-200" x-text="aiInsights.recommendation_summary"></p>
+                            </template>
+                        </div>
                     </div>
 
-                    <div class="p-4 bg-neutral-50 border border-neutral-200 rounded-lg space-y-2">
-                        <div class="flex items-center justify-between text-xs font-mono font-bold">
-                            <span class="text-black uppercase">INSTALLED BUILD: <span x-text="updateInfo.current_version"></span></span>
-                            <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] font-black uppercase">UP TO DATE</span>
+                    <!-- Right: Queue & Playlists Workspace (Col 5) -->
+                    <div class="lg:col-span-5 space-y-6">
+                        
+                        <!-- Queue / Playlists Card -->
+                        <div class="tech-card p-5 space-y-4">
+                            <div class="flex items-center justify-between border-b border-zinc-200 pb-3">
+                                <div class="flex items-center gap-4">
+                                    <button @click="activeTab = 'queue'" :class="activeTab === 'queue' ? 'text-black font-black border-b-2 border-black pb-1' : 'text-zinc-500'" class="text-xs tracking-wide transition">
+                                        Playing Queue (<span x-text="queue.length"></span>)
+                                    </button>
+                                    <button @click="activeTab = 'playlists'" :class="activeTab === 'playlists' ? 'text-black font-black border-b-2 border-black pb-1' : 'text-zinc-500'" class="text-xs tracking-wide transition">
+                                        Playlists
+                                    </button>
+                                </div>
+                                <button x-show="activeTab === 'queue'" @click="clearQueue()" class="text-xs text-red-600 hover:underline">Clear Queue</button>
+                            </div>
+
+                            <!-- Queue Tab List -->
+                            <div x-show="activeTab === 'queue'" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                                <template x-for="(item, index) in queue" :key="item.id">
+                                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200 hover:border-black transition">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <span class="text-xs font-mono text-zinc-400 w-4" x-text="index + 1"></span>
+                                            <img :src="item.thumbnail" class="w-8 h-8 rounded-md object-cover" alt="thumb">
+                                            <div class="min-w-0">
+                                                <h4 class="text-xs font-bold text-black truncate" x-text="item.title"></h4>
+                                                <p class="text-[11px] text-zinc-500 truncate" x-text="item.artist"></p>
+                                            </div>
+                                        </div>
+                                        <button @click="removeFromQueue(item.id)" class="text-zinc-400 hover:text-red-600 p-1 transition">
+                                            <i class="fa-solid fa-xmark text-xs"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="queue.length === 0">
+                                    <p class="text-center text-xs text-zinc-400 py-12">Queue is empty. Search and add tracks!</p>
+                                </template>
+                            </div>
+
+                            <!-- Playlists Tab -->
+                            <div x-show="activeTab === 'playlists'" class="space-y-3">
+                                <div class="flex gap-2">
+                                    <input type="text" x-model="newPlaylistName" placeholder="New Playlist..." 
+                                           class="flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-1.5 text-xs text-black focus:outline-none">
+                                    <button @click="createPlaylist()" class="btn-black px-3 py-1.5 text-xs">Create</button>
+                                </div>
+                                <div class="space-y-2 max-h-80 overflow-y-auto">
+                                    <template x-for="pl in playlists" :key="pl.id">
+                                        <div class="flex items-center justify-between p-3 rounded-lg bg-zinc-50 border border-zinc-200">
+                                            <div>
+                                                <h4 class="text-xs font-bold text-black" x-text="pl.name"></h4>
+                                                <p class="text-[10px] text-zinc-500" x-text="pl.song_count + ' tracks'"></p>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button @click="playPlaylist(pl.id)" class="btn-black px-2.5 py-1 text-xs">Play</button>
+                                                <button @click="deletePlaylist(pl.id)" class="text-red-600 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
+
                     </div>
                 </div>
-            </div>
+            </main>
+        </div>
 
-        </main>
-
-        <!-- Architectural Bottom Fixed Player Bar -->
-        <footer class="fixed bottom-16 md:bottom-0 left-0 right-0 h-20 bg-white/95 border-t border-neutral-200 backdrop-blur-xl px-4 md:px-8 z-40 flex items-center justify-between gap-4 text-black">
-            <div class="flex items-center gap-3 w-1/3 min-w-0">
-                <img :src="getSongImage(currentSong)" class="w-12 h-12 rounded object-cover border border-neutral-200 bg-neutral-100 flex-shrink-0">
-                <div class="min-w-0">
-                    <h4 class="font-extrabold text-xs md:text-sm uppercase text-black truncate" x-text="currentSong?.title || 'No active stream'"></h4>
-                    <p class="text-neutral-500 text-[11px] font-semibold truncate" x-text="currentSong?.artist || 'Select track to initialize'"></p>
+        <!-- Sticky Mobile Bottom Music Deck & Navigation Bar -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-zinc-200 p-3 shadow-2xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <img :src="currentSong ? currentSong.thumbnail : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600&auto=format&fit=crop'" 
+                     class="w-10 h-10 rounded-lg object-cover flex-shrink-0" alt="thumb">
+                <div class="min-w-0 flex-1">
+                    <h4 class="text-xs font-bold text-black truncate" x-text="currentSong ? currentSong.title : 'Ready to Stream'"></h4>
+                    <p class="text-[11px] text-zinc-500 truncate" x-text="currentSong ? currentSong.artist : 'Select track'"></p>
                 </div>
             </div>
 
-            <!-- Center Controls -->
-            <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl">
-                <div class="flex items-center gap-5">
-                    <button @click="playPrevious()" class="text-black hover:scale-110"><i data-lucide="skip-back" class="w-5 h-5 text-black"></i></button>
-                    <button @click="togglePlay()" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-neutral-800 transition">
-                        <i :data-lucide="playerState.paused ? 'play' : 'pause'" class="w-5 h-5 text-white fill-current"></i>
-                    </button>
-                    <button @click="playNext()" class="text-black hover:scale-110"><i data-lucide="skip-forward" class="w-5 h-5 text-black"></i></button>
-                </div>
-                <div class="hidden md:flex w-full items-center gap-3 text-xs font-mono font-bold">
-                    <input type="range" min="0" :max="getEffectiveDuration()" :value="playerState.position" @input="seekTo($event.target.value)" class="w-full h-1.5 bg-neutral-200 rounded appearance-none cursor-pointer accent-black">
-                    <span x-text="`${formatTime(playerState.position)} / ${formatTime(getEffectiveDuration())}`"></span>
-                </div>
-            </div>
-
-            <!-- Right Utilities -->
-            <div class="hidden md:flex items-center gap-4 w-1/4 justify-end">
-                <button @click="switchTab('sound')" class="p-2 border border-neutral-200 rounded hover:bg-neutral-100" title="Settings">
-                    <i data-lucide="settings" class="w-4 h-4 text-black"></i>
+            <div class="flex items-center gap-2">
+                <button @click="togglePlay()" class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center text-sm shadow">
+                    <i class="fa-solid" :class="playerState.paused ? 'fa-play ml-0.5' : 'fa-pause'"></i>
+                </button>
+                <button @click="nextSong()" class="p-2 text-black">
+                    <i class="fa-solid fa-forward-step text-lg"></i>
                 </button>
             </div>
-        </footer>
+        </div>
 
-        <!-- Mobile Bottom Navigation Bar -->
-        <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-neutral-200 flex items-center justify-around z-50 text-[9px] font-black uppercase text-neutral-500">
-            <button @click="switchTab('home')" :class="{'text-black border-t-2 border-black': activeTab === 'home'}" class="flex flex-col items-center gap-1 py-2">
-                <i data-lucide="disc" class="w-5 h-5 text-black"></i> LIBRARY
-            </button>
-            <button @click="switchTab('search')" :class="{'text-black border-t-2 border-black': activeTab === 'search'}" class="flex flex-col items-center gap-1 py-2">
-                <i data-lucide="search" class="w-5 h-5 text-black"></i> SEARCH
-            </button>
-            <button @click="switchTab('sound')" :class="{'text-black border-t-2 border-black': activeTab === 'sound'}" class="flex flex-col items-center gap-1 py-2">
-                <i data-lucide="settings" class="w-5 h-5 text-black"></i> SETTINGS
-            </button>
-        </nav>
-    </div>
+        <!-- 10-Band Equalizer Modal -->
+        <div x-show="showEqModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-xl rounded-2xl p-6 shadow-2xl border border-zinc-200">
+                <div class="flex items-center justify-between mb-4 border-b border-zinc-200 pb-3">
+                    <h3 class="text-base font-black text-black flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i>
+                        10-Band Parametric Equalizer
+                    </h3>
+                    <button @click="showEqModal = false" class="text-zinc-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
 
-    <!-- Modals -->
-    <!-- Create Playlist Modal -->
-    <div x-cloak x-show="showAddPlaylistModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="tech-card p-6 w-full max-w-md space-y-4 bg-white">
-            <h3 class="font-black text-base uppercase text-black">CREATE NEW PLAYLIST</h3>
-            <input type="text" x-model="newPlaylistName" placeholder="Playlist Title..." class="w-full p-3 border border-neutral-300 rounded font-bold text-xs uppercase focus:outline-none focus:ring-1 focus:ring-black">
-            <div class="flex justify-end gap-2 pt-2">
-                <button @click="showAddPlaylistModal = false" class="btn-outline px-4 py-2 text-xs">CANCEL</button>
-                <button @click="createPlaylist()" class="btn-black px-4 py-2 text-xs">CREATE</button>
+                <!-- Presets -->
+                <div class="flex flex-wrap gap-1.5 mb-6">
+                    <template x-for="p in ['normal', 'bass', 'vocal', 'treble', 'party', 'rock', 'jazz', 'electronic', 'acoustic']" :key="p">
+                        <button @click="setEqPreset(p)" 
+                                :class="currentEq === p ? 'bg-black text-white font-bold' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'" 
+                                class="px-3 py-1 rounded-lg text-xs capitalize transition" x-text="p"></button>
+                    </template>
+                </div>
+
+                <!-- Sliders -->
+                <div class="grid grid-cols-5 md:grid-cols-10 gap-3 text-center mb-6">
+                    <template x-for="(freq, key) in eqBands" :key="key">
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-[10px] font-mono text-zinc-500" x-text="freq.label"></span>
+                            <input type="range" min="-12" max="12" step="1" x-model="freq.val" @change="applyCustomEq()" 
+                                   class="h-32 appearance-none bg-zinc-200 rounded-lg cursor-pointer accent-black" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical; appearance: slider-vertical;">
+
+                            <span class="text-[10px] font-mono font-bold text-black" x-text="(freq.val > 0 ? '+' : '') + freq.val + 'dB'"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="flex justify-end gap-2">
+                    <button @click="resetEq()" class="btn-outline px-4 py-2 text-xs">Reset Flat</button>
+                    <button @click="showEqModal = false" class="btn-black px-4 py-2 text-xs">Done</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Add To Playlist Modal -->
-    <div x-cloak x-show="showAddToPlaylistModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="tech-card p-6 w-full max-w-md space-y-4 bg-white">
-            <h3 class="font-black text-base uppercase text-black">ADD TRACK TO PLAYLIST</h3>
-            <div class="space-y-2 max-h-60 overflow-y-auto touch-scroll">
-                <template x-for="pl in playlists" :key="pl.id">
-                    <button @click="addSongToPlaylist(pl.id)" class="w-full p-3 border border-neutral-200 rounded text-left font-black text-xs uppercase hover:bg-black hover:text-white transition flex justify-between">
-                        <span x-text="pl.name"></span> +
+        <!-- Hi-Fi Hub & HAT DAC Modal -->
+        <div x-show="showHifiModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-zinc-200">
+                <div class="flex items-center justify-between mb-4 border-b border-zinc-200 pb-3">
+                    <h3 class="text-base font-black text-black flex items-center gap-2">
+                        <i class="fa-solid fa-tower-broadcast"></i>
+                        Hi-Fi Audio Daemons & Hardware DAC Selector
+                    </h3>
+                    <button @click="showHifiModal = false" class="text-zinc-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Roon -->
+                    <div class="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold text-black">Roon Endpoint (Bridge)</h4>
+                            <p class="text-[10px] text-zinc-500">Bit-perfect audio passthrough</p>
+                        </div>
+                        <button @click="toggleHifiService('roon')" :class="hifiServices.roon?.active ? 'bg-black text-white' : 'bg-zinc-200 text-zinc-700'" class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                            <span x-text="hifiServices.roon?.active ? 'Active' : 'Enable'"></span>
+                        </button>
+                    </div>
+
+                    <!-- AirPlay -->
+                    <div class="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold text-black">AirPlay (Shairport-sync)</h4>
+                            <p class="text-[10px] text-zinc-500">Apple AirPlay receiver</p>
+                        </div>
+                        <button @click="toggleHifiService('airplay')" :class="hifiServices.airplay?.active ? 'bg-black text-white' : 'bg-zinc-200 text-zinc-700'" class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                            <span x-text="hifiServices.airplay?.active ? 'Active' : 'Enable'"></span>
+                        </button>
+                    </div>
+
+                    <!-- UPnP -->
+                    <div class="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold text-black">UPnP / DLNA Renderer</h4>
+                            <p class="text-[10px] text-zinc-500">BubbleUPnP / Audirvana target</p>
+                        </div>
+                        <button @click="toggleHifiService('upnp')" :class="hifiServices.upnp?.active ? 'bg-black text-white' : 'bg-zinc-200 text-zinc-700'" class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                            <span x-text="hifiServices.upnp?.active ? 'Active' : 'Enable'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Spotify -->
+                    <div class="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold text-black">Spotify Connect (Librespot)</h4>
+                            <p class="text-[10px] text-zinc-500">Hardware Spotify sink</p>
+                        </div>
+                        <button @click="toggleHifiService('spotify')" :class="hifiServices.spotify?.active ? 'bg-black text-white' : 'bg-zinc-200 text-zinc-700'" class="px-3 py-1 rounded-lg text-xs font-bold transition">
+                            <span x-text="hifiServices.spotify?.active ? 'Active' : 'Enable'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Audio Output Cards -->
+                <h4 class="text-xs font-bold text-black uppercase tracking-wider mb-3">Audio Hardware Output</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                    <template x-for="dev in audioOutputs" :key="dev.id">
+                        <div @click="setAudioOutput(dev.id)" :class="dev.active ? 'border-black bg-zinc-100 font-bold' : 'border-zinc-200 bg-zinc-50'" class="p-3 rounded-xl border cursor-pointer flex items-center gap-3 transition">
+                            <i class="fa-solid" :class="dev.icon || 'fa-plug'" class="text-black text-base"></i>
+                            <div>
+                                <h5 class="text-xs font-bold text-black" x-text="dev.name"></h5>
+                                <p class="text-[10px] text-zinc-500" x-text="dev.active ? 'Active Output' : 'Click to select'"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="flex justify-end">
+                    <button @click="showHifiModal = false" class="btn-black px-4 py-2 text-xs">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customization & Settings Modal -->
+        <div x-show="showSettingsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-zinc-200">
+                <div class="flex items-center justify-between mb-4 border-b border-zinc-200 pb-3">
+                    <h3 class="text-base font-black text-black flex items-center gap-2">
+                        <i class="fa-solid fa-gear"></i>
+                        System Customization & Settings
+                    </h3>
+                    <button @click="showSettingsModal = false" class="text-zinc-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <form @submit.prevent="saveCustomization()" class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-700 mb-1">Bluetooth Device Name</label>
+                        <input type="text" x-model="customBtName" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs text-black focus:outline-none focus:border-black">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-700 mb-1">System Hostname</label>
+                        <input type="text" x-model="customHostname" class="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs text-black focus:outline-none focus:border-black">
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 btn-black text-xs">
+                        Save System Settings
                     </button>
-                </template>
+                </form>
+
+                <div class="p-4 rounded-xl bg-red-50 border border-red-200 space-y-2">
+                    <h4 class="text-xs font-bold text-red-800">Database Reset</h4>
+                    <p class="text-[10px] text-red-600">Clears playback history, queue, favorites, and playlists.</p>
+                    <button @click="resetDatabase()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition">
+                        Reset Database Now
+                    </button>
+                </div>
             </div>
         </div>
+
     </div>
 
-    <!-- Alpine App Logic with Lenis Smooth Scroll -->
+    <!-- Alpine.js & Lenis.js Script -->
     <script>
-        function playerApp() {
+        // Initialize Lenis Smooth Scroll
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof Lenis !== "undefined") {
+                const lenis = new Lenis({
+                    duration: 1.1,
+                    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                    touchMultiplier: 2
+                });
+                function raf(time) {
+                    lenis.raf(time);
+                    requestAnimationFrame(raf);
+                }
+                requestAnimationFrame(raf);
+            }
+        });
+
+        function piAampsApp() {
             return {
-                activeTab: 'home',
-                showSleepModal: false,
-                showAddPlaylistModal: false,
-                showAddToPlaylistModal: false,
-                searchQuery: '',
-                searchResults: [],
-                recentSongs: [],
-                playlists: [],
-                currentSong: null,
-                isSearching: false,
-                autoplayEnabled: true,
-                serverPort: 8000,
-                updateInfo: { current_version: 'v2.2.0-production' },
+                activeNav: 'player',
+                activeTab: 'queue',
+                showEqModal: false,
+                showHifiModal: false,
+                showSettingsModal: false,
+                deferredPrompt: null,
+
                 playerState: { paused: true, position: 0, duration: 0, volume: 85 },
-                lyricsState: { parsedLines: [], activeIndex: 0 },
-                eqBands: [
-                    { freq: '60Hz', gain: 0 }, { freq: '170Hz', gain: 0 }, { freq: '310Hz', gain: 0 },
-                    { freq: '600Hz', gain: 0 }, { freq: '1kHz', gain: 0 }, { freq: '3kHz', gain: 0 },
-                    { freq: '6kHz', gain: 0 }, { freq: '12kHz', gain: 0 }, { freq: '14kHz', gain: 0 }, { freq: '16kHz', gain: 0 }
-                ],
-                btStatus: { powered: true, discoverable: true, connected_device: null },
-                btDevices: [],
-                masterVolume: 85,
-                lenis: null,
+                currentSong: null,
+                queue: [],
+                playlists: [],
+                searchResults: [],
+                searchQuery: '',
+                newPlaylistName: '',
+                aiInsights: null,
 
-                init() {
-                    // Initialize Lenis Smooth Scrolling
-                    if (window.Lenis) {
-                        this.lenis = new Lenis({
-                            duration: 1.2,
-                            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-                            smoothTouch: true
-                        });
-                        const raf = (time) => {
-                            this.lenis.raf(time);
-                            requestAnimationFrame(raf);
-                        };
-                        requestAnimationFrame(raf);
-                    }
+                metrics: { cpu_usage_percent: 0, temperature_celsius: 40, hostname: 'pi-aamps' },
+                bluetoothStatus: { powered: true },
+                audioOutputs: [],
+                activeDacName: '3.5mm Jack',
+                hifiServices: {},
 
-                    this.loadHistory();
-                    this.loadPlaylists();
-                    this.fetchBTStatus();
-                    this.checkUpdates();
-                    this.refreshLucide();
+                autoplayEnabled: true,
+                isShuffle: false,
+                currentEq: 'normal',
 
-                    setInterval(() => {
-                        if (!this.playerState.paused && this.getEffectiveDuration() > 0) {
-                            if (this.playerState.position < this.getEffectiveDuration()) {
-                                this.playerState.position += 1;
-                            } else {
-                                this.playNext();
-                            }
-                        }
-                    }, 1000);
+                customBtName: 'pi-aamps Audio Receiver',
+                customHostname: 'pi-aamps',
+
+                eqBands: {
+                    "31": { label: "31Hz", val: 0 },
+                    "62": { label: "62Hz", val: 0 },
+                    "125": { label: "125Hz", val: 0 },
+                    "250": { label: "250Hz", val: 0 },
+                    "500": { label: "500Hz", val: 0 },
+                    "1000": { label: "1kHz", val: 0 },
+                    "2000": { label: "2kHz", val: 0 },
+                    "4000": { label: "4kHz", val: 0 },
+                    "8000": { label: "8kHz", val: 0 },
+                    "16000": { label: "16kHz", val: 0 }
                 },
 
-                refreshLucide() {
-                    this.$nextTick(() => {
-                        if (window.lucide) lucide.createIcons();
+                ws: null,
+
+                init() {
+                    this.fetchStatus();
+                    this.fetchMetrics();
+                    this.fetchHifiStatus();
+                    this.fetchPlaylists();
+                    this.initWebSocket();
+                    this.initPwaPrompt();
+
+                    setInterval(() => this.fetchMetrics(), 3000);
+                },
+
+                initPwaPrompt() {
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        this.deferredPrompt = e;
                     });
                 },
 
-                getTabTitle() {
-                    const titles = {
-                        home: 'PIPLAYER MUSIC ENGINE',
-                        search: 'SEARCH ENGINE',
-                        lyrics: 'SYNCHRONIZED LYRICS',
-                        playlists: 'COLLECTIONS',
-                        equalizer: 'AUDIO EQUALIZER',
-                        sound: 'SYSTEM & SETTINGS',
-                        updates: 'AUTOMATIC UPDATES'
+                async installPwa() {
+                    if (!this.deferredPrompt) return;
+                    this.deferredPrompt.prompt();
+                    const { outcome } = await this.deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        this.deferredPrompt = null;
+                    }
+                },
+
+                initWebSocket() {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${protocol}//${window.location.host}/ws`;
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onmessage = (event) => {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'player_state_changed') {
+                            this.playerState = msg.data;
+                        } else if (msg.type === 'song_changed') {
+                            this.currentSong = msg.data;
+                            this.fetchAiInsights();
+                        } else if (msg.type === 'queue_updated') {
+                            this.queue = msg.data;
+                        }
                     };
-                    return titles[this.activeTab] || 'PIPLAYER MUSIC ENGINE';
+
+                    this.ws.onclose = () => {
+                        setTimeout(() => this.initWebSocket(), 2000);
+                    };
                 },
 
-                switchTab(tab) {
-                    this.activeTab = tab;
-                    if (this.lenis) this.lenis.scrollTo(0, { immediate: true });
-                    this.refreshLucide();
+                async fetchStatus() {
+                    try {
+                        const res = await fetch('/api/status');
+                        const data = await res.json();
+                        this.playerState = data.player || this.playerState;
+                        this.currentSong = data.current_song;
+                        this.queue = data.queue || [];
+                        this.audioOutputs = data.audio || [];
+                        const activeOut = this.audioOutputs.find(o => o.active);
+                        if (activeOut) this.activeDacName = activeOut.name;
+                        if (this.currentSong) this.fetchAiInsights();
+                    } catch (e) {}
                 },
 
-                onSearchInput() {
-                    if (this.searchQuery.trim() && this.activeTab !== 'search') this.activeTab = 'search';
-                    this.searchSongs();
+                async fetchMetrics() {
+                    try {
+                        const res = await fetch('/api/system/metrics');
+                        this.metrics = await res.json();
+                        if (this.metrics.bluetooth_name) this.customBtName = this.metrics.bluetooth_name;
+                        if (this.metrics.hostname) this.customHostname = this.metrics.hostname;
+                    } catch (e) {}
                 },
 
-                getSongImage(song) {
-                    if (!song) return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300';
-                    if (song.thumbnail && song.thumbnail !== 'None') return song.thumbnail;
-                    if (song.id) return `https://i.ytimg.com/vi/${song.id}/hqdefault.jpg`;
-                    return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300';
+                async fetchHifiStatus() {
+                    try {
+                        const res = await fetch('/api/hifi/status');
+                        this.hifiServices = await res.json();
+                    } catch (e) {}
                 },
 
-                getEffectiveDuration() {
-                    return this.currentSong?.duration || this.playerState.duration || 0;
-                },
-
-                async searchSongs() {
+                async performSearch() {
                     if (!this.searchQuery.trim()) return;
-                    this.isSearching = true;
                     try {
                         const res = await fetch(`/api/search?q=${encodeURIComponent(this.searchQuery)}`);
                         this.searchResults = await res.json();
-                        this.refreshLucide();
-                    } catch (e) {} finally { this.isSearching = false; }
+                    } catch (e) {}
                 },
 
                 async playSong(song) {
-                    this.currentSong = song;
-                    this.playerState.paused = false;
-                    this.playerState.position = 0;
                     try {
                         await fetch('/api/play', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(song)
                         });
+                        this.currentSong = song;
+                        this.fetchAiInsights();
                     } catch (e) {}
-                    this.loadHistory();
-                    this.refreshLucide();
+                },
+
+                async addToQueue(song) {
+                    try {
+                        await fetch('/api/queue/add', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(song)
+                        });
+                        this.fetchStatus();
+                    } catch (e) {}
+                },
+
+                async removeFromQueue(id) {
+                    try {
+                        await fetch(`/api/queue/${id}`, { method: 'DELETE' });
+                        this.fetchStatus();
+                    } catch (e) {}
+                },
+
+                async clearQueue() {
+                    try {
+                        await fetch('/api/queue/clear', { method: 'POST' });
+                        this.queue = [];
+                    } catch (e) {}
                 },
 
                 async togglePlay() {
-                    this.playerState.paused = !this.playerState.paused;
-                    await fetch('/api/toggle', { method: 'POST' });
-                    this.refreshLucide();
+                    try {
+                        await fetch('/api/toggle', { method: 'POST' });
+                    } catch (e) {}
                 },
 
-                async toggleAutoplay() {
-                    this.autoplayEnabled = !this.autoplayEnabled;
-                    await fetch('/api/autoplay/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ enabled: this.autoplayEnabled })
-                    });
+                async nextSong() {
+                    try {
+                        await fetch('/api/autoplay/next', { method: 'POST' });
+                    } catch (e) {}
+                },
+
+                async previousSong() {
+                    this.seekTo(0);
                 },
 
                 async seekTo(pos) {
-                    this.playerState.position = parseFloat(pos);
-                    await fetch('/api/seek', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ position: parseFloat(pos) })
-                    });
-                },
-
-                async fetchLyrics() {
-                    if (!this.currentSong) return;
                     try {
-                        const res = await fetch(`/api/lyrics?title=${encodeURIComponent(this.currentSong.title)}&artist=${encodeURIComponent(this.currentSong.artist || '')}`);
-                        const data = await res.json();
-                        if (data.synced_lyrics) this.parseLrc(data.synced_lyrics);
+                        await fetch('/api/seek', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ position: parseFloat(pos) })
+                        });
                     } catch (e) {}
-                },
-
-                parseLrc(lrcText) {
-                    const lines = lrcText.split('\n');
-                    const parsed = [];
-                    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
-                    for (const line of lines) {
-                        const match = timeRegex.exec(line);
-                        if (match) {
-                            const min = parseInt(match[1]), sec = parseInt(match[2]), ms = parseInt(match[3]);
-                            parsed.push({ time: min * 60 + sec + ms / 1000, text: line.replace(timeRegex, '').trim() });
-                        }
-                    }
-                    this.lyricsState.parsedLines = parsed;
-                },
-
-                updateEqBand(idx, val) {
-                    this.eqBands[idx].gain = parseInt(val);
-                },
-
-                applyEqPreset(preset) {
-                    this.eqBands.forEach(b => b.gain = 0);
-                    fetch('/api/equalizer', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ preset })
-                    });
-                },
-
-                async fetchBTStatus() {
-                    try {
-                        const res = await fetch('/api/bluetooth/status');
-                        this.btStatus = await res.json();
-                    } catch (e) {}
-                },
-
-                async toggleBTPower() {
-                    const target = !this.btStatus.powered;
-                    const res = await fetch('/api/bluetooth/power', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ power: target })
-                    });
-                    this.btStatus.powered = (await res.json()).powered;
-                },
-
-                async scanBTDevices() {
-                    try {
-                        const res = await fetch('/api/bluetooth/devices');
-                        this.btDevices = await res.json();
-                    } catch (e) {}
-                },
-
-                async connectBTDevice(mac) {
-                    await fetch('/api/bluetooth/connect', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ mac })
-                    });
-                    this.fetchBTStatus();
-                },
-
-                async setMasterVolume(vol) {
-                    this.masterVolume = parseInt(vol);
-                    await fetch('/api/audio/master-volume', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ volume: parseInt(vol) })
-                    });
                 },
 
                 async setVolume(vol) {
-                    this.playerState.volume = parseInt(vol);
-                    await fetch('/api/volume', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ volume: parseInt(vol) })
-                    });
-                },
-
-                async checkUpdates() {
                     try {
-                        const res = await fetch('/api/updates/check');
-                        this.updateInfo = await res.json();
+                        await fetch('/api/volume', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ volume: parseInt(vol) })
+                        });
                     } catch (e) {}
                 },
 
-                async applyUpdate() {
-                    const res = await fetch('/api/updates/apply', { method: 'POST' });
-                    const data = await res.json();
-                    alert(data.message || 'Automatic git update completed');
-                    this.checkUpdates();
+                async toggleHifiService(svc) {
+                    const currentActive = this.hifiServices[svc]?.active || false;
+                    try {
+                        await fetch('/api/hifi/toggle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ service: svc, enable: !currentActive })
+                        });
+                        this.fetchHifiStatus();
+                    } catch (e) {}
                 },
 
-                async loadPlaylists() {
+                async setAudioOutput(id) {
+                    try {
+                        await fetch('/api/audio/output', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ output: id })
+                        });
+                        this.fetchStatus();
+                    } catch (e) {}
+                },
+
+                async setEqPreset(preset) {
+                    this.currentEq = preset;
+                    try {
+                        await fetch('/api/equalizer', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ preset: preset })
+                        });
+                    } catch (e) {}
+                },
+
+                async applyCustomEq() {
+                    const bandsDict = {};
+                    for (const [k, v] of Object.entries(this.eqBands)) {
+                        bandsDict[k] = v.val;
+                    }
+                    try {
+                        await fetch('/api/equalizer/bands', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ bands: bandsDict })
+                        });
+                    } catch (e) {}
+                },
+
+                resetEq() {
+                    for (const k in this.eqBands) {
+                        this.eqBands[k].val = 0;
+                    }
+                    this.setEqPreset('normal');
+                },
+
+                async fetchAiInsights() {
+                    if (!this.currentSong) return;
+                    try {
+                        const res = await fetch(`/api/ai/insights?title=${encodeURIComponent(this.currentSong.title)}&artist=${encodeURIComponent(this.currentSong.artist || '')}`);
+                        this.aiInsights = await res.json();
+                    } catch (e) {
+                        this.aiInsights = null;
+                    }
+                },
+
+                async fetchPlaylists() {
                     try {
                         const res = await fetch('/api/playlists');
                         this.playlists = await res.json();
@@ -891,57 +919,61 @@
 
                 async createPlaylist() {
                     if (!this.newPlaylistName.trim()) return;
-                    await fetch('/api/playlists', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: this.newPlaylistName.trim() })
-                    });
-                    this.newPlaylistName = '';
-                    this.showAddPlaylistModal = false;
-                    this.loadPlaylists();
-                },
-
-                openAddToPlaylistModal(song) {
-                    this.selectedSongForPlaylist = song;
-                    this.showAddToPlaylistModal = true;
-                },
-
-                async addSongToPlaylist(id) {
-                    if (!this.selectedSongForPlaylist) return;
-                    await fetch(`/api/playlists/${id}/songs`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.selectedSongForPlaylist)
-                    });
-                    this.showAddToPlaylistModal = false;
-                },
-
-                async playNext() {
-                    if (this.recentSongs.length > 1) {
-                        await this.playSong(this.recentSongs[1]);
-                    }
-                },
-
-                async playPrevious() {
-                    if (this.recentSongs.length > 0) {
-                        await this.playSong(this.recentSongs[0]);
-                    }
-                },
-
-                async loadHistory() {
                     try {
-                        const res = await fetch('/api/history');
-                        this.recentSongs = await res.json();
-                        this.refreshLucide();
+                        await fetch('/api/playlists', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: this.newPlaylistName.trim() })
+                        });
+                        this.newPlaylistName = '';
+                        this.fetchPlaylists();
                     } catch (e) {}
                 },
 
-                formatTime(sec) {
-                    if (!sec || isNaN(sec) || sec <= 0) return '0:00';
-                    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-                    return `${m}:${s.toString().padStart(2, '0')}`;
+                async playPlaylist(id) {
+                    try {
+                        await fetch(`/api/playlists/${id}/play`, { method: 'POST' });
+                    } catch (e) {}
+                },
+
+                async deletePlaylist(id) {
+                    try {
+                        await fetch(`/api/playlists/${id}`, { method: 'DELETE' });
+                        this.fetchPlaylists();
+                    } catch (e) {}
+                },
+
+                async saveCustomization() {
+                    try {
+                        await fetch('/api/system/customize', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                bluetooth_name: this.customBtName,
+                                hostname: this.customHostname
+                            })
+                        });
+                        this.showSettingsModal = false;
+                        this.fetchMetrics();
+                    } catch (e) {}
+                },
+
+                async resetDatabase() {
+                    if (!confirm('Are you sure you want to clear all history, queue, and playlists?')) return;
+                    try {
+                        await fetch('/api/system/reset-db', { method: 'POST' });
+                        this.showSettingsModal = false;
+                        this.fetchStatus();
+                    } catch (e) {}
+                },
+
+                formatTime(secs) {
+                    if (!secs || isNaN(secs)) return '0:00';
+                    const m = Math.floor(secs / 60);
+                    const s = Math.floor(secs % 60);
+                    return `${m}:${s < 10 ? '0' : ''}${s}`;
                 }
-            };
+            }
         }
     </script>
 </body>

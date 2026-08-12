@@ -54,9 +54,11 @@ class AudioService:
                 "id": key,
                 "name": val["name"],
                 "active": (key == self.current_output),
-                "icon": val.get("icon", "fa-volume-up")
+                "icon": val.get("icon", "fa-volume-up"),
+                "type": val.get("type", "analog")
             })
         return devices
+
 
     def set_output_device(self, device_id: str) -> Dict:
         if device_id not in AUDIO_OUTPUT_DEVICES:
