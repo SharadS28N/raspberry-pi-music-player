@@ -86,6 +86,8 @@ class MPVPlayer:
                 "--demuxer-readahead-secs=8",
                 "--network-timeout=5",
                 f"--input-ipc-server={self.socket_path}",
+                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                '--referrer=https://www.youtube.com/',
                 "--no-video"
             ]
             if sys.platform.startswith("linux"):
@@ -93,7 +95,6 @@ class MPVPlayer:
 
             if os.path.exists(ytdl_path):
                 cmd.append(f"--ytdl-path={ytdl_path}")
-
 
             logger.info(f"Auto-starting mpv process: {' '.join(cmd)}")
             creationflags = 0
@@ -191,9 +192,12 @@ class MPVPlayer:
             self.sim_duration = float(duration)
         self.sim_last_update = time.time()
         
+        self._send_command(["set_property", "user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"])
+        self._send_command(["set_property", "referrer", "https://www.youtube.com/"])
         res = self._send_command(["loadfile", url, "replace"])
         self._send_command(["set_property", "pause", False])
         return res or {"status": "ok"}
+
 
     def pause(self):
         self._update_sim_pos()
