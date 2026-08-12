@@ -73,14 +73,12 @@ class MPVPlayer:
             return
 
         try:
-            audio_dev = "alsa/sysdefault:CARD=Headphones" if sys.platform.startswith("linux") else "alsa/plughw:CARD=Headphones,DEV=0"
             ytdl_path = "/home/aamps/raspberry-pi-music-player/venv/bin/yt-dlp"
             cmd = [
                 MPV_COMMAND,
                 "--idle=yes",
                 "--ytdl=yes",
                 "--ytdl-format=bestaudio/best",
-                f"--audio-device={audio_dev}",
                 "--cache=yes",
                 "--demuxer-max-bytes=8M",
                 "--demuxer-readahead-secs=8",
@@ -90,8 +88,6 @@ class MPVPlayer:
                 '--referrer=https://www.youtube.com/',
                 "--no-video"
             ]
-            if sys.platform.startswith("linux"):
-                cmd.append("--ao=alsa")
 
             if os.path.exists(ytdl_path):
                 cmd.append(f"--ytdl-path={ytdl_path}")
@@ -101,15 +97,23 @@ class MPVPlayer:
             if sys.platform == "win32":
                 creationflags = subprocess.CREATE_NO_WINDOW
 
+            env = os.environ.copy()
+            if sys.platform.startswith("linux"):
+                env["XDG_RUNTIME_DIR"] = "/run/user/1000"
+                if os.path.exists("/run/user/1000/pulse/native"):
+                    env["PULSE_SERVER"] = "unix:/run/user/1000/pulse/native"
+
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                creationflags=creationflags
+                creationflags=creationflags,
+                env=env
             )
             time.sleep(1.2)
         except Exception as e:
             logger.warning(f"Could not spawn mpv binary ({e}). Using integrated software player state.")
+
 
     def _connect(self):
         if self.sock or self.pipe_file:

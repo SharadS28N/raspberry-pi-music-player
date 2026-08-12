@@ -55,7 +55,13 @@ def ensure_ssl_certs(ip):
 
 
 def main():
+    if sys.platform.startswith("linux"):
+        os.environ["XDG_RUNTIME_DIR"] = "/run/user/1000"
+        if os.path.exists("/run/user/1000/pulse/native"):
+            os.environ["PULSE_SERVER"] = "unix:/run/user/1000/pulse/native"
+
     print("=" * 60)
+
     print("      pi-aamps — Pi Advanced Audio & Music Player System")
     print("=" * 60)
 
