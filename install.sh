@@ -34,7 +34,15 @@ echo "[+] Deploying pi-aamps files to ${INSTALL_DIR}..."
 mkdir -p "$INSTALL_DIR"
 cp -rf backend frontend run.py requirements.txt LICENSE README.md "$INSTALL_DIR/"
 
+RUN_USER="aamps"
+if ! id "$RUN_USER" &>/dev/null; then
+  RUN_USER="root"
+fi
+
+chown -R "${RUN_USER}:${RUN_USER}" "$INSTALL_DIR"
+
 echo "[+] Setting up Python virtual environment..."
+
 if [ ! -d "$INSTALL_DIR/venv" ]; then
   python3 -m venv "$INSTALL_DIR/venv"
 fi
@@ -44,7 +52,10 @@ fi
 # Ensure yt-dlp is up to date inside venv
 "$INSTALL_DIR/venv/bin/pip" install --upgrade yt-dlp
 
+chown -R "${RUN_USER}:${RUN_USER}" "$INSTALL_DIR"
+
 echo "[+] Configuring ALSA audio volume levels..."
+
 amixer sset Master 60% unmute || true
 amixer sset Headphones 60% unmute || true
 amixer sset PCM 60% unmute || true
