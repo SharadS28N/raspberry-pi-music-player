@@ -201,9 +201,9 @@ async def play(request: PlayRequest):
 
     video_url = request.url
     
-    # Resolve direct stream URL via yt-dlp visionos client
-    audio_url = await asyncio.to_thread(youtube.get_audio_url, video_url)
-    target_play_url = audio_url if (audio_url and audio_url.startswith("http")) else video_url
+    # Pass original video_url directly to MPV for continuous native streaming via yt-dlp
+    target_play_url = video_url
+
 
 
 
