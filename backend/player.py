@@ -65,8 +65,10 @@ class MPVPlayer:
         self.current_eq = "normal"
         self.req_counter = 1
         self._buf = ""
+        self.ytdl_stream_proc: Optional[subprocess.Popen] = None
 
         self._connect()
+
 
     def _spawn_mpv(self):
         if self.process and self.process.poll() is None:
@@ -209,15 +211,44 @@ class MPVPlayer:
         if duration and duration > 0:
             self.sim_duration = float(duration)
         self.sim_last_update = time.time()
-        
-        self._send_command(["set_property", "http-header-fields", [
-            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer: https://www.youtube.com/"
-        ]])
-        res = self._send_command(["loadfile", url, "replace"])
 
+        # Stop previous stream process if running
+        if hasattr(self, 'ytdl_stream_proc') and self.ytdl_stream_proc:
+            try:
+                self.ytdl_stream_proc.kill()
+                self.ytdl_stream_proc.wait(timeout=1)
+            except Exception:
+                pass
+            self.ytdl_stream_proc = None
+
+        target_url = url
+        if sys.platform.startswith("linux") and ("youtube.com" in url or "youtu.be" in url or "googlevideo.com" in url):
+            venv_bin = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "venv", "bin", "yt-dlp")
+            ytdl_bin = venv_bin if os.path.exists(venv_bin) else "/home/aamps/pi-aamps/venv/bin/yt-dlp"
+            
+            fifo = "/tmp/pi-aamps-stream.fifo"
+            if os.path.exists(fifo):
+                try:
+                    os.remove(fifo)
+                except Exception:
+                    pass
+            try:
+                os.mkfifo(fifo)
+            except Exception:
+                pass
+
+            logger.info(f"Spawning yt-dlp FIFO stream process for {url}")
+            self.ytdl_stream_proc = subprocess.Popen(
+                [ytdl_bin, "-f", "bestaudio/best", "-o", fifo, url],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            target_url = fifo
+
+        res = self._send_command(["loadfile", target_url, "replace"])
         self._send_command(["set_property", "pause", False])
         return res or {"status": "ok"}
+
 
 
     def pause(self):
