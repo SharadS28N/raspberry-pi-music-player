@@ -15,14 +15,17 @@ logger = logging.getLogger(__name__)
 EQ_PRESETS = {
     "normal": "",
     "bass": "lavfi=[equalizer=f=60:width_type=h:width=50:g=7,equalizer=f=150:width_type=h:width=100:g=4]",
+    "bass_boost": "lavfi=[equalizer=f=60:width_type=h:width=50:g=7,equalizer=f=150:width_type=h:width=100:g=4]",
     "vocal": "lavfi=[highpass=f=80,lowpass=f=12000,equalizer=f=1000:width_type=h:width=500:g=4]",
     "treble": "lavfi=[equalizer=f=8000:width_type=h:width=2000:g=6,equalizer=f=12000:width_type=h:width=3000:g=4]",
     "party": "lavfi=[equalizer=f=60:width_type=h:width=50:g=6,equalizer=f=10000:width_type=h:width=3000:g=5]",
+    "pop": "lavfi=[equalizer=f=120:width_type=h:width=60:g=4,equalizer=f=1000:width_type=h:width=500:g=3,equalizer=f=8000:width_type=h:width=2000:g=4]",
     "rock": "lavfi=[equalizer=f=60:width_type=h:width=40:g=5,equalizer=f=250:width_type=h:width=150:g=3,equalizer=f=4000:width_type=h:width=1000:g=4,equalizer=f=12000:width_type=h:width=3000:g=5]",
     "jazz": "lavfi=[equalizer=f=100:width_type=h:width=50:g=3,equalizer=f=500:width_type=h:width=250:g=-2,equalizer=f=3000:width_type=h:width=1000:g=3,equalizer=f=10000:width_type=h:width=3000:g=4]",
     "electronic": "lavfi=[equalizer=f=50:width_type=h:width=30:g=8,equalizer=f=120:width_type=h:width=60:g=5,equalizer=f=8000:width_type=h:width=2000:g=6]",
     "acoustic": "lavfi=[equalizer=f=120:width_type=h:width=60:g=3,equalizer=f=1000:width_type=h:width=500:g=3,equalizer=f=6000:width_type=h:width=1500:g=4]"
 }
+
 
 
 def build_10band_eq_filter(bands: Dict[str, float]) -> str:
