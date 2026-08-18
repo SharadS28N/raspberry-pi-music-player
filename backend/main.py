@@ -199,9 +199,9 @@ async def play(request: PlayRequest):
     current_play_request_id += 1
     this_request_id = current_play_request_id
 
-    # Resolve direct audio stream url via yt-dlp
-    audio_url = await asyncio.to_thread(youtube.get_audio_url, video_url)
-    target_play_url = audio_url if (audio_url and audio_url.startswith("http")) else video_url
+    song_url = request.url
+    target_play_url = song_url
+
 
 
 
