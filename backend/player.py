@@ -88,9 +88,10 @@ class MPVPlayer:
                 "--network-timeout=5",
                 f"--input-ipc-server={self.socket_path}",
                 '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                '--referrer=https://www.youtube.com/',
+                "--ytdl-raw-options=extractor-args=youtube:player_client=visionos,remote-components=ejs:github",
                 "--no-video"
             ]
+
 
             if os.path.exists(ytdl_path):
                 cmd.append(f"--script-opts=ytdl_hook-ytdl_path={ytdl_path}")
