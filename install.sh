@@ -14,8 +14,9 @@ fi
 echo "[+] Updating apt repositories..."
 apt-get update -y
 
-echo "[+] Installing system dependencies (git, MPV, FFmpeg, BlueZ, ALSA, Python3)..."
-apt-get install -y git python3 python3-pip python3-venv mpv ffmpeg alsa-utils bluez pulseaudio shairport-sync gmediarender
+echo "[+] Installing system dependencies (git, nodejs, MPV, FFmpeg, BlueZ, ALSA, Python3)..."
+apt-get install -y git nodejs python3 python3-pip python3-venv mpv ffmpeg alsa-utils bluez pulseaudio shairport-sync gmediarender
+
 
 TMP_REPO="/tmp/pi-aamps-install-repo"
 if [ ! -f "run.py" ]; then
