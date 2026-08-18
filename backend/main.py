@@ -201,12 +201,10 @@ async def play(request: PlayRequest):
 
     video_url = request.url
     
-    # For YouTube videos, pass original video_url directly to MPV for continuous native streaming via ytdl_hook
-    if "youtube.com" in video_url or "youtu.be" in video_url:
-        target_play_url = video_url
-    else:
-        audio_url = await asyncio.to_thread(youtube.get_audio_url, video_url)
-        target_play_url = audio_url if (audio_url and audio_url.startswith("http")) else video_url
+    # Resolve direct stream URL via yt-dlp visionos client
+    audio_url = await asyncio.to_thread(youtube.get_audio_url, video_url)
+    target_play_url = audio_url if (audio_url and audio_url.startswith("http")) else video_url
+
 
 
     # Cancel stale out-of-order request if user clicked another song quickly

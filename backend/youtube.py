@@ -33,10 +33,12 @@ def search_songs(query: str, limit: int = 12) -> List[Dict]:
         "ignoreerrors": True,
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web"]
+                "player_client": ["visionos", "mweb", "android"]
             }
         }
     }
+
+
 
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -85,11 +87,10 @@ def get_audio_url(youtube_url: str) -> str:
         "noplaylist": True,
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "web"]
+                "player_client": ["visionos", "mweb", "android"]
             }
         }
     }
-
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
@@ -108,6 +109,7 @@ def get_audio_url(youtube_url: str) -> str:
         except Exception as e:
             logger.error(f"Error extracting direct audio URL: {e}")
             return youtube_url
+
 
 
 def get_related_songs(title: str, artist: Optional[str] = "", limit: int = 5) -> List[Dict]:
