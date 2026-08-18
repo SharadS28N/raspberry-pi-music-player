@@ -215,10 +215,10 @@ async def play(request: PlayRequest):
     player.play(target_play_url, duration=duration)
 
     video_id = ""
-    if "v=" in video_url:
-        video_id = video_url.split("v=")[1].split("&")[0]
-    elif request.url:
-        video_id = request.url.split("/")[-1]
+    if "v=" in song_url:
+        video_id = song_url.split("v=")[1].split("&")[0]
+    elif song_url:
+        video_id = song_url.split("/")[-1]
 
     thumbnail = request.thumbnail
     if not thumbnail and video_id:
@@ -227,7 +227,8 @@ async def play(request: PlayRequest):
     current_song = {
         "title": request.title or "Unknown Song",
         "artist": request.artist or "YouTube",
-        "url": video_url,
+        "url": song_url,
+
         "thumbnail": thumbnail,
         "duration": duration,
         "id": video_id
