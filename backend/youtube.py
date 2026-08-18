@@ -31,7 +31,13 @@ def search_songs(query: str, limit: int = 12) -> List[Dict]:
         "youtube_include_dash_manifest": False,
         "youtube_include_hls_manifest": False,
         "ignoreerrors": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"]
+            }
+        }
     }
+
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
@@ -77,7 +83,13 @@ def get_audio_url(youtube_url: str) -> str:
         "extract_flat": False,
         "nocheckcertificate": True,
         "noplaylist": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"]
+            }
+        }
     }
+
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
