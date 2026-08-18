@@ -73,8 +73,10 @@ class MPVPlayer:
             return
 
         try:
-            ytdl_path = "/home/aamps/raspberry-pi-music-player/venv/bin/yt-dlp"
+            venv_bin = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "venv", "bin", "yt-dlp")
+            ytdl_path = venv_bin if os.path.exists(venv_bin) else "/home/aamps/pi-aamps/venv/bin/yt-dlp"
             cmd = [
+
                 MPV_COMMAND,
                 "--idle=yes",
                 "--terminal=no",
