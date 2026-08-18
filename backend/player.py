@@ -91,7 +91,8 @@ class MPVPlayer:
             ]
 
             if os.path.exists(ytdl_path):
-                cmd.append(f"--ytdl-path={ytdl_path}")
+                cmd.append(f"--script-opts=ytdl_hook-ytdl_path={ytdl_path}")
+
 
             logger.info(f"Auto-starting mpv process: {' '.join(cmd)}")
             creationflags = 0

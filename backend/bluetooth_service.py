@@ -39,8 +39,12 @@ class BluetoothService:
             return
 
         try:
+            # Unblock bluetooth via rfkill if soft-blocked on Raspberry Pi OS
+            subprocess.run(["rfkill", "unblock", "bluetooth"], capture_output=True)
+            subprocess.run(["sudo", "rfkill", "unblock", "bluetooth"], capture_output=True)
             # We spawn an interactive bluetoothctl shell session that registers NoInputNoOutput default-agent
             cmd = ["bluetoothctl"]
+
             self._agent_process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,

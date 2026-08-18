@@ -42,9 +42,12 @@ class AudioService:
         if not self.is_linux:
             return
         vol_str = f"{volume}%"
+        self._run_cmd(["amixer", "-c", "0", "sset", "PCM", vol_str, "unmute"])
+        self._run_cmd(["amixer", "-c", "Headphones", "sset", "PCM", vol_str, "unmute"])
         self._run_cmd(["amixer", "sset", "Master", vol_str, "unmute"])
         self._run_cmd(["amixer", "sset", "Headphones", vol_str, "unmute"])
         self._run_cmd(["amixer", "sset", "PCM", vol_str, "unmute"])
+
 
     def get_output_devices(self) -> List[Dict]:
         devices = []
