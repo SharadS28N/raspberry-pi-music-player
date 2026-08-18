@@ -199,10 +199,10 @@ async def play(request: PlayRequest):
     current_play_request_id += 1
     this_request_id = current_play_request_id
 
-    video_url = request.url
-    
-    # Pass original video_url directly to MPV for continuous native streaming via yt-dlp
-    target_play_url = video_url
+    # Resolve direct audio stream url via yt-dlp
+    audio_url = await asyncio.to_thread(youtube.get_audio_url, video_url)
+    target_play_url = audio_url if (audio_url and audio_url.startswith("http")) else video_url
+
 
 
 

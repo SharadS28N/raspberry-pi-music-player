@@ -210,9 +210,12 @@ class MPVPlayer:
             self.sim_duration = float(duration)
         self.sim_last_update = time.time()
         
-        self._send_command(["set_property", "user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"])
-        self._send_command(["set_property", "referrer", "https://www.youtube.com/"])
+        self._send_command(["set_property", "http-header-fields", [
+            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer: https://www.youtube.com/"
+        ]])
         res = self._send_command(["loadfile", url, "replace"])
+
         self._send_command(["set_property", "pause", False])
         return res or {"status": "ok"}
 
