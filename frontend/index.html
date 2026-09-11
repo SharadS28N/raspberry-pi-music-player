@@ -262,8 +262,10 @@
                             </div>
                             <div class="flex items-center gap-1.5">
                                 <button @click="playSong(song)" class="btn-black px-3 py-1.5 text-xs">Play</button>
-                                <button @click="addToQueue(song)" class="btn-outline px-2.5 py-1.5 text-xs"><i class="fa-solid fa-plus"></i></button>
+                                <button @click="addToQueue(song)" title="Add to Queue" class="btn-outline px-2.5 py-1.5 text-xs"><i class="fa-solid fa-plus"></i></button>
+                                <button @click="downloadSong(song)" title="Download Track" class="btn-outline px-2.5 py-1.5 text-xs"><i class="fa-solid fa-download"></i></button>
                             </div>
+
                         </div>
                     </template>
                 </div>
@@ -354,8 +356,34 @@
                                            class="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-black">
                                     <span class="text-xs font-mono text-zinc-600 w-10 text-right font-bold" x-text="(playerState.volume || 60) + '%'"></span>
                                 </div>
+
+                                <!-- 3. Audio Output Target Switcher & Bluetooth Receiver Toggle -->
+                                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-zinc-100 w-full text-xs">
+                                    <div class="flex items-center gap-1.5 font-bold text-zinc-800">
+                                        <i class="fa-solid fa-tower-broadcast text-zinc-500"></i>
+                                        <span>Output Target:</span>
+                                    </div>
+                                    <div class="flex bg-zinc-100 p-1 rounded-xl gap-1 w-full sm:w-auto justify-center">
+                                        <button @click="setAudioTarget('PI_SPEAKER')" :class="audioTarget === 'PI_SPEAKER' ? 'bg-black text-white font-bold shadow' : 'text-zinc-600 hover:text-black'" class="px-3 py-1.5 rounded-lg transition text-[11px] flex items-center gap-1">
+                                            <i class="fa-solid fa-radio"></i> 📻 Raspberry Pi Speaker
+                                        </button>
+                                        <button @click="setAudioTarget('PHONE_LOCAL')" :class="audioTarget === 'PHONE_LOCAL' ? 'bg-black text-white font-bold shadow' : 'text-zinc-600 hover:text-black'" class="px-3 py-1.5 rounded-lg transition text-[11px] flex items-center gap-1">
+                                            <i class="fa-solid fa-mobile-screen"></i> 📱 This Phone Speaker
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-2 text-xs">
+                                    <span class="font-bold text-zinc-700 flex items-center gap-1.5">
+                                        <i class="fa-brands fa-bluetooth-b text-blue-600"></i> Pi Bluetooth Speaker Mode
+                                    </span>
+                                    <button @click="toggleBluetoothPower()" :class="bluetoothStatus.powered ? 'bg-emerald-600 text-white font-bold' : 'bg-zinc-200 text-zinc-700'" class="px-3 py-1 rounded-lg text-[11px] transition">
+                                        <span x-text="bluetoothStatus.powered ? 'ON (Discoverable)' : 'OFF'"></span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
+
 
 
                         <!-- AI Track Insights & Acoustic Analytics Widget -->
@@ -669,6 +697,9 @@
 
                 playerState: { paused: true, position: 0, duration: 0, volume: 60 },
                 masterVolume: 60,
+                audioTarget: 'PI_SPEAKER', // 'PI_SPEAKER' or 'PHONE_LOCAL'
+                localAudio: null,
+
 
 
                 currentSong: null,
@@ -796,17 +827,79 @@
                     } catch (e) {}
                 },
 
-                async playSong(song) {
+                setAudioTarget(target) {
+                    this.audioTarget = target;
+                    if (target === 'PHONE_LOCAL' && !this.playerState.paused) {
+                        fetch('/api/pause', { method: 'POST' });
+                    } else if (target === 'PI_SPEAKER' && this.localAudio) {
+                        this.localAudio.pause();
+                    }
+                },
+
+                async toggleBluetoothPower() {
+                    const current = this.bluetoothStatus ? this.bluetoothStatus.powered : true;
                     try {
-                        await fetch('/api/play', {
+                        const res = await fetch('/api/bluetooth/power', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(song)
+                            body: JSON.stringify({ power: !current })
                         });
-                        this.currentSong = song;
-                        this.fetchAiInsights();
-                    } catch (e) {}
+                        const data = await res.json();
+                        if (data.powered !== undefined) {
+                            this.bluetoothStatus.powered = data.powered;
+                        }
+                    } catch(e) {}
                 },
+
+                async playSong(song) {
+                    this.currentSong = song;
+                    if (this.audioTarget === 'PHONE_LOCAL') {
+                        try {
+                            if (!this.localAudio) {
+                                this.localAudio = new Audio();
+                            }
+                            const res = await fetch(`/api/search?q=${encodeURIComponent(song.title + ' ' + (song.artist || ''))}`);
+                            const results = await res.json();
+                            const targetUrl = (results && results[0]) ? results[0].url : song.url;
+                            
+                            this.localAudio.src = targetUrl;
+                            this.localAudio.play();
+                            this.playerState.paused = false;
+                        } catch (e) {
+                            console.error('Local playback error:', e);
+                        }
+                    } else {
+                        if (this.localAudio) this.localAudio.pause();
+                        try {
+                            await fetch('/api/play', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(song)
+                            });
+                        } catch (e) {}
+                    }
+                    this.fetchAiInsights();
+                },
+
+                async downloadSong(song) {
+                    try {
+                        const query = encodeURIComponent(song.title + ' ' + (song.artist || ''));
+                        const res = await fetch(`/api/search?q=${query}`);
+                        const results = await res.json();
+                        const downloadUrl = (results && results[0]) ? results[0].url : song.url;
+                        
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.download = `${song.title.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+                        a.target = '_blank';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch(e) {
+                        console.error('Download error:', e);
+                    }
+                },
+
 
                 async addToQueue(song) {
                     try {
