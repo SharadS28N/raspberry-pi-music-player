@@ -142,7 +142,9 @@ async def get_app_info():
 
 @app.get("/api/app/download")
 async def download_app_apk():
-    apk_path = os.path.join(BASE_DIR, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk")
+    apk_path = os.path.join(BASE_DIR, "releases", "OpenAamps-v2.6.0.apk")
+    if not os.path.exists(apk_path):
+        apk_path = os.path.join(BASE_DIR, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk")
     if os.path.exists(apk_path):
         return FileResponse(
             apk_path,

@@ -8,6 +8,12 @@
   <img src="https://img.shields.io/badge/Platform-Raspberry%20Pi%203%2F4%2F5%2FZero2W-red?style=for-the-badge&logo=raspberrypi" alt="Platform">
 </p>
 
+<p align="center">
+  <a href="releases/OpenAamps-v2.6.0.apk">
+    <img src="https://img.shields.io/badge/📥%20Download-OpenAamps%20v2.6.0%20Android%20APK-brightgreen?style=for-the-badge&logo=android" alt="Download OpenAamps APK">
+  </a>
+</p>
+
 ---
 
 ## 🌟 Overview
