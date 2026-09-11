@@ -128,8 +128,25 @@ SOFTWARE_VERSION: str = "v2.5.0-production"
 
 
 
+@app.get("/api/app/info")
+async def get_app_info():
+    return {
+        "name": "pi-aamps Companion & Music Player",
+        "version": "2.6.0",
+        "package_id": "com.piaamps.musicplayer",
+        "features": [
+            "Dual Audio Output Engine (Phone Local vs Raspberry Pi Speaker)",
+            "Real-time WebSocket Sync with Laptop Web OS & Pi Hardware",
+            "10-Band Equalizer & ALSA PCM Master Hardware Volume Controls",
+            "1-Tap Bluetooth Speaker Mode Toggle (ON/OFF)",
+            "YouTube & Spotify Stream Search & Offline Track Downloading"
+        ]
+    }
+
+
 # Serve PWA manifest and service worker at root paths
 @app.get("/manifest.json")
+
 async def get_manifest():
     manifest_path = os.path.join(os.path.dirname(BASE_DIR), "frontend", "manifest.json")
     if os.path.exists(manifest_path):
@@ -846,21 +863,8 @@ async def websocket_endpoint(websocket: WebSocket):
             poll_task.cancel()
 
 
-@app.get("/api/app/info")
 
-async def get_app_info():
-    return {
-        "name": "pi-aamps Companion & Music Player",
-        "version": "2.6.0",
-        "package_id": "com.piaamps.musicplayer",
-        "features": [
-            "Dual Audio Output Engine (Phone Local vs Raspberry Pi Speaker)",
-            "Real-time WebSocket Sync with Laptop Web OS & Pi Hardware",
-            "10-Band Equalizer & ALSA PCM Master Hardware Volume Controls",
-            "1-Tap Bluetooth Speaker Mode Toggle (ON/OFF)",
-            "YouTube & Spotify Stream Search & Offline Track Downloading"
-        ]
-    }
+
 
 
 
