@@ -152,7 +152,10 @@ async def download_app_apk():
             filename="OpenAamps-v2.6.0.apk"
         )
     from fastapi.responses import RedirectResponse
-    return RedirectResponse("https://raw.githubusercontent.com/SharadS28N/raspberry-pi-music-player/main/releases/OpenAamps-v2.6.0.apk")
+    return RedirectResponse(
+        "https://raw.githubusercontent.com/SharadS28N/raspberry-pi-music-player/main/releases/OpenAamps-v2.6.0.apk",
+        status_code=302
+    )
 
 
 # Serve PWA manifest and service worker at root paths
