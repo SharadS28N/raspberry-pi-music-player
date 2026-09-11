@@ -26,7 +26,8 @@ from audio_service import audio_service
 from hifi_services import hifi_service_manager, get_system_metrics
 from websocket import manager, broadcast_state_update
 
-app = FastAPI(title="pi-aamps")
+app = FastAPI(title="pi-aamps", version="2.6.0")
+
 
 # Initialize database
 database.init_database()

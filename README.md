@@ -1,7 +1,8 @@
 # 🎵 pi-aamps — Pi Advanced Audio & Music Player System
 
 <p align="center">
-  <img src="https://img.shields.io/badge/pi--aamps-v2.5.0--production-blue?style=for-the-badge&logo=raspberrypi&logoColor=white" alt="pi-aamps Version">
+  <img src="https://img.shields.io/badge/pi--aamps-v2.6.0--production-blue?style=for-the-badge&logo=raspberrypi&logoColor=white" alt="pi-aamps Version">
+
   <img src="https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github-actions" alt="Build Status">
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License">
   <img src="https://img.shields.io/badge/Platform-Raspberry%20Pi%203%2F4%2F5%2FZero2W-red?style=for-the-badge&logo=raspberrypi" alt="Platform">
