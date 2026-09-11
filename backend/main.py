@@ -846,6 +846,25 @@ async def websocket_endpoint(websocket: WebSocket):
             poll_task.cancel()
 
 
+@app.get("/api/app/info")
+
+async def get_app_info():
+    return {
+        "name": "pi-aamps Companion & Music Player",
+        "version": "2.6.0",
+        "package_id": "com.piaamps.musicplayer",
+        "features": [
+            "Dual Audio Output Engine (Phone Local vs Raspberry Pi Speaker)",
+            "Real-time WebSocket Sync with Laptop Web OS & Pi Hardware",
+            "10-Band Equalizer & ALSA PCM Master Hardware Volume Controls",
+            "1-Tap Bluetooth Speaker Mode Toggle (ON/OFF)",
+            "YouTube & Spotify Stream Search & Offline Track Downloading"
+        ]
+    }
+
+
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
