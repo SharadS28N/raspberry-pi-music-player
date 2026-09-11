@@ -131,16 +131,28 @@ SOFTWARE_VERSION: str = "v2.5.0-production"
 @app.get("/api/app/info")
 async def get_app_info():
     return {
-        "name": "pi-aamps Companion & Music Player",
+        "app_name": "OpenAamps",
+        "package_name": "com.openaamps.open_aamps",
         "version": "2.6.0",
-        "package_id": "com.piaamps.musicplayer",
-        "features": [
-            "Dual Audio Output Engine (Phone Local vs Raspberry Pi Speaker)",
-            "Real-time WebSocket Sync with Laptop Web OS & Pi Hardware",
-            "10-Band Equalizer & ALSA PCM Master Hardware Volume Controls",
-            "1-Tap Bluetooth Speaker Mode Toggle (ON/OFF)",
-            "YouTube & Spotify Stream Search & Offline Track Downloading"
-        ]
+        "description": "Standalone Android Music Player & pi-aamps Remote Control Hub",
+        "download_url": "/api/app/download",
+        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v2.6.0"
+    }
+
+
+@app.get("/api/app/download")
+async def download_app_apk():
+    apk_path = os.path.join(BASE_DIR, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk")
+    if os.path.exists(apk_path):
+        return FileResponse(
+            apk_path,
+            media_type="application/vnd.android.package-archive",
+            filename="OpenAamps-v2.6.0.apk"
+        )
+    return {
+        "status": "building_or_github_release",
+        "message": "Direct APK package build available on GitHub Releases page.",
+        "github_releases": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v2.6.0"
     }
 
 
@@ -869,32 +881,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 
-@app.get("/api/app/info")
-async def get_app_info():
-    return {
-        "app_name": "OpenAamps",
-        "package_name": "com.openaamps.open_aamps",
-        "version": "2.6.0",
-        "description": "Standalone Android Music Player & pi-aamps Remote Control Hub",
-        "download_url": "/api/app/download",
-        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/latest"
-    }
 
-
-@app.get("/api/app/download")
-async def download_app_apk():
-    apk_path = os.path.join(BASE_DIR, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk")
-    if os.path.exists(apk_path):
-        return FileResponse(
-            apk_path,
-            media_type="application/vnd.android.package-archive",
-            filename="OpenAamps-v2.6.0.apk"
-        )
-    return {
-        "status": "building_or_github_release",
-        "message": "Direct APK package build available on GitHub Releases page.",
-        "github_releases": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v2.6.0"
-    }
 
 
 if __name__ == "__main__":
