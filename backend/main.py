@@ -151,11 +151,8 @@ async def download_app_apk():
             media_type="application/vnd.android.package-archive",
             filename="OpenAamps-v2.6.0.apk"
         )
-    return {
-        "status": "building_or_github_release",
-        "message": "Direct APK package build available on GitHub Releases page.",
-        "github_releases": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v2.6.0"
-    }
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("https://raw.githubusercontent.com/SharadS28N/raspberry-pi-music-player/main/releases/OpenAamps-v2.6.0.apk")
 
 
 # Serve PWA manifest and service worker at root paths
