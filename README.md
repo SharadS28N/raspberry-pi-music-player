@@ -64,28 +64,41 @@ Whether connected to a high-end USB DAC, an audiophile HAT DAC (HiFiBerry, Allo 
   - Customize Raspberry Pi Hostname (`set_system_hostname`).
   - Clear and Reset Database with 1-click modal.
 - **Endless Autoplay & Real-Time Syncing**: WebSocket real-time broadcast across all connected browsers.
-- **Dual-Mode Android Mobile Music Player (.apk)**: A standalone open-source Android music player (like OpenTune/Echo Music) with local YouTube/Spotify streaming & downloads, combined with 1-tap remote control over Raspberry Pi speakers, 10-band EQ, and Bluetooth receiver mode.
+- **OpenAamps Dual-Mode Android App (.apk)**: A modern Flutter-based mobile music application (inspired by **OpenTune** and **ArchiveTune**) featuring YouTube Music streaming, offline `.mp3` track downloader, local device audio player, combined with 1-tap remote control over Raspberry Pi speakers, hardware ALSA volume, 10-band EQ, and Bluetooth receiver mode.
 
 ---
 
-## 📱 Dual-Mode Android Mobile Music Player & Companion App (`.apk`)
+## 📱 OpenAamps Mobile App (`.apk`) — Flutter Android Music Player & Pi Hub
 
-**pi-aamps** includes a standalone, open-source Android Mobile Application (inspired by **OpenTune**, **InnerTune**, and **Echo Music**) that serves two distinct roles:
+**OpenAamps** (located in [`mobile/`](file:///d:/Code/Projects/raspberry-pi-music-player/mobile)) is a standalone, open-source Android Mobile Application built with Flutter and Material Design 3 (inspired by **OpenTune** and **ArchiveTune**). It serves two distinct roles:
 
 ### 1. 📱 Open-Source Standalone Android Music Player (Phone Mode)
-- **YouTube & Spotify Music Streaming**: Search and stream high-quality music directly on your Android phone's speakers or headphones without needing a connection to a Raspberry Pi.
-- **Offline Track Downloader**: Download `.mp3` tracks directly to your phone device storage for offline playback anywhere.
-- **Local Queue & Playlist Management**: Organize tracks, create playlists, and view high-resolution album art & lyrics.
+- **YouTube Music Streaming & Search**: Search and stream high-quality music directly on your Android phone's speakers or headphones without needing a connection to a Raspberry Pi.
+- **Offline `.mp3` Track Downloader**: Download tracks directly to device storage for offline library playback anywhere.
+- **Local Queue & Playlist Management**: Organize tracks, manage playlists, and view high-resolution album art & lyrics.
 
-### 2. 📻 Raspberry Pi Remote Control & Real-Time Sync (Hub Mode)
-- **1-Tap Output Switcher**: Instantly switch audio output between `📱 This Phone Speaker` and `📻 Raspberry Pi Speaker` directly from the Now Playing bar.
-- **Bi-Directional WebSocket Sync**: Whatever plays or changes on your **Laptop Web Browser** stays 100% in sync with your **Android Phone App** and **Raspberry Pi Hardware**.
+### 2. 📻 pi-aamps Raspberry Pi Remote Control (Hub Mode)
+- **1-Tap Output Switcher**: Instantly toggle audio playback between `📱 This Phone Speaker` and `📻 pi-aamps (Raspberry Pi)` directly from the bottom mini-player bar.
+- **Bi-Directional WebSocket & REST Sync**: Real-time state synchronization with laptop web browsers and Raspberry Pi hardware.
 - **1-Tap Bluetooth Speaker Mode**: Toggle your Pi's Bluetooth Receiver ON/OFF from your phone. Turn it ON to transform your Raspberry Pi into a "Just Works" NoPIN Bluetooth A2DP wireless speaker.
 - **Remote Hardware Volume & 10-Band Equalizer**: Control the Pi's ALSA PCM hardware volume and 10-band equalizer presets (`Bass Boost`, `Rock`, `Vocal`, `Jazz`) from anywhere on your WiFi network.
 
-### 📥 Installing the Android App
-Open `http://<pi-ip>:8000` (e.g. `http://192.168.18.159:8000`) in Chrome on your Android phone, tap **"Install App"** on the banner, or select **"Add to Home Screen"** to install the standalone application.
+### 🛠️ Building the OpenAamps `.apk`
+To build the standalone `.apk` package for Android using Flutter:
 
+```bash
+# Navigate to the mobile directory
+cd mobile
+
+# Run Flutter code analysis
+flutter analyze
+
+# Build Release APK for Android devices
+flutter build apk --release
+```
+
+The compiled Android `.apk` package will be located at:
+`mobile/build/app/outputs/flutter-apk/app-release.apk`
 
 ---
 
