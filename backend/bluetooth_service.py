@@ -42,7 +42,11 @@ class BluetoothService:
             # Unblock bluetooth via rfkill if soft-blocked on Raspberry Pi OS
             subprocess.run(["rfkill", "unblock", "bluetooth"], capture_output=True)
             subprocess.run(["sudo", "rfkill", "unblock", "bluetooth"], capture_output=True)
-            # We spawn an interactive bluetoothctl shell session that registers NoInputNoOutput default-agent
+            
+            # Ensure Bluetooth class is hardcoded to A2DP Audio Speaker / Receiver (0x20041C)
+            subprocess.run(["sudo", "hciconfig", "hci0", "class", "0x20041C"], capture_output=True)
+            subprocess.run(["sudo", "hciconfig", "hci0", "piscan"], capture_output=True)
+
             cmd = ["bluetoothctl"]
 
             self._agent_process = subprocess.Popen(
@@ -60,7 +64,7 @@ class BluetoothService:
                 self._agent_process.stdin.write("pairable on\n")
                 self._agent_process.stdin.write("discoverable on\n")
                 self._agent_process.stdin.flush()
-            logger.info("Persistent BlueZ Bluetooth Agent started successfully")
+            logger.info("Persistent BlueZ Bluetooth Agent started successfully with NoInputNoOutput capability")
         except Exception as e:
             logger.error(f"Could not start BlueZ Bluetooth Agent process: {e}")
 
@@ -123,15 +127,11 @@ class BluetoothService:
         if power:
             self._run_cmd(["sudo", "rfkill", "unblock", "bluetooth"])
             self._run_cmd(["bluetoothctl", "power", "on"])
-            # Hardcode Bluetooth Device Class to Audio Speaker / Receiver (0x20041C)
             self._run_cmd(["sudo", "hciconfig", "hci0", "class", "0x20041C"])
             self._run_cmd(["sudo", "hciconfig", "hci0", "piscan"])
             self._start_agent()
             self._run_cmd(["bluetoothctl", "pairable", "on"])
             self._run_cmd(["bluetoothctl", "discoverable", "on"])
-            # Load PulseAudio Bluetooth Audio Sink Loopback
-            self._run_cmd(["pactl", "load-module", "module-loopback", "latency_msec=10"])
-            self._run_cmd(["pactl", "load-module", "module-switch-on-connect"])
             self.powered = True
             self.discoverable = True
         else:
@@ -142,6 +142,7 @@ class BluetoothService:
             self.discoverable = False
 
         return self.powered
+
 
 
 
