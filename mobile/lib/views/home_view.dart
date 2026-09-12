@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/track.dart';
 import '../services/audio_player_service.dart';
 import '../services/pi_aamps_service.dart';
+import 'stats_view.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   final Function(Track) onPlayTrack;
   final AudioTarget currentTarget;
   final PiAampsService piService;
@@ -16,212 +17,242 @@ class HomeView extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final trendingTracks = [
-      Track(
-        id: 'dQw4w9WgXcQ',
-        title: 'Never Gonna Give You Up',
-        artist: 'Rick Astley',
-        album: 'Whenever You Need Somebody',
-        artworkUrl: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
-        streamUrl: '',
-      ),
-      Track(
-        id: 'fJ9rUzIMcZQ',
-        title: 'Bohemian Rhapsody',
-        artist: 'Queen',
-        album: 'A Night at the Opera',
-        artworkUrl: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
-        streamUrl: '',
-      ),
-      Track(
-        id: '3JZ_D3ELwOQ',
-        title: 'Starboy',
-        artist: 'The Weeknd ft. Daft Punk',
-        album: 'Starboy',
-        artworkUrl: 'https://i.ytimg.com/vi/3JZ_D3ELwOQ/hqdefault.jpg',
-        streamUrl: '',
-      ),
-      Track(
-        id: '09R8_2nJtjg',
-        title: 'Sugar',
-        artist: 'Maroon 5',
-        album: 'V',
-        artworkUrl: 'https://i.ytimg.com/vi/09R8_2nJtjg/hqdefault.jpg',
-        streamUrl: '',
-      ),
-    ];
+  State<HomeView> createState() => _HomeViewState();
+}
 
+class _HomeViewState extends State<HomeView> {
+  String _selectedCategory = 'Feel good';
+
+  final List<String> _categories = [
+    'Feel good',
+    'Sad',
+    'Energize',
+    'Relax',
+    'Romance',
+    'Focus',
+  ];
+
+  final List<Map<String, String>> _artists = [
+    {
+      'name': 'aimyon',
+      'url': 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
+    },
+    {
+      'name': 'Yuika',
+      'url': 'https://i.ytimg.com/vi/3JZ_D3ELwOQ/hqdefault.jpg',
+    },
+    {
+      'name': '40mP',
+      'url': 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+    },
+    {
+      'name': 'Queen',
+      'url': 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
+    },
+    {
+      'name': 'Rick Astley',
+      'url': 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+    },
+  ];
+
+  final List<Track> _quickPicks = [
+    Track(
+      id: 'zarame_1',
+      title: 'ざらめ - Zarame',
+      artist: 'aimyon',
+      album: 'Zarame Single',
+      artworkUrl: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
+      streamUrl: '',
+    ),
+    Track(
+      id: 'iloveyou_2',
+      title: 'アイラブユー - I Love You',
+      artist: 'back number',
+      album: 'I Love You Single',
+      artworkUrl: 'https://i.ytimg.com/vi/3JZ_D3ELwOQ/hqdefault.jpg',
+      streamUrl: '',
+    ),
+    Track(
+      id: 'finale_3',
+      title: 'フィナーレ。 - Finale.',
+      artist: 'eill',
+      album: 'Finale Single',
+      artworkUrl: 'https://i.ytimg.com/vi/09R8_2nJtjg/hqdefault.jpg',
+      streamUrl: '',
+    ),
+    Track(
+      id: 'wish_4',
+      title: '会いに行くのに - Wish I could see you',
+      artist: 'aimyon',
+      album: 'Wish Single',
+      artworkUrl: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+      streamUrl: '',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Top Header with Branding & Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.cyanAccent.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'assets/logo.jpg',
+                          width: 34,
+                          height: 34,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 34,
+                            height: 34,
+                            decoration: const BoxDecoration(
+                              color: Colors.cyanAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'प',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        child: const Icon(Icons.music_note_rounded, color: Colors.cyanAccent, size: 28),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       const Text(
                         'OpenAamps',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: currentTarget == AudioTarget.piSpeaker
-                          ? Colors.purpleAccent.withValues(alpha: 0.2)
-                          : Colors.cyanAccent.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: currentTarget == AudioTarget.piSpeaker
-                            ? Colors.purpleAccent
-                            : Colors.cyanAccent,
-                        width: 1,
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.access_time_rounded, color: Colors.white70),
+                        tooltip: 'Stats',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const StatsView()),
+                          );
+                        },
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          currentTarget == AudioTarget.piSpeaker
-                              ? Icons.radio_rounded
-                              : Icons.phone_android_rounded,
-                          color: currentTarget == AudioTarget.piSpeaker
-                              ? Colors.purpleAccent
-                              : Colors.cyanAccent,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          currentTarget == AudioTarget.piSpeaker ? 'pi-aamps' : 'This Phone',
-                          style: TextStyle(
-                            color: currentTarget == AudioTarget.piSpeaker
-                                ? Colors.purpleAccent
-                                : Colors.cyanAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+                      IconButton(
+                        icon: const Icon(Icons.tune_rounded, color: Colors.white70),
+                        tooltip: 'Equalizer',
+                        onPressed: () {},
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.settings_outlined, color: Colors.white70),
+                        tooltip: 'Settings',
+                        onPressed: () {},
+                      ),
+                    ],
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              // Category / Mood Filter Chips
+              SizedBox(
+                height: 38,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final cat = _categories[index];
+                    final isSelected = cat == _selectedCategory;
+                    return ChoiceChip(
+                      label: Text(
+                        cat,
+                        style: TextStyle(
+                          color: isSelected ? Colors.black : Colors.white,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: Colors.white,
+                      backgroundColor: const Color(0xFF1E293B),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedCategory = cat;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 24),
 
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.purple.shade900.withValues(alpha: 0.6),
-                      Colors.indigo.shade900.withValues(alpha: 0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              // Quick Picks Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Quick picks',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'OpenTune + pi-aamps Engine',
-                      style: TextStyle(
-                        color: Colors.cyanAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Stream Local & Pi Hi-Fi Audio',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      currentTarget == AudioTarget.piSpeaker
-                          ? 'Connected to Raspberry Pi (192.168.18.159) — Playing via DAC Speaker'
-                          : 'Playing audio directly on this Android device speakers / headphones',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text('See all', style: TextStyle(color: Colors.cyanAccent)),
+                  ),
+                ],
               ),
-              const SizedBox(height: 28),
-
-              const Text(
-                '🔥 Trending Hits',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: trendingTracks.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemCount: _quickPicks.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
-                  final track = trendingTracks[index];
+                  final track = _quickPicks[index];
                   return Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B).withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                      color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                         child: Image.network(
                           track.artworkUrl,
-                          width: 50,
-                          height: 50,
+                          width: 48,
+                          height: 48,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
-                            width: 50,
-                            height: 50,
+                            width: 48,
+                            height: 48,
                             color: Colors.cyanAccent.withValues(alpha: 0.2),
                             child: const Icon(Icons.music_note_rounded, color: Colors.cyanAccent),
                           ),
@@ -232,7 +263,7 @@ class HomeView extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                          fontSize: 14,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -241,19 +272,125 @@ class HomeView extends StatelessWidget {
                         track.artist,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.cyanAccent, size: 36),
-                        onPressed: () => onPlayTrack(track),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.play_arrow_rounded, color: Colors.cyanAccent, size: 28),
+                            onPressed: () => widget.onPlayTrack(track),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert_rounded, color: Colors.white54, size: 20),
+                            onPressed: () {},
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
               ),
+              const SizedBox(height: 28),
+
+              // Keep Listening (Circular Artist Avatars)
+              const Text(
+                'Keep listening',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                height: 130,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _artists.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    final artist = _artists[index];
+                    return Column(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: NetworkImage(artist['url']!),
+                              fit: BoxFit.cover,
+                            ),
+                            border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3), width: 2),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          artist['name']!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Pi-aamps Dedicated Engine Banner
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.purple.shade900.withValues(alpha: 0.5),
+                      Colors.indigo.shade900.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.radio_rounded, color: Colors.purpleAccent, size: 36),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'pi-aamps Speaker Hub',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.currentTarget == AudioTarget.piSpeaker
+                                ? 'Active: Casted to Raspberry Pi Speaker'
+                                : 'Local mode: Connect to Pi Speaker anytime',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
