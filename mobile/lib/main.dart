@@ -122,9 +122,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: screens,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 70.0),
+            child: IndexedStack(
+              index: _currentIndex,
+              children: screens,
+            ),
           ),
           Positioned(
             left: 0,
