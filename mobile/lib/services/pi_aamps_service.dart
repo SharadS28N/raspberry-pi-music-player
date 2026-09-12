@@ -85,13 +85,19 @@ class PiAampsService {
       final ytUrl = track.id.startsWith('http')
           ? track.id
           : 'https://www.youtube.com/watch?v=${track.id}';
-      final res = await http.post(Uri.parse('$baseUrl/api/play?url=${Uri.encodeComponent(ytUrl)}'));
-      if (res.statusCode != 200) {
-        final query = Uri.encodeComponent('${track.title} ${track.artist}');
-        await http.post(Uri.parse('$baseUrl/api/play?query=$query'));
-      }
+      final payload = jsonEncode({
+        'url': ytUrl,
+        'title': track.title,
+        'artist': track.artist,
+        'thumbnail': track.artworkUrl,
+      });
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/play'),
+        headers: {'Content-Type': 'application/json'},
+        body: payload,
+      );
       fetchStatus();
-      return true;
+      return res.statusCode == 200;
     } catch (_) {
       return false;
     }
