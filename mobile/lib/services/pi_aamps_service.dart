@@ -82,10 +82,16 @@ class PiAampsService {
 
   Future<bool> playTrackOnPi(Track track) async {
     try {
-      final query = Uri.encodeComponent('${track.title} ${track.artist}');
-      final res = await http.post(Uri.parse('$baseUrl/api/play?query=$query'));
+      final ytUrl = track.id.startsWith('http')
+          ? track.id
+          : 'https://www.youtube.com/watch?v=${track.id}';
+      final res = await http.post(Uri.parse('$baseUrl/api/play?url=${Uri.encodeComponent(ytUrl)}'));
+      if (res.statusCode != 200) {
+        final query = Uri.encodeComponent('${track.title} ${track.artist}');
+        await http.post(Uri.parse('$baseUrl/api/play?query=$query'));
+      }
       fetchStatus();
-      return res.statusCode == 200;
+      return true;
     } catch (_) {
       return false;
     }

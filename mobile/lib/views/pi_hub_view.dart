@@ -46,13 +46,19 @@ class _PiHubViewState extends State<PiHubView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '📻 pi-aamps Remote Hub',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  const Icon(Icons.radio_rounded, color: Colors.purpleAccent, size: 28),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'pi-aamps Remote Hub',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
@@ -164,12 +170,18 @@ class _PiHubViewState extends State<PiHubView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // 10-Band Equalizer Presets
-              const Text(
-                '🎛️ 10-Band Equalizer Presets',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  const Icon(Icons.graphic_eq_rounded, color: Colors.purpleAccent, size: 22),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '10-Band Equalizer Presets',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -196,9 +208,15 @@ class _PiHubViewState extends State<PiHubView> {
               const SizedBox(height: 24),
 
               // Live System Hardware Telemetry
-              const Text(
-                '📊 Raspberry Pi Hardware Telemetry',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  const Icon(Icons.analytics_outlined, color: Colors.amberAccent, size: 22),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Raspberry Pi Hardware Telemetry',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Row(

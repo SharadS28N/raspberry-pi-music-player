@@ -1,16 +1,20 @@
 import 'package:just_audio/just_audio.dart';
 import '../models/track.dart';
+import 'youtube_service.dart';
 
 enum AudioTarget { phoneLocal, piSpeaker }
 
 class AudioPlayerService {
   final AudioPlayer _player = AudioPlayer();
+  final YoutubeService _ytService = YoutubeService();
   AudioTarget _target = AudioTarget.phoneLocal;
   Track? _currentTrack;
+  bool _isLoading = false;
 
   AudioPlayer get player => _player;
   AudioTarget get target => _target;
   Track? get currentTrack => _currentTrack;
+  bool get isLoading => _isLoading;
 
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
   Stream<Duration?> get durationStream => _player.durationStream;
@@ -26,15 +30,33 @@ class AudioPlayerService {
   Future<void> playTrack(Track track) async {
     _currentTrack = track;
     if (_target == AudioTarget.phoneLocal) {
+      _isLoading = true;
       try {
+        String? audioUrl = track.streamUrl;
         if (track.localPath != null && track.localPath!.isNotEmpty) {
           await _player.setFilePath(track.localPath!);
-        } else if (track.streamUrl.isNotEmpty) {
-          await _player.setUrl(track.streamUrl);
+        } else {
+          if (audioUrl.isEmpty) {
+            audioUrl = await _ytService.getAudioStreamUrl(track.id);
+          }
+          if (audioUrl != null && audioUrl.isNotEmpty) {
+            await _player.setUrl(audioUrl);
+          } else {
+            // Fallback stream URL from Pi backend or direct YouTube search
+            final fallbackUrl = 'http://192.168.18.159:8000/api/audio/stream?id=${track.id}';
+            await _player.setUrl(fallbackUrl);
+          }
         }
         await _player.play();
       } catch (e) {
-        // Handle playback error fallback
+        // Retry fallback stream
+        try {
+          final fallbackUrl = 'http://192.168.18.159:8000/api/audio/stream?id=${track.id}';
+          await _player.setUrl(fallbackUrl);
+          await _player.play();
+        } catch (_) {}
+      } finally {
+        _isLoading = false;
       }
     }
   }
@@ -56,10 +78,11 @@ class AudioPlayerService {
   }
 
   Future<void> setVolume(double volume) async {
-    await _player.setVolume(volume);
+    await _player.setVolume(volume / 100.0);
   }
 
   void dispose() {
     _player.dispose();
+    _ytService.dispose();
   }
 }

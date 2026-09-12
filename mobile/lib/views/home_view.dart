@@ -57,7 +57,7 @@ class _HomeViewState extends State<HomeView> {
 
   final List<Track> _quickPicks = [
     Track(
-      id: 'zarame_1',
+      id: 'fJ9rUzIMcZQ',
       title: 'ざらめ - Zarame',
       artist: 'aimyon',
       album: 'Zarame Single',
@@ -65,7 +65,7 @@ class _HomeViewState extends State<HomeView> {
       streamUrl: '',
     ),
     Track(
-      id: 'iloveyou_2',
+      id: '3JZ_D3ELwOQ',
       title: 'アイラブユー - I Love You',
       artist: 'back number',
       album: 'I Love You Single',
@@ -73,7 +73,7 @@ class _HomeViewState extends State<HomeView> {
       streamUrl: '',
     ),
     Track(
-      id: 'finale_3',
+      id: '09R8_2nJtjg',
       title: 'フィナーレ。 - Finale.',
       artist: 'eill',
       album: 'Finale Single',
@@ -81,7 +81,7 @@ class _HomeViewState extends State<HomeView> {
       streamUrl: '',
     ),
     Track(
-      id: 'wish_4',
+      id: 'dQw4w9WgXcQ',
       title: '会いに行くのに - Wish I could see you',
       artist: 'aimyon',
       album: 'Wish Single',
