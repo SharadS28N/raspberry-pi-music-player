@@ -10,6 +10,7 @@ ENV/
 *.egg-info/
 dist/
 build/
+reference/
 
 # Database & Storage
 database/*.db

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/track.dart';
 import '../services/audio_player_service.dart';
 import '../services/pi_aamps_service.dart';
+import '../services/account_service.dart';
+import '../services/integration_service.dart';
+import '../widgets/account_switcher_modal.dart';
+import '../widgets/spotify_import_modal.dart';
 import 'stats_view.dart';
 
 class HomeView extends StatefulWidget {
@@ -148,6 +152,25 @@ class _HomeViewState extends State<HomeView> {
                   Row(
                     children: [
                       IconButton(
+                        icon: const Icon(Icons.download_for_offline_rounded, color: Colors.cyanAccent),
+                        tooltip: 'Import Spotify Playlist',
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => SpotifyImportModal(
+                              integrationService: IntegrationService.instance,
+                              onImportSuccess: (importedTracks) {
+                                if (importedTracks.isNotEmpty) {
+                                  widget.onPlayTrack(importedTracks.first);
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
                         icon: const Icon(Icons.access_time_rounded, color: Colors.white70),
                         tooltip: 'Stats',
                         onPressed: () {
@@ -157,15 +180,25 @@ class _HomeViewState extends State<HomeView> {
                           );
                         },
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.tune_rounded, color: Colors.white70),
-                        tooltip: 'Equalizer',
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.settings_outlined, color: Colors.white70),
-                        tooltip: 'Settings',
-                        onPressed: () {},
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => AccountSwitcherModal(
+                              accountService: AccountService.instance,
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: Colors.pinkAccent.withValues(alpha: 0.3),
+                            child: const Icon(Icons.person_rounded, size: 18, color: Colors.pinkAccent),
+                          ),
+                        ),
                       ),
                     ],
                   ),

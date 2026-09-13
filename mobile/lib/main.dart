@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'models/track.dart';
 import 'services/audio_player_service.dart';
 import 'services/pi_aamps_service.dart';
+import 'services/account_service.dart';
+import 'services/local_audio_service.dart';
 import 'views/home_view.dart';
 import 'views/search_view.dart';
 import 'views/player_view.dart';
@@ -114,7 +116,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         piService: _piService,
       ),
       SearchView(onPlayTrack: _onPlayTrack),
-      LibraryView(onPlayTrack: _onPlayTrack),
+      LibraryView(
+        accountService: AccountService.instance,
+        localAudioService: LocalAudioService(),
+        onPlayTrack: _onPlayTrack,
+      ),
       PiHubView(piService: _piService),
     ];
 

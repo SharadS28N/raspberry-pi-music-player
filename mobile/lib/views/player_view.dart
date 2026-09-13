@@ -3,6 +3,7 @@ import '../models/track.dart';
 import '../services/audio_player_service.dart';
 import '../services/pi_aamps_service.dart';
 import 'lyrics_view.dart';
+import 'settings_view.dart';
 
 class PlayerView extends StatefulWidget {
   final Track track;
@@ -10,6 +11,7 @@ class PlayerView extends StatefulWidget {
   final AudioPlayerService audioService;
   final PiAampsService piService;
   final VoidCallback onToggleTarget;
+  final PlayerStyle playerStyle;
 
   const PlayerView({
     super.key,
@@ -18,22 +20,43 @@ class PlayerView extends StatefulWidget {
     required this.audioService,
     required this.piService,
     required this.onToggleTarget,
+    this.playerStyle = PlayerStyle.modern,
   });
 
   @override
   State<PlayerView> createState() => _PlayerViewState();
 }
 
-class _PlayerViewState extends State<PlayerView> {
+class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateMixin {
   bool _isPlaying = true;
-  double _currentPosition = 135.0; // 2:15
-  final double _totalDuration = 198.0; // 3:18 (-1:03 remaining)
+  double _currentPosition = 38.0; // 0:38 (Matching screenshot_7.jpg)
+  final double _totalDuration = 198.0; // 3:18
   double _volume = 80.0;
+  bool _isLiked = false;
+
+  late AnimationController _vinylController;
+
+  @override
+  void initState() {
+    super.initState();
+    _vinylController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _vinylController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final track = widget.track;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF090D16),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -47,14 +70,14 @@ class _PlayerViewState extends State<PlayerView> {
               widget.currentTarget == AudioTarget.piSpeaker ? 'PLAYING ON PI-AAMPS' : 'PLAYING ON THIS PHONE',
               style: TextStyle(
                 color: widget.currentTarget == AudioTarget.piSpeaker ? Colors.purpleAccent : Colors.cyanAccent,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
+                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              widget.track.album,
+              track.album,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
             ),
           ],
@@ -67,7 +90,7 @@ class _PlayerViewState extends State<PlayerView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LyricsView(track: widget.track),
+                  builder: (context) => LyricsView(track: track),
                 ),
               );
             },
@@ -80,15 +103,15 @@ class _PlayerViewState extends State<PlayerView> {
       ),
       body: Stack(
         children: [
-          // Blurred Artwork Background
+          // Blurred Backdrop Image
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage(widget.track.artworkUrl),
+                  image: NetworkImage(track.artworkUrl),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.85),
+                    Colors.black.withValues(alpha: widget.playerStyle == PlayerStyle.glassmorphism ? 0.75 : 0.90),
                     BlendMode.darken,
                   ),
                 ),
@@ -103,35 +126,12 @@ class _PlayerViewState extends State<PlayerView> {
                 children: [
                   const Spacer(),
 
-                  // Album Artwork Box
-                  Hero(
-                    tag: 'player_artwork',
-                    child: Container(
-                      width: 280,
-                      height: 280,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.currentTarget == AudioTarget.piSpeaker
-                                ? Colors.purpleAccent.withValues(alpha: 0.3)
-                                : Colors.cyanAccent.withValues(alpha: 0.3),
-                            blurRadius: 25,
-                            spreadRadius: 2,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                        image: DecorationImage(
-                          image: NetworkImage(widget.track.artworkUrl),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Artwork View (Matching screenshot_7.jpg & custom styles)
+                  _buildArtworkWidget(track),
 
                   const Spacer(),
 
-                  // Track Info & Like Button
+                  // Track Info & Like Button (Matching screenshot_7.jpg)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -141,18 +141,19 @@ class _PlayerViewState extends State<PlayerView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.track.title,
+                              track.title,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: -0.3,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.track.artist,
+                              track.artist,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 16,
@@ -164,14 +165,24 @@ class _PlayerViewState extends State<PlayerView> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.favorite_rounded, color: Colors.cyanAccent, size: 28),
+                        icon: const Icon(Icons.more_vert_rounded, color: Colors.white70, size: 24),
                         onPressed: () {},
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          color: _isLiked ? Colors.redAccent : Colors.white70,
+                          size: 26,
+                        ),
+                        onPressed: () {
+                          setState(() => _isLiked = !_isLiked);
+                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Progress Bar Slider (Matching Screenshot 2: 2:15 / -1:03)
+                  // Progress Bar Slider + Codec Pill (Matching screenshot_7.jpg)
                   SliderTheme(
                     data: SliderThemeData(
                       trackHeight: 4,
@@ -196,8 +207,29 @@ class _PlayerViewState extends State<PlayerView> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('2:15', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        const Text('-1:03', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        const Text('0:38', style: TextStyle(color: Colors.white70, fontSize: 12)),
+
+                        // Audio Codec Format Pill (Matching screenshot_7.jpg)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white24, width: 0.8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.graphic_eq_rounded, color: Colors.white70, size: 12),
+                              const SizedBox(width: 4),
+                              Text(
+                                track.codec,
+                                style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Text('3:18', style: TextStyle(color: Colors.white70, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -208,11 +240,7 @@ class _PlayerViewState extends State<PlayerView> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.shuffle_rounded, color: Colors.white54, size: 24),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.fast_rewind_rounded, color: Colors.white, size: 36),
+                        icon: const Icon(Icons.fast_rewind_rounded, color: Colors.white, size: 40),
                         onPressed: () {},
                       ),
                       GestureDetector(
@@ -245,18 +273,14 @@ class _PlayerViewState extends State<PlayerView> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.fast_forward_rounded, color: Colors.white, size: 36),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.repeat_rounded, color: Colors.white54, size: 24),
+                        icon: const Icon(Icons.fast_forward_rounded, color: Colors.white, size: 40),
                         onPressed: () {},
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  // Bottom Bar with Volume Slider & Cast Target Modal Trigger
+                  // Volume Slider
                   Row(
                     children: [
                       const Icon(Icons.volume_mute_rounded, color: Colors.white54, size: 20),
@@ -265,13 +289,9 @@ class _PlayerViewState extends State<PlayerView> {
                           data: SliderThemeData(
                             trackHeight: 3,
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                            activeTrackColor: widget.currentTarget == AudioTarget.piSpeaker
-                                ? Colors.purpleAccent
-                                : Colors.cyanAccent,
+                            activeTrackColor: Colors.white70,
                             inactiveTrackColor: Colors.white12,
-                            thumbColor: widget.currentTarget == AudioTarget.piSpeaker
-                                ? Colors.purpleAccent
-                                : Colors.cyanAccent,
+                            thumbColor: Colors.white,
                           ),
                           child: Slider(
                             value: _volume,
@@ -289,26 +309,120 @@ class _PlayerViewState extends State<PlayerView> {
                         ),
                       ),
                       const Icon(Icons.volume_up_rounded, color: Colors.white54, size: 20),
-                      const SizedBox(width: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Bottom Action Bar (Queue List, Lyrics, Sleep Timer, Cast Target Pill)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       IconButton(
-                        icon: Icon(
-                          widget.currentTarget == AudioTarget.piSpeaker
-                              ? Icons.radio_rounded
-                              : Icons.speaker_group_rounded,
-                          color: widget.currentTarget == AudioTarget.piSpeaker
-                              ? Colors.purpleAccent
-                              : Colors.cyanAccent,
+                        icon: const Icon(Icons.format_list_bulleted_rounded, color: Colors.white70, size: 22),
+                        onPressed: () {},
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white70, size: 22),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LyricsView(track: track),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.bedtime_outlined, color: Colors.white70, size: 22),
+                        onPressed: () {},
+                      ),
+
+                      // Cast Target Speaker Pill (Matching screenshot_7.jpg)
+                      GestureDetector(
+                        onTap: widget.onToggleTarget,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                widget.currentTarget == AudioTarget.piSpeaker
+                                    ? Icons.radio_rounded
+                                    : Icons.speaker_rounded,
+                                color: widget.currentTarget == AudioTarget.piSpeaker
+                                    ? Colors.purpleAccent
+                                    : Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                widget.currentTarget == AudioTarget.piSpeaker ? 'pi-aamps' : 'Speaker',
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
-                        onPressed: widget.onToggleTarget,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildArtworkWidget(Track track) {
+    if (widget.playerStyle == PlayerStyle.vinyl) {
+      return RotationTransition(
+        turns: _vinylController,
+        child: Container(
+          width: 270,
+          height: 270,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black,
+            border: Border.all(color: Colors.white24, width: 4),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 30,
+                spreadRadius: 4,
+              ),
+            ],
+            image: DecorationImage(
+              image: NetworkImage(track.artworkUrl),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: 290,
+      height: 290,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: widget.currentTarget == AudioTarget.piSpeaker
+                ? Colors.purpleAccent.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.5),
+            blurRadius: 30,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        image: DecorationImage(
+          image: NetworkImage(track.artworkUrl),
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }

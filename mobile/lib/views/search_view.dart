@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/track.dart';
 import '../services/youtube_service.dart';
+import '../services/integration_service.dart';
+import 'music_recognition_view.dart';
 
 class SearchView extends StatefulWidget {
   final Function(Track) onPlayTrack;
@@ -123,12 +125,32 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                   style: const TextStyle(color: Colors.white),
                   onSubmitted: (_) => _performSearch(),
                   decoration: InputDecoration(
-                    hintText: 'Search YouTube Music',
+                    hintText: 'Search YouTube Music or local tracks',
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                     prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.language_rounded, color: Colors.white70),
-                      onPressed: _performSearch,
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.graphic_eq_rounded, color: Colors.cyanAccent),
+                          tooltip: 'Identify Song (Shazam)',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MusicRecognitionView(
+                                  integrationService: IntegrationService.instance,
+                                  onPlayTrack: widget.onPlayTrack,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.language_rounded, color: Colors.white70),
+                          onPressed: _performSearch,
+                        ),
+                      ],
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
