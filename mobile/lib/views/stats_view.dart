@@ -7,9 +7,9 @@ class StatsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final artistData = [
-      {'name': 'aimyon', 'percentage': 0.41, 'color': const Color(0xFF4285F4), 'time': '1:02'},
-      {'name': 'Yuika', 'percentage': 0.30, 'color': const Color(0xFFE91E63), 'time': '0:45'},
-      {'name': '40mP', 'percentage': 0.29, 'color': const Color(0xFF76FF03), 'time': '0:45'},
+      {'name': 'The Weeknd', 'percentage': 0.45, 'color': const Color(0xFF4285F4), 'time': '1:12'},
+      {'name': 'Taylor Swift', 'percentage': 0.32, 'color': const Color(0xFFE91E63), 'time': '0:50'},
+      {'name': 'Dua Lipa', 'percentage': 0.23, 'color': const Color(0xFF76FF03), 'time': '0:30'},
     ];
 
     return Scaffold(
@@ -99,7 +99,7 @@ class StatsView extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Top Genre: J-Pop • 42 hrs listened • 128 top tracks',
+                          'Top Genre: Pop • 42 hrs listened • 128 top tracks',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
@@ -176,15 +176,15 @@ class StatsView extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _buildMetricTile('4', 'Total Plays'),
+                  child: _buildMetricTile('42', 'Total Plays'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildMetricTile('4', 'Unique Songs'),
+                  child: _buildMetricTile('18', 'Unique Songs'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildMetricTile('3', 'Unique Artists'),
+                  child: _buildMetricTile('8', 'Unique Artists'),
                 ),
               ],
             ),
@@ -229,9 +229,9 @@ class StatsView extends StatelessWidget {
                         child: CustomPaint(
                           painter: _DonutChartPainter(
                             slices: [
-                              _ChartSlice(0.41, const Color(0xFF4285F4)),
-                              _ChartSlice(0.30, const Color(0xFFE91E63)),
-                              _ChartSlice(0.29, const Color(0xFF76FF03)),
+                              _ChartSlice(0.45, const Color(0xFF4285F4)),
+                              _ChartSlice(0.32, const Color(0xFFE91E63)),
+                              _ChartSlice(0.23, const Color(0xFF76FF03)),
                             ],
                           ),
                           child: const Center(
@@ -323,7 +323,7 @@ class StatsView extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+                      'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,
@@ -350,7 +350,7 @@ class StatsView extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'aimyon',
+                        'The Weeknd',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -359,7 +359,7 @@ class StatsView extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '1 songs • 0:43',
+                        '12 songs • 48:20',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 12,
@@ -385,7 +385,7 @@ class StatsView extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
+                      'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,
@@ -412,7 +412,7 @@ class StatsView extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Marigold - aimyon',
+                        'Starboy - The Weeknd',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -421,7 +421,7 @@ class StatsView extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '1 time • 0:47',
+                        '18 times • 3:50',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 12,

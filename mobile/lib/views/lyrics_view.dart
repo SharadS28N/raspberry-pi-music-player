@@ -20,34 +20,34 @@ class _LyricsViewState extends State<LyricsView> {
 
   final List<Map<String, String>> _lyricsData = [
     {
-      'kanji': 'なんて 期待していない',
-      'romaji': 'nante kitaishi te i nai',
-      'translation': 'I don\'t expect anything like that',
+      'kanji': 'I\'m tryna put you in the worst mood, ah',
+      'romaji': 'P1 Cleaned V8 Engine Audio',
+      'translation': 'Starboy - High Fidelity Audio Stream',
     },
     {
-      'kanji': '期待したくもない',
-      'romaji': 'kitai shi taku mo nai',
-      'translation': 'I don\'t even want to expect it',
+      'kanji': 'P1 cleaner than your church shoes, ah',
+      'romaji': 'Milli point two on the wrist count',
+      'translation': 'Point two on the wrist count',
     },
     {
-      'kanji': '君と巡り 会った',
-      'romaji': 'kimito meguriat ta sore',
-      'translation': 'When I met you and crossed paths',
+      'kanji': 'Milli point two just to hurt you, ah',
+      'romaji': 'All red Lamb\' set the city on fire',
+      'translation': 'All red Lamb\' set the city on fire',
     },
     {
-      'kanji': 'それ以上の',
-      'romaji': 'ijou no',
-      'translation': 'More than that',
+      'kanji': 'All red Lamb\' just to tease you, ah',
+      'romaji': 'None of these toys on lease, too',
+      'translation': 'None of these toys on lease, too',
     },
     {
-      'kanji': 'どんでん返しなんてないから',
-      'romaji': 'dondengaeshi nante nai kara',
-      'translation': 'Because there is no plot twist coming',
+      'kanji': 'Made your whole year in a week too, yah',
+      'romaji': 'Main chick out your league too, ah',
+      'translation': 'Main chick out your league too, ah',
     },
     {
-      'kanji': 'しなんてないから',
-      'romaji': 'shi nante nai kara',
-      'translation': 'Because nothing will change',
+      'kanji': 'Side chick out of your league too, ah',
+      'romaji': 'Look what you\'ve done, I\'m a Starboy',
+      'translation': 'Look what you\'ve done, I\'m a Starboy',
     },
   ];
 

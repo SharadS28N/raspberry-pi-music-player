@@ -55,12 +55,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final PiAampsService _piService = PiAampsService();
 
   Track _activeTrack = Track(
-    id: 'dQw4w9WgXcQ',
-    title: 'Never Gonna Give You Up',
-    artist: 'Rick Astley',
-    album: 'Whenever You Need Somebody',
-    artworkUrl: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+    id: '34Na4j8AVgA',
+    title: 'Starboy',
+    artist: 'The Weeknd ft. Daft Punk',
+    album: 'Starboy (Deluxe)',
+    artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
     streamUrl: '',
+    codec: 'FLAC 24-bit',
   );
 
   bool _isPlaying = false;
