@@ -16,7 +16,7 @@ class OutputTargetModal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: Color(0xFF141414),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -25,7 +25,7 @@ class OutputTargetModal extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.volume_up_rounded, color: Colors.cyanAccent, size: 22),
+              const Icon(Icons.volume_up_rounded, color: Colors.white, size: 22),
               const SizedBox(width: 8),
               const Text(
                 'Choose Audio Output Target',
@@ -43,15 +43,15 @@ class OutputTargetModal extends StatelessWidget {
           // Option 1: Phone Speakers
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: currentTarget == AudioTarget.phoneLocal ? Colors.cyanAccent.withValues(alpha: 0.1) : Colors.transparent,
+            tileColor: currentTarget == AudioTarget.phoneLocal ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
             leading: Icon(
               Icons.phone_android_rounded,
-              color: currentTarget == AudioTarget.phoneLocal ? Colors.cyanAccent : Colors.white70,
+              color: currentTarget == AudioTarget.phoneLocal ? Colors.white : Colors.white70,
               size: 28,
             ),
             title: const Text('This Phone (Local Audio)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             subtitle: const Text('Play directly on Android phone speakers or Bluetooth headphones', style: TextStyle(color: Colors.white54, fontSize: 12)),
-            trailing: currentTarget == AudioTarget.phoneLocal ? const Icon(Icons.check_circle_rounded, color: Colors.cyanAccent) : null,
+            trailing: currentTarget == AudioTarget.phoneLocal ? const Icon(Icons.check_circle_rounded, color: Colors.white) : null,
             onTap: () {
               onSelectTarget(AudioTarget.phoneLocal);
               Navigator.pop(context);
@@ -62,15 +62,15 @@ class OutputTargetModal extends StatelessWidget {
           // Option 2: Raspberry Pi Speaker
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: currentTarget == AudioTarget.piSpeaker ? Colors.purpleAccent.withValues(alpha: 0.1) : Colors.transparent,
+            tileColor: currentTarget == AudioTarget.piSpeaker ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
             leading: Icon(
               Icons.radio_rounded,
-              color: currentTarget == AudioTarget.piSpeaker ? Colors.purpleAccent : Colors.white70,
+              color: currentTarget == AudioTarget.piSpeaker ? Colors.white : Colors.white70,
               size: 28,
             ),
-            title: const Text('pi-aamps (Raspberry Pi)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            subtitle: const Text('Stream audio to Raspberry Pi 3B+ DAC & Hi-Fi Speakers (192.168.18.159)', style: TextStyle(color: Colors.white54, fontSize: 12)),
-            trailing: currentTarget == AudioTarget.piSpeaker ? const Icon(Icons.check_circle_rounded, color: Colors.purpleAccent) : null,
+            title: const Text('pi-aamps (Hardware Streamer)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Stream audio to external DAC & Hi-Fi Speakers (Coming Soon)', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: currentTarget == AudioTarget.piSpeaker ? const Icon(Icons.check_circle_rounded, color: Colors.white) : null,
             onTap: () {
               onSelectTarget(AudioTarget.piSpeaker);
               Navigator.pop(context);

@@ -1,6 +1,18 @@
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../models/track.dart';
 
+class StreamData {
+  final String url;
+  final int totalBytes;
+  final String container;
+
+  StreamData({
+    required this.url,
+    required this.totalBytes,
+    required this.container,
+  });
+}
+
 class YoutubeService {
   final YoutubeExplode _yt = YoutubeExplode();
 
@@ -26,16 +38,68 @@ class YoutubeService {
     }
   }
 
-  Future<String?> getAudioStreamUrl(String videoId) async {
+  Future<StreamData?> getBestAudioStream(String videoId, {String? queryFallback}) async {
     try {
-      final manifest = await _yt.videos.streamsClient.getManifest(videoId);
+      final manifest = await _yt.videos.streamsClient.getManifest(
+        videoId,
+        ytClients: [YoutubeApiClient.android],
+      );
       final audioOnly = manifest.audioOnly;
       if (audioOnly.isNotEmpty) {
-        final bestAudio = audioOnly.withHighestBitrate();
-        return bestAudio.url.toString();
+        // Prioritize itag 140 (128kbps AAC), then 251 (Opus), then any mp4
+        final itag140 = audioOnly.where((s) => s.tag == 140).firstOrNull;
+        if (itag140 != null) {
+          return StreamData(
+            url: itag140.url.toString(),
+            totalBytes: itag140.size.totalBytes,
+            container: itag140.container.name,
+          );
+        }
+        final itag251 = audioOnly.where((s) => s.tag == 251).firstOrNull;
+        if (itag251 != null) {
+          return StreamData(
+            url: itag251.url.toString(),
+            totalBytes: itag251.size.totalBytes,
+            container: itag251.container.name,
+          );
+        }
+        final bestMp4 = audioOnly.where((s) => s.container.name == 'mp4').firstOrNull;
+        if (bestMp4 != null) {
+          return StreamData(
+            url: bestMp4.url.toString(),
+            totalBytes: bestMp4.size.totalBytes,
+            container: bestMp4.container.name,
+          );
+        }
+        final first = audioOnly.first;
+        return StreamData(
+          url: first.url.toString(),
+          totalBytes: first.size.totalBytes,
+          container: first.container.name,
+        );
       }
     } catch (_) {}
+
+    if (queryFallback != null && queryFallback.isNotEmpty) {
+      try {
+        final searchResults = await _yt.search.search(queryFallback);
+        if (searchResults.isNotEmpty) {
+          final firstVideoId = searchResults.first.id.value;
+          return await getBestAudioStream(firstVideoId);
+        }
+      } catch (_) {}
+    }
     return null;
+  }
+
+  Future<List<String>> getAudioStreamUrls(String videoId, {String? queryFallback}) async {
+    final streamData = await getBestAudioStream(videoId, queryFallback: queryFallback);
+    return streamData != null ? [streamData.url] : [];
+  }
+
+  Future<String?> getAudioStreamUrl(String videoId, {String? queryFallback}) async {
+    final streamData = await getBestAudioStream(videoId, queryFallback: queryFallback);
+    return streamData?.url;
   }
 
   void dispose() {

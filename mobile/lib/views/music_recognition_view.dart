@@ -42,7 +42,7 @@ class _MusicRecognitionViewState extends State<MusicRecognitionView> with Single
     final recognizedTrack = widget.integrationService.recognizedTrack;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -74,14 +74,14 @@ class _MusicRecognitionViewState extends State<MusicRecognitionView> with Single
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          Colors.cyanAccent.withValues(alpha: 0.8),
-                          Colors.purpleAccent.withValues(alpha: 0.4),
+                          Colors.white.withValues(alpha: 0.25),
+                          Colors.white.withValues(alpha: 0.08),
                           Colors.transparent,
                         ],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.cyanAccent.withValues(alpha: 0.3),
+                          color: Colors.white.withValues(alpha: 0.1),
                           blurRadius: 40,
                           spreadRadius: 10,
                         ),
@@ -100,17 +100,17 @@ class _MusicRecognitionViewState extends State<MusicRecognitionView> with Single
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                const Text(
                   'Hold your device close to the music source',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                  style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 14),
                 ),
               ] else if (recognizedTrack != null) ...[
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: const Color(0xFF141414),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                   ),
                   child: Column(
                     children: [
@@ -132,7 +132,7 @@ class _MusicRecognitionViewState extends State<MusicRecognitionView> with Single
                       const SizedBox(height: 6),
                       Text(
                         recognizedTrack.artist,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 16),
+                        style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 16),
                       ),
                       const SizedBox(height: 20),
                       SizedBox(
@@ -140,7 +140,7 @@ class _MusicRecognitionViewState extends State<MusicRecognitionView> with Single
                         height: 50,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.cyanAccent,
+                            backgroundColor: Colors.white,
                             foregroundColor: Colors.black,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),

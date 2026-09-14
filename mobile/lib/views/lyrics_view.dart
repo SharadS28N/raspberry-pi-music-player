@@ -56,7 +56,7 @@ class _LyricsViewState extends State<LyricsView> {
     final track = widget.track;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: const Color(0xFF000000),
       body: Stack(
         children: [
           // Blurred Artwork Backdrop
@@ -67,7 +67,7 @@ class _LyricsViewState extends State<LyricsView> {
                   image: NetworkImage(track.artworkUrl),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.88),
+                    Colors.black.withValues(alpha: 0.94),
                     BlendMode.darken,
                   ),
                 ),
@@ -76,12 +76,12 @@ class _LyricsViewState extends State<LyricsView> {
           ),
 
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              child: Column(
-                children: [
-                  // Top Header (Matching screenshot_2.jpg)
-                  Row(
+            child: Column(
+              children: [
+                // Top Action Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -106,7 +106,9 @@ class _LyricsViewState extends State<LyricsView> {
                             const SizedBox(height: 2),
                             Text(
                               track.artist,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+                              style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -116,11 +118,21 @@ class _LyricsViewState extends State<LyricsView> {
                       IconButton(
                         icon: Icon(
                           Icons.translate_rounded,
-                          color: _showRomaji ? Colors.cyanAccent : Colors.white54,
+                          color: _showRomaji ? Colors.white : Colors.white38,
                           size: 22,
                         ),
                         tooltip: 'Toggle Romaji Romanization',
                         onPressed: () => setState(() => _showRomaji = !_showRomaji),
+                      ),
+                      // Translation Toggle Button
+                      IconButton(
+                        icon: Icon(
+                          Icons.g_translate_rounded,
+                          color: _showTranslation ? Colors.white : Colors.white38,
+                          size: 22,
+                        ),
+                        tooltip: 'Toggle AI Lyric Translation',
+                        onPressed: () => setState(() => _showTranslation = !_showTranslation),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 28),
@@ -132,35 +144,33 @@ class _LyricsViewState extends State<LyricsView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    itemCount: _lyricsData.length,
+                    itemBuilder: (context, index) {
+                      final line = _lyricsData[index];
+                      final isActive = index == _activeLineIndex;
 
-                  // Synced Lyrics Center View (Matching screenshot_2.jpg)
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      itemCount: _lyricsData.length,
-                      itemBuilder: (context, index) {
-                        final line = _lyricsData[index];
-                        final isActive = index == _activeLineIndex;
-
-                        return GestureDetector(
-                          onTap: () => setState(() => _activeLineIndex = index),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_showRomaji && line['romaji'] != null)
-                                  Text(
-                                    line['romaji']!,
-                                    style: TextStyle(
-                                      color: isActive
-                                          ? Colors.cyanAccent.withValues(alpha: 0.9)
-                                          : Colors.white.withValues(alpha: 0.35),
-                                      fontSize: 13,
-                                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                                    ),
+                      return GestureDetector(
+                        onTap: () => setState(() => _activeLineIndex = index),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 14.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_showRomaji && line['romaji'] != null)
+                                Text(
+                                  line['romaji']!,
+                                  style: TextStyle(
+                                    color: isActive
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.35),
+                                    fontSize: 13,
+                                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                                   ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   line['kanji']!,
@@ -266,9 +276,10 @@ class _LyricsViewState extends State<LyricsView> {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }
+
+

@@ -10,14 +10,14 @@ import 'stats_view.dart';
 
 class HomeView extends StatefulWidget {
   final Function(Track) onPlayTrack;
-  final AudioTarget currentTarget;
-  final PiAampsService piService;
+  final AudioTarget? currentTarget;
+  final PiAampsService? piService;
 
   const HomeView({
     super.key,
     required this.onPlayTrack,
-    required this.currentTarget,
-    required this.piService,
+    this.currentTarget,
+    this.piService,
   });
 
   @override
@@ -38,6 +38,10 @@ class _HomeViewState extends State<HomeView> {
 
   final List<Map<String, String>> _artists = [
     {
+      'name': 'Coldplay',
+      'url': 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
+    },
+    {
       'name': 'The Weeknd',
       'url': 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
     },
@@ -50,10 +54,6 @@ class _HomeViewState extends State<HomeView> {
       'url': 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg',
     },
     {
-      'name': 'Billie Eilish',
-      'url': 'https://i.ytimg.com/vi/d5g8WkHthvA/hqdefault.jpg',
-    },
-    {
       'name': 'Harry Styles',
       'url': 'https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg',
     },
@@ -61,10 +61,22 @@ class _HomeViewState extends State<HomeView> {
 
   final List<Track> _quickPicks = [
     Track(
+      id: 'yKNxeF4KMsY',
+      title: 'Yellow',
+      artist: 'Coldplay',
+      album: 'Parachutes',
+      duration: const Duration(minutes: 4, seconds: 29),
+      artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
+      streamUrl: '',
+      codec: 'AAC 320kbps',
+      loudnessGain: -14.0,
+    ),
+    Track(
       id: '34Na4j8AVgA',
       title: 'Starboy',
       artist: 'The Weeknd ft. Daft Punk',
       album: 'Starboy (Deluxe)',
+      duration: const Duration(minutes: 3, seconds: 50),
       artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
       streamUrl: '',
       codec: 'FLAC 24-bit',
@@ -75,6 +87,7 @@ class _HomeViewState extends State<HomeView> {
       title: 'Blinding Lights',
       artist: 'The Weeknd',
       album: 'After Hours',
+      duration: const Duration(minutes: 3, seconds: 20),
       artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
       streamUrl: '',
       codec: 'OPUS 160kbps',
@@ -85,6 +98,7 @@ class _HomeViewState extends State<HomeView> {
       title: 'As It Was',
       artist: 'Harry Styles',
       album: "Harry's House",
+      duration: const Duration(minutes: 2, seconds: 47),
       artworkUrl: 'https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg',
       streamUrl: '',
       codec: 'AAC 320kbps',
@@ -95,6 +109,7 @@ class _HomeViewState extends State<HomeView> {
       title: 'Levitating',
       artist: 'Dua Lipa',
       album: 'Future Nostalgia',
+      duration: const Duration(minutes: 3, seconds: 23),
       artworkUrl: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg',
       streamUrl: '',
       codec: 'OPUS 160kbps',
@@ -105,54 +120,39 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF000000),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Header with Branding & Action Buttons
+              // Top Header with Monochrome Branding & Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          'assets/logo.jpg',
-                          width: 34,
-                          height: 34,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 34,
-                            height: 34,
-                            decoration: const BoxDecoration(
-                              color: Colors.cyanAccent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'प',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                            ),
-                          ),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF141414),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.graphic_eq_rounded, color: Colors.white, size: 20),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       const Text(
-                        'OpenAamps',
+                        'Echo Music',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
@@ -160,7 +160,7 @@ class _HomeViewState extends State<HomeView> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.download_for_offline_rounded, color: Colors.cyanAccent),
+                        icon: const Icon(Icons.download_for_offline_rounded, color: Colors.white),
                         tooltip: 'Import Spotify Playlist',
                         onPressed: () {
                           showModalBottomSheet(
@@ -179,7 +179,7 @@ class _HomeViewState extends State<HomeView> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.access_time_rounded, color: Colors.white70),
+                        icon: const Icon(Icons.access_time_rounded, color: Color(0xFFA1A1AA)),
                         tooltip: 'Stats',
                         onPressed: () {
                           Navigator.push(
@@ -203,8 +203,8 @@ class _HomeViewState extends State<HomeView> {
                           padding: const EdgeInsets.only(left: 4.0, right: 4.0),
                           child: CircleAvatar(
                             radius: 15,
-                            backgroundColor: Colors.pinkAccent.withValues(alpha: 0.3),
-                            child: const Icon(Icons.person_rounded, size: 18, color: Colors.pinkAccent),
+                            backgroundColor: const Color(0xFF222222),
+                            child: const Icon(Icons.person_rounded, size: 18, color: Colors.white),
                           ),
                         ),
                       ),
@@ -214,7 +214,7 @@ class _HomeViewState extends State<HomeView> {
               ),
               const SizedBox(height: 16),
 
-              // Category / Mood Filter Chips
+              // Category / Mood Filter Chips (Monochrome)
               SizedBox(
                 height: 38,
                 child: ListView.separated(
@@ -235,9 +235,12 @@ class _HomeViewState extends State<HomeView> {
                       ),
                       selected: isSelected,
                       selectedColor: Colors.white,
-                      backgroundColor: const Color(0xFF1E293B),
+                      backgroundColor: const Color(0xFF141414),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.1),
+                        ),
                       ),
                       onSelected: (selected) {
                         setState(() {
@@ -264,7 +267,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text('See all', style: TextStyle(color: Colors.cyanAccent)),
+                    child: const Text('See all', style: TextStyle(color: Color(0xFFA1A1AA))),
                   ),
                 ],
               ),
@@ -279,11 +282,13 @@ class _HomeViewState extends State<HomeView> {
                   final track = _quickPicks[index];
                   return Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B).withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                     ),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      onTap: () => widget.onPlayTrack(track),
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -294,8 +299,8 @@ class _HomeViewState extends State<HomeView> {
                           errorBuilder: (context, error, stackTrace) => Container(
                             width: 48,
                             height: 48,
-                            color: Colors.cyanAccent.withValues(alpha: 0.2),
-                            child: const Icon(Icons.music_note_rounded, color: Colors.cyanAccent),
+                            color: const Color(0xFF222222),
+                            child: const Icon(Icons.music_note_rounded, color: Colors.white70),
                           ),
                         ),
                       ),
@@ -311,8 +316,8 @@ class _HomeViewState extends State<HomeView> {
                       ),
                       subtitle: Text(
                         track.artist,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                        style: const TextStyle(
+                          color: Color(0xFFA1A1AA),
                           fontSize: 12,
                         ),
                         maxLines: 1,
@@ -322,12 +327,14 @@ class _HomeViewState extends State<HomeView> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.play_arrow_rounded, color: Colors.cyanAccent, size: 28),
+                            icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
+                            tooltip: 'Play',
                             onPressed: () => widget.onPlayTrack(track),
                           ),
                           IconButton(
                             icon: const Icon(Icons.more_vert_rounded, color: Colors.white54, size: 20),
-                            onPressed: () {},
+                            tooltip: 'Options',
+                            onPressed: () => _showTrackOptions(context, track),
                           ),
                         ],
                       ),
@@ -356,79 +363,42 @@ class _HomeViewState extends State<HomeView> {
                   separatorBuilder: (context, index) => const SizedBox(width: 16),
                   itemBuilder: (context, index) {
                     final artist = _artists[index];
-                    return Column(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            image: DecorationImage(
-                              image: NetworkImage(artist['url']!),
-                              fit: BoxFit.cover,
-                            ),
-                            border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3), width: 2),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          artist['name']!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Pi-aamps Dedicated Engine Banner
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.purple.shade900.withValues(alpha: 0.5),
-                      Colors.indigo.shade900.withValues(alpha: 0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.radio_rounded, color: Colors.purpleAccent, size: 36),
-                    const SizedBox(width: 16),
-                    Expanded(
+                    return GestureDetector(
+                      onTap: () {
+                        final matching = _quickPicks.where((t) => t.artist.contains(artist['name']!)).toList();
+                        if (matching.isNotEmpty) {
+                          widget.onPlayTrack(matching.first);
+                        } else {
+                          widget.onPlayTrack(_quickPicks[index % _quickPicks.length]);
+                        }
+                      },
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'pi-aamps Speaker Hub',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: NetworkImage(artist['url']!),
+                                fit: BoxFit.cover,
+                              ),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 8),
                           Text(
-                            widget.currentTarget == AudioTarget.piSpeaker
-                                ? 'Active: Casted to Raspberry Pi Speaker'
-                                : 'Local mode: Connect to Pi Speaker anytime',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
+                            artist['name']!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 40),
@@ -436,6 +406,65 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showTrackOptions(BuildContext context, Track track) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      track.artworkUrl,
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.music_note_rounded, color: Colors.white),
+                    ),
+                  ),
+                  title: Text(track.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: Text('${track.artist} • ${track.album}', style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                ),
+                const Divider(color: Colors.white12),
+                ListTile(
+                  leading: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                  title: const Text('Play Track', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    widget.onPlayTrack(track);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.download_rounded, color: Color(0xFFA1A1AA)),
+                  title: const Text('Download Offline', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Downloading "${track.title}" offline...'),
+                        backgroundColor: const Color(0xFF141414),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

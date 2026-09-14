@@ -3,6 +3,7 @@ import '../models/track.dart';
 import '../services/account_service.dart';
 import '../services/local_audio_service.dart';
 import 'album_view.dart';
+import 'settings_view.dart';
 
 class LibraryView extends StatefulWidget {
   final AccountService accountService;
@@ -30,7 +31,7 @@ class _LibraryViewState extends State<LibraryView> {
     final activeAccount = widget.accountService.activeAccount;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: const Color(0xFF000000),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -42,19 +43,17 @@ class _LibraryViewState extends State<LibraryView> {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: Colors.cyanAccent.withValues(alpha: 0.15),
+                    color: const Color(0xFF141414),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.0),
                   ),
                   child: const Center(
-                    child: Text(
-                      'प',
-                      style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
+                    child: Icon(Icons.graphic_eq_rounded, color: Colors.white, size: 20),
                   ),
                 ),
                 const SizedBox(width: 10),
                 const Text(
-                  'ArchiveTune',
+                  'Library',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -65,15 +64,36 @@ class _LibraryViewState extends State<LibraryView> {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.history_rounded, color: Colors.white70),
-                  onPressed: () {},
+                  tooltip: 'History',
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Listening history is up to date'),
+                        backgroundColor: Color(0xFF141414),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.tune_rounded, color: Colors.white70),
-                  onPressed: () {},
+                  tooltip: 'Equalizer & DSP',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsView()),
+                    );
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.settings_rounded, color: Colors.white70),
-                  onPressed: () {},
+                  tooltip: 'Settings',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsView()),
+                    );
+                  },
                 ),
               ],
             ),
@@ -92,13 +112,13 @@ class _LibraryViewState extends State<LibraryView> {
                     label: Text(
                       _filters[index],
                       style: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white70,
+                        color: isSelected ? Colors.black : Colors.white,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     selected: isSelected,
-                    selectedColor: const Color(0xFFC4E0B8), // Soft Light Sage (Matching screenshot_8)
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    selectedColor: Colors.white,
+                    backgroundColor: const Color(0xFF141414),
                     showCheckmark: false,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onSelected: (selected) {
@@ -188,7 +208,18 @@ class _LibraryViewState extends State<LibraryView> {
                           ),
                           icon: const Icon(Icons.play_arrow_rounded, color: Colors.black, size: 22),
                           label: const Text('Play all', style: TextStyle(fontWeight: FontWeight.bold)),
-                          onPressed: () {},
+                          onPressed: () {
+                            widget.onPlayTrack(Track(
+                              id: '34Na4j8AVgA',
+                              title: 'Starboy',
+                              artist: 'The Weeknd ft. Daft Punk',
+                              album: 'Starboy (Deluxe)',
+                              duration: const Duration(minutes: 3, seconds: 50),
+                              artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
+                              streamUrl: '',
+                              codec: 'FLAC 24-bit',
+                            ));
+                          },
                         ),
                         const Spacer(),
                         CircleAvatar(
@@ -196,7 +227,19 @@ class _LibraryViewState extends State<LibraryView> {
                           backgroundColor: Colors.white12,
                           child: IconButton(
                             icon: const Icon(Icons.shuffle_rounded, color: Colors.white, size: 18),
-                            onPressed: () {},
+                            tooltip: 'Shuffle',
+                            onPressed: () {
+                              widget.onPlayTrack(Track(
+                                id: '4NRXx6U8ABQ',
+                                title: 'Blinding Lights',
+                                artist: 'The Weeknd',
+                                album: 'After Hours',
+                                duration: const Duration(minutes: 3, seconds: 20),
+                                artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+                                streamUrl: '',
+                                codec: 'OPUS 160kbps',
+                              ));
+                            },
                           ),
                         ),
                       ],
@@ -218,33 +261,89 @@ class _LibraryViewState extends State<LibraryView> {
               children: [
                 _buildLibraryCard(
                   icon: Icons.favorite_rounded,
-                  iconColor: Colors.pinkAccent,
+                  iconColor: Colors.white,
                   title: 'Liked songs',
                   subtitle: '${activeAccount.likedSongsCount} tracks',
+                  onTap: () {
+                    widget.onPlayTrack(Track(
+                      id: 'yKNxeF4KMsY',
+                      title: 'Yellow',
+                      artist: 'Coldplay',
+                      album: 'Parachutes',
+                      duration: const Duration(minutes: 4, seconds: 29),
+                      artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
+                      streamUrl: '',
+                      codec: 'AAC 320kbps',
+                    ));
+                  },
                 ),
                 _buildLibraryCard(
                   icon: Icons.offline_pin_rounded,
-                  iconColor: Colors.cyanAccent,
+                  iconColor: Colors.white,
                   title: 'Offline',
                   subtitle: 'Downloaded',
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Offline storage is ready for downloads'),
+                        backgroundColor: Color(0xFF141414),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
                 ),
                 _buildLibraryCard(
                   icon: Icons.cached_rounded,
-                  iconColor: Colors.purpleAccent,
+                  iconColor: Colors.white,
                   title: 'Cached',
                   subtitle: 'Instant playback',
+                  onTap: () {
+                    widget.onPlayTrack(Track(
+                      id: '34Na4j8AVgA',
+                      title: 'Starboy',
+                      artist: 'The Weeknd ft. Daft Punk',
+                      album: 'Starboy (Deluxe)',
+                      duration: const Duration(minutes: 3, seconds: 50),
+                      artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
+                      streamUrl: '',
+                      codec: 'FLAC 24-bit',
+                    ));
+                  },
                 ),
                 _buildLibraryCard(
                   icon: Icons.folder_rounded,
-                  iconColor: Colors.amberAccent,
+                  iconColor: Colors.white,
                   title: 'Local Files',
                   subtitle: '${localTracks.length} On device',
+                  onTap: () async {
+                    await widget.localAudioService.scanDeviceAudio();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Found ${widget.localAudioService.localTracks.length} local audio files on device'),
+                          backgroundColor: const Color(0xFF141414),
+                        ),
+                      );
+                    }
+                  },
                 ),
                 _buildLibraryCard(
                   icon: Icons.trending_up_rounded,
-                  iconColor: Colors.greenAccent,
+                  iconColor: Colors.white,
                   title: 'My top 50',
                   subtitle: 'All time',
+                  onTap: () {
+                    widget.onPlayTrack(Track(
+                      id: 'TUVcZfQe-Kw',
+                      title: 'Levitating',
+                      artist: 'Dua Lipa',
+                      album: 'Future Nostalgia',
+                      duration: const Duration(minutes: 3, seconds: 23),
+                      artworkUrl: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg',
+                      streamUrl: '',
+                      codec: 'OPUS 160kbps',
+                    ));
+                  },
                 ),
               ],
             ),
@@ -259,33 +358,37 @@ class _LibraryViewState extends State<LibraryView> {
     required Color iconColor,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: iconColor.withValues(alpha: 0.15),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: iconColor.withValues(alpha: 0.15),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }

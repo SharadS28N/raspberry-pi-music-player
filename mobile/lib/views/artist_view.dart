@@ -52,14 +52,14 @@ class ArtistView extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: const Color(0xFF000000),
       body: CustomScrollView(
         slivers: [
           // Hero Header Image & Artist Info
           SliverAppBar(
             expandedHeight: 380,
             pinned: true,
-            backgroundColor: const Color(0xFF090D16),
+            backgroundColor: const Color(0xFF000000),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () => Navigator.pop(context),
@@ -80,8 +80,8 @@ class ArtistView extends StatelessWidget {
                         colors: [
                           Colors.black.withValues(alpha: 0.3),
                           Colors.transparent,
-                          const Color(0xFF090D16).withValues(alpha: 0.8),
-                          const Color(0xFF090D16),
+                          Colors.black.withValues(alpha: 0.8),
+                          const Color(0xFF000000),
                         ],
                         stops: const [0.0, 0.4, 0.85, 1.0],
                       ),

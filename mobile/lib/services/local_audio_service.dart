@@ -55,6 +55,8 @@ class LocalAudioService extends ChangeNotifier {
     ];
   }
 
+  Future<void> scanDeviceAudio() => scanDeviceMusic();
+
   Future<void> scanDeviceMusic() async {
     _isScanning = true;
     notifyListeners();

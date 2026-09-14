@@ -66,14 +66,14 @@ class AlbumView extends StatelessWidget {
     final currentPlaying = audioService.currentTrack;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: const Color(0xFF000000),
       body: CustomScrollView(
         slivers: [
           // Album Hero Cover Header
           SliverAppBar(
             expandedHeight: 360,
             pinned: true,
-            backgroundColor: const Color(0xFF090D16),
+            backgroundColor: const Color(0xFF000000),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () => Navigator.pop(context),
@@ -94,8 +94,8 @@ class AlbumView extends StatelessWidget {
                         colors: [
                           Colors.black.withValues(alpha: 0.3),
                           Colors.transparent,
-                          const Color(0xFF090D16).withValues(alpha: 0.85),
-                          const Color(0xFF090D16),
+                          Colors.black.withValues(alpha: 0.85),
+                          const Color(0xFF000000),
                         ],
                         stops: const [0.0, 0.4, 0.85, 1.0],
                       ),
@@ -215,7 +215,7 @@ class AlbumView extends StatelessWidget {
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           leading: isPlaying
-                              ? const Icon(Icons.bar_chart_rounded, color: Colors.greenAccent, size: 26)
+                              ? const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 26)
                               : Text(
                                   '${index + 1}',
                                   style: TextStyle(
@@ -226,8 +226,8 @@ class AlbumView extends StatelessWidget {
                                 ),
                           title: Text(
                             track.title,
-                            style: TextStyle(
-                              color: isPlaying ? Colors.greenAccent : Colors.white,
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                             ),

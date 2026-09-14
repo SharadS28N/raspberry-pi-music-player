@@ -43,7 +43,7 @@ class _SpotifyImportModalState extends State<SpotifyImportModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Successfully imported ${tracks.length} tracks from Spotify!'),
-            backgroundColor: Colors.cyanAccent.shade700,
+            backgroundColor: const Color(0xFF141414),
           ),
         );
       }
@@ -67,42 +67,42 @@ class _SpotifyImportModalState extends State<SpotifyImportModal> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: Color(0xFF141414),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.library_music_rounded, color: Colors.greenAccent, size: 26),
-              const SizedBox(width: 10),
-              const Text(
+              Icon(Icons.library_music_rounded, color: Colors.white, size: 26),
+              SizedBox(width: 10),
+              Text(
                 'Import Spotify Playlist',
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            'Paste any public Spotify playlist link (https://open.spotify.com/playlist/...) to match and queue tracks seamlessly.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+          const Text(
+            'Paste any public Spotify playlist link to match and stream tracks seamlessly.',
+            style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: _urlController,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+              hintText: 'https://open.spotify.com/playlist/...',
+              hintStyle: const TextStyle(color: Color(0xFF71717A), fontSize: 13),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
-              prefixIcon: const Icon(Icons.link_rounded, color: Colors.greenAccent),
+              prefixIcon: const Icon(Icons.link_rounded, color: Colors.white70),
               errorText: _errorMessage,
             ),
           ),
@@ -112,7 +112,7 @@ class _SpotifyImportModalState extends State<SpotifyImportModal> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.greenAccent.shade700,
+                backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),

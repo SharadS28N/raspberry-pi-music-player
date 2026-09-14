@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:just_audio/just_audio.dart';
 import 'models/track.dart';
 import 'services/audio_player_service.dart';
-import 'services/pi_aamps_service.dart';
 import 'services/account_service.dart';
 import 'services/local_audio_service.dart';
 import 'views/home_view.dart';
@@ -11,7 +12,6 @@ import 'views/player_view.dart';
 import 'views/pi_hub_view.dart';
 import 'views/library_view.dart';
 import 'widgets/now_playing_bar.dart';
-import 'widgets/output_target_modal.dart';
 
 void main() {
   runApp(const OpenAampsApp());
@@ -23,17 +23,17 @@ class OpenAampsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OpenAamps',
+      title: 'Echo Music',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        scaffoldBackgroundColor: const Color(0xFF000000),
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         colorScheme: const ColorScheme.dark(
-          primary: Colors.cyanAccent,
-          secondary: Colors.purpleAccent,
-          surface: Color(0xFF1E293B),
+          primary: Colors.white,
+          secondary: Colors.white70,
+          surface: Color(0xFF121212),
         ),
       ),
       home: const MainNavigationScreen(),
@@ -50,26 +50,31 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
-  AudioTarget _currentTarget = AudioTarget.phoneLocal;
   final AudioPlayerService _audioService = AudioPlayerService();
-  final PiAampsService _piService = PiAampsService();
 
   Track _activeTrack = Track(
-    id: '34Na4j8AVgA',
-    title: 'Starboy',
-    artist: 'The Weeknd ft. Daft Punk',
-    album: 'Starboy (Deluxe)',
-    artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
+    id: 'yKNxeF4KMsY',
+    title: 'Yellow',
+    artist: 'Coldplay',
+    album: 'Parachutes',
+    artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
     streamUrl: '',
-    codec: 'FLAC 24-bit',
+    codec: 'AAC 320kbps',
   );
 
   bool _isPlaying = false;
+  StreamSubscription<PlayerState>? _playerStateSub;
 
   @override
   void initState() {
     super.initState();
-    _piService.checkConnection();
+    _playerStateSub = _audioService.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = state.playing;
+        });
+      }
+    });
   }
 
   void _onPlayTrack(Track track) {
@@ -77,60 +82,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _activeTrack = track;
       _isPlaying = true;
     });
-
-    if (_currentTarget == AudioTarget.piSpeaker) {
-      _piService.playTrackOnPi(track);
-    } else {
-      _audioService.playTrack(track);
-    }
-  }
-
-  void _toggleTarget() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => OutputTargetModal(
-        currentTarget: _currentTarget,
-        onSelectTarget: (target) {
-          setState(() {
-            _currentTarget = target;
-            _audioService.setAudioTarget(target);
-          });
-        },
-      ),
-    );
+    _audioService.playTrack(track);
   }
 
   @override
   void dispose() {
+    _playerStateSub?.cancel();
     _audioService.dispose();
-    _piService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeView(
-        onPlayTrack: _onPlayTrack,
-        currentTarget: _currentTarget,
-        piService: _piService,
-      ),
+      HomeView(onPlayTrack: _onPlayTrack),
       SearchView(onPlayTrack: _onPlayTrack),
       LibraryView(
         accountService: AccountService.instance,
         localAudioService: LocalAudioService(),
         onPlayTrack: _onPlayTrack,
       ),
-      PiHubView(piService: _piService),
+      const PiHubView(),
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF000000),
       body: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 70.0),
+            padding: const EdgeInsets.only(bottom: 74.0),
             child: IndexedStack(
               index: _currentIndex,
               children: screens,
@@ -140,80 +120,74 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                NowPlayingBar(
-                  track: _activeTrack,
-                  currentTarget: _currentTarget,
-                  isPlaying: _isPlaying,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PlayerView(
-                          track: _activeTrack,
-                          currentTarget: _currentTarget,
-                          audioService: _audioService,
-                          piService: _piService,
-                          onToggleTarget: _toggleTarget,
-                        ),
-                      ),
-                    );
-                  },
-                  onPlayPause: () {
-                    setState(() {
-                      _isPlaying = !_isPlaying;
-                    });
-                    if (_currentTarget == AudioTarget.piSpeaker) {
-                      _piService.togglePlayPause();
-                    } else {
-                      if (_isPlaying) {
-                        _audioService.resume();
-                      } else {
-                        _audioService.pause();
-                      }
-                    }
-                  },
-                ),
-              ],
+            child: NowPlayingBar(
+              track: _activeTrack,
+              audioService: _audioService,
+              isPlaying: _isPlaying,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PlayerView(
+                      track: _activeTrack,
+                      audioService: _audioService,
+                    ),
+                  ),
+                );
+              },
+              onPlayPause: () {
+                if (_audioService.player.playing) {
+                  _audioService.pause();
+                } else {
+                  if (_audioService.player.audioSource == null) {
+                    _audioService.playTrack(_activeTrack);
+                  } else {
+                    _audioService.resume(fallbackTrack: _activeTrack);
+                  }
+                }
+              },
             ),
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        backgroundColor: const Color(0xFF0F172A),
-        indicatorColor: _currentTarget == AudioTarget.piSpeaker
-            ? Colors.purpleAccent.withValues(alpha: 0.2)
-            : Colors.cyanAccent.withValues(alpha: 0.2),
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: Colors.cyanAccent),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search_rounded, color: Colors.cyanAccent),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music_rounded, color: Colors.cyanAccent),
-            label: 'Library',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.radio_outlined),
-            selectedIcon: Icon(Icons.radio_rounded, color: Colors.purpleAccent),
-            label: 'pi-aamps',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF000000),
+          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 0.8)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          backgroundColor: const Color(0xFF000000),
+          indicatorColor: Colors.white.withValues(alpha: 0.14),
+          elevation: 0,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined, color: Colors.white60),
+              selectedIcon: Icon(Icons.home_rounded, color: Colors.white),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.search_outlined, color: Colors.white60),
+              selectedIcon: Icon(Icons.search_rounded, color: Colors.white),
+              label: 'Search',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.library_music_outlined, color: Colors.white60),
+              selectedIcon: Icon(Icons.library_music_rounded, color: Colors.white),
+              label: 'Library',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.radio_outlined, color: Colors.white60),
+              selectedIcon: Icon(Icons.radio_rounded, color: Colors.white),
+              label: 'pi-aamps',
+            ),
+          ],
+        ),
       ),
     );
   }

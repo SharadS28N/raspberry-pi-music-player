@@ -7,9 +7,9 @@ class IntegrationService extends ChangeNotifier {
 
   // Scrobbling states
   bool _lastFmEnabled = true;
-  String _lastFmUsername = 'SharadB';
+  final String _lastFmUsername = 'SharadB';
   bool _listenBrainzEnabled = true;
-  String _listenBrainzToken = 'lb_user_token_991823';
+  final String _listenBrainzToken = 'lb_user_token_991823';
   bool _discordRpcEnabled = true;
 
   // Music Recognition state

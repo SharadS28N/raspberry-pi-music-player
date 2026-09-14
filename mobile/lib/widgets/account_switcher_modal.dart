@@ -18,27 +18,27 @@ class AccountSwitcherModal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: Color(0xFF141414),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.manage_accounts_rounded, color: Colors.cyanAccent, size: 26),
-              const SizedBox(width: 10),
-              const Text(
+              Icon(Icons.manage_accounts_rounded, color: Colors.white, size: 26),
+              SizedBox(width: 10),
+              Text(
                 'Switch Account Profile',
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            'Select your active YouTube Music / OpenAamps account',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+          const Text(
+            'Select your active YouTube Music account',
+            style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
           ),
           const SizedBox(height: 20),
 
@@ -52,7 +52,7 @@ class AccountSwitcherModal extends StatelessWidget {
               final isSelected = acc.id == active.id;
               return ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                tileColor: isSelected ? Colors.cyanAccent.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.04),
+                tileColor: isSelected ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.04),
                 leading: CircleAvatar(
                   radius: 22,
                   backgroundImage: NetworkImage(acc.avatarUrl),
@@ -63,10 +63,10 @@ class AccountSwitcherModal extends StatelessWidget {
                 ),
                 subtitle: Text(
                   '${acc.email} • ${acc.playlistsCount} Playlists',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                  style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
                 ),
                 trailing: isSelected
-                    ? const Icon(Icons.check_circle_rounded, color: Colors.cyanAccent, size: 24)
+                    ? const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24)
                     : null,
                 onTap: () {
                   accountService.switchAccount(acc);
@@ -83,13 +83,13 @@ class AccountSwitcherModal extends StatelessWidget {
             height: 48,
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.cyanAccent),
+                side: const BorderSide(color: Colors.white),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              icon: const Icon(Icons.add_rounded, color: Colors.cyanAccent),
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
               label: const Text(
                 'Add Another YouTube Music Account',
-                style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               onPressed: () {
                 accountService.addAccount(

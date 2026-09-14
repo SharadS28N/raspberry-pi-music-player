@@ -1,233 +1,163 @@
 import 'package:flutter/material.dart';
-import '../models/pi_state.dart';
 import '../services/pi_aamps_service.dart';
 
-class PiHubView extends StatefulWidget {
-  final PiAampsService piService;
+class PiHubView extends StatelessWidget {
+  final PiAampsService? piService;
 
-  const PiHubView({super.key, required this.piService});
-
-  @override
-  State<PiHubView> createState() => _PiHubViewState();
-}
-
-class _PiHubViewState extends State<PiHubView> {
-  final TextEditingController _ipController = TextEditingController(text: '192.168.18.159');
-  PiState _state = PiState();
-  bool _isChecking = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshStatus();
-  }
-
-  void _refreshStatus() async {
-    setState(() {
-      _isChecking = true;
-    });
-    widget.piService.setIpAddress(_ipController.text.trim());
-    final state = await widget.piService.fetchStatus();
-    if (mounted) {
-      setState(() {
-        _state = state;
-        _isChecking = false;
-      });
-    }
-  }
+  const PiHubView({super.key, this.piService});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF000000),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 12),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.radio_rounded, color: Colors.purpleAccent, size: 28),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'pi-aamps Remote Hub',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF18181B),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        child: const Icon(Icons.radio_rounded, color: Colors.white, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'pi-aamps',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            'Hardware Audio Hub',
+                            style: TextStyle(
+                              color: Color(0xFFA1A1AA),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF18181B),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    ),
+                    child: const Text(
+                      'COMING SOON',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Manage Raspberry Pi hardware, equalizer & bluetooth',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
 
-              // Connection Card
+              // Hero Coming Soon Showcase Card
               Container(
-                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _state.isConnected ? Colors.greenAccent : Colors.redAccent.withValues(alpha: 0.5),
-                  ),
+                  color: const Color(0xFF121212),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _state.isConnected ? Icons.wifi_tethering_rounded : Icons.wifi_off_rounded,
-                          color: _state.isConnected ? Colors.greenAccent : Colors.redAccent,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          _state.isConnected ? 'Connected to Raspberry Pi' : 'Disconnected',
-                          style: TextStyle(
-                            color: _state.isConnected ? Colors.greenAccent : Colors.redAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E1E),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      ),
+                      child: const Icon(Icons.speaker_group_rounded, color: Colors.white, size: 32),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _ipController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: 'Raspberry Pi IP Address',
-                              labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                              isDense: true,
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.cyanAccent,
-                            foregroundColor: Colors.black,
-                          ),
-                          onPressed: _isChecking ? null : _refreshStatus,
-                          child: _isChecking
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Text('Connect'),
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Wireless Hardware Engine',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Direct hardware integration with Raspberry Pi audio streamers is under active development. High-fidelity wireless audio streaming to external speakers will be available in an upcoming update.',
+                      style: TextStyle(
+                        color: Color(0xFFA1A1AA),
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // Bluetooth Speaker Receiver Toggle
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.bluetooth_audio_rounded, color: Colors.blueAccent, size: 28),
-                        SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bluetooth Receiver Mode',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                            Text(
-                              'Transform Pi into wireless A2DP speaker',
-                              style: TextStyle(color: Colors.white54, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Switch(
-                      value: _state.isBluetoothEnabled,
-                      activeThumbColor: Colors.blueAccent,
-                      onChanged: (val) async {
-                        await widget.piService.toggleBluetoothReceiver(val);
-                        _refreshStatus();
-                      },
-                    ),
-                  ],
+              // Upcoming Capabilities
+              const Text(
+                'Upcoming Capabilities',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // 10-Band Equalizer Presets
-              Row(
-                children: [
-                  const Icon(Icons.graphic_eq_rounded, color: Colors.purpleAccent, size: 22),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '10-Band Equalizer Presets',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              _buildFeatureItem(
+                icon: Icons.wifi_rounded,
+                title: 'Lossless Wi-Fi Multi-Room',
+                description: 'Bit-perfect 24-bit / 96kHz streaming directly over LAN without Bluetooth degradation.',
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: ['Flat', 'Bass Boost', 'Vocal', 'Treble', 'Party', 'Rock', 'Jazz', 'Electronic', 'Acoustic']
-                    .map((preset) => ChoiceChip(
-                          label: Text(preset),
-                          selected: _state.eqPreset.toLowerCase() == preset.toLowerCase(),
-                          selectedColor: Colors.purpleAccent,
-                          labelStyle: TextStyle(
-                            color: _state.eqPreset.toLowerCase() == preset.toLowerCase() ? Colors.black : Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          onSelected: (selected) async {
-                            if (selected) {
-                              await widget.piService.setEqPreset(preset);
-                              _refreshStatus();
-                            }
-                          },
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 24),
-
-              // Live System Hardware Telemetry
-              Row(
-                children: [
-                  const Icon(Icons.analytics_outlined, color: Colors.amberAccent, size: 22),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Raspberry Pi Hardware Telemetry',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              _buildFeatureItem(
+                icon: Icons.tune_rounded,
+                title: 'Hardware DSP & Parametric EQ',
+                description: 'Studio-grade CamillaDSP digital signal processing running on Raspberry Pi hardware.',
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  _telemetryTile('CPU Load', '${_state.cpuUsage.toStringAsFixed(1)}%', Icons.memory_rounded, Colors.amberAccent),
-                  const SizedBox(width: 10),
-                  _telemetryTile('RAM Usage', '${_state.ramUsage.toStringAsFixed(1)}%', Icons.pie_chart_rounded, Colors.cyanAccent),
-                  const SizedBox(width: 10),
-                  _telemetryTile('Temp', '${_state.tempCelsius.toStringAsFixed(1)}°C', Icons.thermostat_rounded, Colors.orangeAccent),
-                ],
+              _buildFeatureItem(
+                icon: Icons.developer_board_rounded,
+                title: 'Dedicated Hi-Fi DAC Support',
+                description: 'Direct bit-stream synchronization with I2S DAC HATs and dedicated amplifiers.',
               ),
+              const SizedBox(height: 12),
+              _buildFeatureItem(
+                icon: Icons.sync_rounded,
+                title: 'Sub-Millisecond Sync',
+                description: 'Zero audio latency with jitter buffer optimization for multi-room home listening.',
+              ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -235,23 +165,55 @@ class _PiHubViewState extends State<PiHubView> {
     );
   }
 
-  Widget _telemetryTile(String label, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-            Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
-          ],
-        ),
+  Widget _buildFeatureItem({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121212),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: Color(0xFFA1A1AA),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,12 +1,16 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/track.dart';
 import 'youtube_service.dart';
+import 'local_stream_proxy.dart';
 
 enum AudioTarget { phoneLocal, piSpeaker }
 
 class AudioPlayerService {
   final AudioPlayer _player = AudioPlayer();
   final YoutubeService _ytService = YoutubeService();
+  final LocalStreamProxy _proxy = LocalStreamProxy();
   AudioTarget _target = AudioTarget.phoneLocal;
   Track? _currentTrack;
   bool _isLoading = false;
@@ -58,39 +62,70 @@ class AudioPlayerService {
     _loudnessNormalization = enabled;
   }
 
+  LoopMode get loopMode => _player.loopMode;
+  Stream<LoopMode> get loopModeStream => _player.loopModeStream;
+  Stream<bool> get shuffleModeEnabledStream => _player.shuffleModeEnabledStream;
+  Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
+  Future<void> setShuffleModeEnabled(bool enabled) => _player.setShuffleModeEnabled(enabled);
+
+  final Map<String, String> _resolvedStreamCache = {};
+
+  Future<void> preloadNextTrack(Track track) async {
+    try {
+      if (track.localPath != null && File(track.localPath!).existsSync()) return;
+      if (_resolvedStreamCache.containsKey(track.id)) return;
+      final url = await _ytService.getAudioStreamUrl(
+        track.id,
+        queryFallback: '${track.title} ${track.artist}',
+      );
+      if (url != null) {
+        _resolvedStreamCache[track.id] = url;
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _playThroughProxy(String streamUrl, int totalBytes, String container) async {
+    await _proxy.start();
+    _proxy.setStream(streamUrl, totalBytes);
+    final ext = container.isEmpty ? 'mp4' : container;
+    final proxyUrl = _proxy.getProxyUrl('stream.$ext');
+    await _player.setUrl(proxyUrl);
+  }
+
   Future<void> playTrack(Track track) async {
     _currentTrack = track;
-    if (_target == AudioTarget.phoneLocal) {
-      _isLoading = true;
-      try {
-        String? audioUrl = track.streamUrl;
-        if (track.localPath != null && track.localPath!.isNotEmpty) {
+    _isLoading = true;
+    try {
+      bool playedLocal = false;
+      if (track.localPath != null && track.localPath!.isNotEmpty) {
+        final file = File(track.localPath!);
+        if (file.existsSync()) {
           await _player.setFilePath(track.localPath!);
-        } else {
-          if (audioUrl.isEmpty) {
-            audioUrl = await _ytService.getAudioStreamUrl(track.id);
-          }
-          if (audioUrl != null && audioUrl.isNotEmpty) {
-            await _player.setUrl(audioUrl);
-          } else {
-            // Fallback stream URL from Pi backend or direct YouTube search
-            final fallbackUrl = 'http://192.168.18.159:8000/api/audio/stream?id=${track.id}';
-            await _player.setUrl(fallbackUrl);
-          }
+          playedLocal = true;
         }
-        await _player.setSpeed(_playbackSpeed);
-        await _player.setPitch(_pitch);
-        await _player.play();
-      } catch (e) {
-        // Retry fallback stream
-        try {
-          final fallbackUrl = 'http://192.168.18.159:8000/api/audio/stream?id=${track.id}';
-          await _player.setUrl(fallbackUrl);
-          await _player.play();
-        } catch (_) {}
-      } finally {
-        _isLoading = false;
       }
+
+      if (!playedLocal) {
+        await _player.stop();
+        final streamData = await _ytService.getBestAudioStream(
+          track.id,
+          queryFallback: '${track.title} ${track.artist}',
+        );
+
+        if (streamData == null) {
+          throw Exception('No stream URL found for track "${track.title}"');
+        }
+
+        await _playThroughProxy(streamData.url, streamData.totalBytes, streamData.container);
+        _resolvedStreamCache[track.id] = streamData.url;
+      }
+      _isLoading = false;
+      await _player.setSpeed(_playbackSpeed);
+      await _player.setPitch(_pitch);
+      _player.play();
+    } catch (e) {
+      debugPrint('Error playing real track "${track.title}": $e');
+      _isLoading = false;
     }
   }
 
@@ -98,16 +133,19 @@ class AudioPlayerService {
     await _player.pause();
   }
 
-  Future<void> resume() async {
-    if (_target == AudioTarget.phoneLocal) {
-      await _player.play();
+  Future<void> resume({Track? fallbackTrack}) async {
+    if (_player.audioSource == null) {
+      final trackToPlay = _currentTrack ?? fallbackTrack;
+      if (trackToPlay != null) {
+        await playTrack(trackToPlay);
+        return;
+      }
     }
+    _player.play();
   }
 
   Future<void> seek(Duration position) async {
-    if (_target == AudioTarget.phoneLocal) {
-      await _player.seek(position);
-    }
+    await _player.seek(position);
   }
 
   Future<void> setVolume(double volume) async {
@@ -115,6 +153,7 @@ class AudioPlayerService {
   }
 
   void dispose() {
+    _proxy.stop();
     _player.dispose();
     _ytService.dispose();
   }

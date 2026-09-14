@@ -22,10 +22,21 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
 
   final List<Track> _uniqueSongs = [
     Track(
+      id: 'yKNxeF4KMsY',
+      title: 'Yellow',
+      artist: 'Coldplay',
+      album: 'Parachutes',
+      duration: const Duration(minutes: 4, seconds: 29),
+      artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
+      streamUrl: '',
+      codec: 'AAC 320kbps',
+    ),
+    Track(
       id: '34Na4j8AVgA',
       title: 'Starboy',
       artist: 'The Weeknd ft. Daft Punk',
       album: 'Starboy (Deluxe)',
+      duration: const Duration(minutes: 3, seconds: 50),
       artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
       streamUrl: '',
       codec: 'FLAC 24-bit',
@@ -35,6 +46,7 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
       title: 'Blinding Lights',
       artist: 'The Weeknd',
       album: 'After Hours',
+      duration: const Duration(minutes: 3, seconds: 20),
       artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
       streamUrl: '',
       codec: 'OPUS 160kbps',
@@ -44,6 +56,7 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
       title: 'As It Was',
       artist: 'Harry Styles',
       album: "Harry's House",
+      duration: const Duration(minutes: 2, seconds: 47),
       artworkUrl: 'https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg',
       streamUrl: '',
       codec: 'AAC 320kbps',
@@ -53,6 +66,7 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
       title: 'Levitating',
       artist: 'Dua Lipa',
       album: 'Future Nostalgia',
+      duration: const Duration(minutes: 3, seconds: 23),
       artworkUrl: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg',
       streamUrl: '',
       codec: 'OPUS 160kbps',
@@ -62,18 +76,10 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
       title: 'Flowers',
       artist: 'Miley Cyrus',
       album: 'Endless Summer Vacation',
+      duration: const Duration(minutes: 3, seconds: 20),
       artworkUrl: 'https://i.ytimg.com/vi/G7KNmW9a75Y/hqdefault.jpg',
       streamUrl: '',
       codec: 'FLAC 24-bit',
-    ),
-    Track(
-      id: 'ic8j13g5JTQ',
-      title: 'Cruel Summer',
-      artist: 'Taylor Swift',
-      album: 'Lover',
-      artworkUrl: 'https://i.ytimg.com/vi/ic8j13g5JTQ/hqdefault.jpg',
-      streamUrl: '',
-      codec: 'AAC 320kbps',
     ),
   ];
 
@@ -112,33 +118,47 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
     final displayList = _searchResults.isNotEmpty ? _searchResults : _uniqueSongs;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF000000),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search Input Bar (Pill shape matching Screenshot 3)
+              // Search Input Bar (Monochrome Pill)
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFF141414),
                   borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
                 child: TextField(
                   controller: _searchController,
                   style: const TextStyle(color: Colors.white),
                   onSubmitted: (_) => _performSearch(),
+                  onChanged: (val) {
+                    setState(() {});
+                  },
                   decoration: InputDecoration(
                     hintText: 'Search YouTube Music or local tracks',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    hintStyle: const TextStyle(color: Color(0xFF71717A)),
                     prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (_searchController.text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.clear_rounded, color: Colors.white54, size: 20),
+                            tooltip: 'Clear',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchResults = [];
+                              });
+                            },
+                          ),
                         IconButton(
-                          icon: const Icon(Icons.graphic_eq_rounded, color: Colors.cyanAccent),
+                          icon: const Icon(Icons.graphic_eq_rounded, color: Colors.white),
                           tooltip: 'Identify Song (Shazam)',
                           onPressed: () {
                             Navigator.push(
@@ -153,7 +173,8 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.language_rounded, color: Colors.white70),
+                          icon: const Icon(Icons.search_rounded, color: Colors.white),
+                          tooltip: 'Search',
                           onPressed: _performSearch,
                         ),
                       ],
@@ -165,13 +186,13 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 16),
 
-              // Explore / Suggestions Tab Bar
+              // Explore / Suggestions Tab Bar (Pure White indicator)
               TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFFD4E157),
+                indicatorColor: Colors.white,
                 labelColor: Colors.white,
-                unselectedLabelColor: Colors.white54,
-                indicatorWeight: 3,
+                unselectedLabelColor: const Color(0xFF71717A),
+                indicatorWeight: 2.5,
                 tabs: const [
                   Tab(
                     icon: Icon(Icons.explore_outlined, size: 20),
@@ -200,7 +221,7 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(color: Colors.cyanAccent),
+                    child: CircularProgressIndicator(color: Colors.white),
                   ),
                 )
               else
@@ -214,18 +235,29 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
 
                       return Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                          color: const Color(0xFF141414),
                           borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          onTap: () {
+                            widget.onPlayTrack(track);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Now playing "${track.title}" by ${track.artist}'),
+                                duration: const Duration(seconds: 2),
+                                backgroundColor: const Color(0xFF141414),
+                              ),
+                            );
+                          },
                           leading: SizedBox(
                             width: 24,
                             child: Text(
                               '$trackNumber',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 16,
+                              style: const TextStyle(
+                                color: Color(0xFF71717A),
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
@@ -243,8 +275,8 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                           ),
                           subtitle: Text(
                             track.artist,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                            style: const TextStyle(
+                              color: Color(0xFFA1A1AA),
                               fontSize: 13,
                             ),
                             maxLines: 1,
@@ -254,12 +286,14 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.cyanAccent, size: 32),
+                                icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 32),
+                                tooltip: 'Play',
                                 onPressed: () => widget.onPlayTrack(track),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.more_vert_rounded, color: Colors.white54, size: 20),
-                                onPressed: () {},
+                                tooltip: 'Options',
+                                onPressed: () => _showTrackModal(context, track),
                               ),
                             ],
                           ),
@@ -272,6 +306,65 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
           ),
         ),
       ),
+    );
+  }
+
+  void _showTrackModal(BuildContext context, Track track) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      track.artworkUrl,
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.music_note_rounded, color: Colors.white),
+                    ),
+                  ),
+                  title: Text(track.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: Text(track.artist, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                ),
+                const Divider(color: Colors.white12),
+                ListTile(
+                  leading: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                  title: const Text('Play Now', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    widget.onPlayTrack(track);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.download_rounded, color: Color(0xFFA1A1AA)),
+                  title: const Text('Download for Offline', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Downloading "${track.title}" offline...'),
+                        backgroundColor: const Color(0xFF141414),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
