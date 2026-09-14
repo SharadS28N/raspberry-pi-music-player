@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-import '../lib/services/local_stream_proxy.dart';
+import 'package:open_aamps/services/local_stream_proxy.dart';
 
 void main() async {
   final yt = YoutubeExplode();
@@ -11,7 +11,7 @@ void main() async {
 
   final proxy = LocalStreamProxy();
   await proxy.start();
-  proxy.setTargetUrl(stream.url.toString());
+  proxy.setStream(stream.url.toString(), stream.size.totalBytes);
   final proxyUrl = proxy.getProxyUrl('audio.mp4');
   print("Proxy URL: $proxyUrl");
 

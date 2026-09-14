@@ -3,6 +3,7 @@ import '../models/track.dart';
 import '../services/youtube_service.dart';
 import '../services/integration_service.dart';
 import 'music_recognition_view.dart';
+import '../widgets/app_alert.dart';
 
 class SearchView extends StatefulWidget {
   final Function(Track) onPlayTrack;
@@ -243,12 +244,10 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           onTap: () {
                             widget.onPlayTrack(track);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Now playing "${track.title}" by ${track.artist}'),
-                                duration: const Duration(seconds: 2),
-                                backgroundColor: const Color(0xFF141414),
-                              ),
+                            AppAlert.show(
+                              context,
+                              'Playing "${track.title}"',
+                              icon: Icons.play_arrow_rounded,
                             );
                           },
                           leading: SizedBox(
@@ -351,13 +350,12 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                   leading: const Icon(Icons.download_rounded, color: Color(0xFFA1A1AA)),
                   title: const Text('Download for Offline', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Downloading "${track.title}" offline...'),
-                        backgroundColor: const Color(0xFF141414),
-                      ),
+                    AppAlert.show(
+                      context,
+                      'Downloading "${track.title}" offline...',
+                      icon: Icons.download_rounded,
                     );
+                    Navigator.pop(ctx);
                   },
                 ),
               ],

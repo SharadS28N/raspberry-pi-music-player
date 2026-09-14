@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'models/track.dart';
 import 'services/audio_player_service.dart';
 import 'services/account_service.dart';
@@ -13,7 +15,18 @@ import 'views/pi_hub_view.dart';
 import 'views/library_view.dart';
 import 'widgets/now_playing_bar.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.openaamps.open_aamps.channel.audio',
+    androidNotificationChannelName: 'OpenAamps Playback',
+    androidNotificationOngoing: false,
+    androidStopForegroundOnPause: false,
+    androidNotificationIcon: 'mipmap/ic_launcher',
+  );
+  try {
+    await Permission.notification.request();
+  } catch (_) {}
   runApp(const OpenAampsApp());
 }
 
@@ -23,7 +36,7 @@ class OpenAampsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Echo Music',
+      title: 'OpenAamps',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -101,6 +114,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         accountService: AccountService.instance,
         localAudioService: LocalAudioService(),
         onPlayTrack: _onPlayTrack,
+        audioService: _audioService,
       ),
       const PiHubView(),
     ];

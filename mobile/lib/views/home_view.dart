@@ -7,6 +7,7 @@ import '../services/integration_service.dart';
 import '../widgets/account_switcher_modal.dart';
 import '../widgets/spotify_import_modal.dart';
 import 'stats_view.dart';
+import '../widgets/app_alert.dart';
 
 class HomeView extends StatefulWidget {
   final Function(Track) onPlayTrack;
@@ -26,6 +27,22 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   String _selectedCategory = 'Feel good';
+
+  @override
+  void initState() {
+    super.initState();
+    AccountService.instance.addListener(_refresh);
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    AccountService.instance.removeListener(_refresh);
+    super.dispose();
+  }
 
   final List<String> _categories = [
     'Feel good',
@@ -147,7 +164,7 @@ class _HomeViewState extends State<HomeView> {
                       ),
                       const SizedBox(width: 12),
                       const Text(
-                        'Echo Music',
+                        'OpenAamps',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -204,7 +221,12 @@ class _HomeViewState extends State<HomeView> {
                           child: CircleAvatar(
                             radius: 15,
                             backgroundColor: const Color(0xFF222222),
-                            child: const Icon(Icons.person_rounded, size: 18, color: Colors.white),
+                            backgroundImage: AccountService.instance.activeAccount.avatarUrl.isNotEmpty
+                                ? NetworkImage(AccountService.instance.activeAccount.avatarUrl)
+                                : null,
+                            child: AccountService.instance.activeAccount.avatarUrl.isEmpty
+                                ? const Icon(Icons.person_rounded, size: 18, color: Colors.white)
+                                : null,
                           ),
                         ),
                       ),
@@ -451,13 +473,12 @@ class _HomeViewState extends State<HomeView> {
                   leading: const Icon(Icons.download_rounded, color: Color(0xFFA1A1AA)),
                   title: const Text('Download Offline', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Downloading "${track.title}" offline...'),
-                        backgroundColor: const Color(0xFF141414),
-                      ),
+                    AppAlert.show(
+                      context,
+                      'Downloading "${track.title}" offline...',
+                      icon: Icons.download_rounded,
                     );
+                    Navigator.pop(ctx);
                   },
                 ),
               ],

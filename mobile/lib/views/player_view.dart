@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/track.dart';
@@ -6,8 +7,10 @@ import '../services/audio_player_service.dart';
 import '../services/pi_aamps_service.dart';
 import '../services/download_service.dart';
 import '../services/youtube_service.dart';
+import '../services/settings_service.dart';
 import 'lyrics_view.dart';
 import 'settings_view.dart';
+import '../widgets/app_alert.dart';
 
 class PlayerView extends StatefulWidget {
   final Track track;
@@ -41,7 +44,6 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
   double _dragValue = 0.0;
   bool _isShuffle = false;
   LoopMode _loopMode = LoopMode.off;
-  Timer? _sleepTimer;
 
   late AnimationController _vinylController;
   StreamSubscription<Duration>? _positionSub;
@@ -52,6 +54,8 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _isPlaying = widget.audioService.player.playing;
+    _isLiked = widget.audioService.isLiked(widget.track.id);
+
     _vinylController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
@@ -92,14 +96,24 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
       }
     });
 
+    SettingsService.instance.addListener(_onSettingsChange);
+    DownloadService.instance.addListener(_onSettingsChange);
+    widget.audioService.addListener(_onSettingsChange);
+
     if (widget.audioService.player.audioSource == null || widget.audioService.currentTrack?.id != widget.track.id) {
       widget.audioService.playTrack(widget.track);
     }
   }
 
+  void _onSettingsChange() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
-    _sleepTimer?.cancel();
+    SettingsService.instance.removeListener(_onSettingsChange);
+    DownloadService.instance.removeListener(_onSettingsChange);
+    widget.audioService.removeListener(_onSettingsChange);
     _positionSub?.cancel();
     _durationSub?.cancel();
     _stateSub?.cancel();
@@ -115,12 +129,12 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final track = widget.track;
+    final track = widget.audioService.currentTrack ?? widget.track;
 
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF000000),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 32),
@@ -147,17 +161,44 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download_rounded, color: Colors.white),
-            tooltip: 'Download Offline',
-            onPressed: () {
-              DownloadService.instance.downloadTrack(track, YoutubeService());
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Downloading "${track.title}" for offline playback...'),
-                  duration: const Duration(seconds: 2),
-                  backgroundColor: const Color(0xFF141414),
+          Builder(
+            builder: (context) {
+              final isDownloaded = DownloadService.instance.isDownloaded(track.id);
+              final isDownloading = DownloadService.instance.isDownloading(track.id);
+              if (isDownloading) {
+                return const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  ),
+                );
+              }
+              return IconButton(
+                icon: Icon(
+                  isDownloaded ? Icons.offline_pin_rounded : Icons.download_rounded,
+                  color: isDownloaded ? Colors.white : Colors.white70,
                 ),
+                tooltip: isDownloaded ? 'Downloaded' : 'Download Offline',
+                onPressed: () {
+                  if (isDownloaded) {
+                    AppAlert.show(
+                      context,
+                      'Song already downloaded for offline playback',
+                      icon: Icons.offline_pin_rounded,
+                      isFullScreen: true,
+                    );
+                  } else {
+                    DownloadService.instance.downloadTrack(track, YoutubeService());
+                    AppAlert.show(
+                      context,
+                      'Downloading "${track.title}" for offline playback...',
+                      icon: Icons.download_rounded,
+                      isFullScreen: true,
+                    );
+                  }
+                },
               );
             },
           ),
@@ -168,7 +209,10 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LyricsView(track: track),
+                  builder: (context) => LyricsView(
+                    track: track,
+                    audioService: widget.audioService,
+                  ),
                 ),
               );
             },
@@ -180,64 +224,76 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
           ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-          child: Column(
-            children: [
-              const Spacer(),
-
-              // Artwork View
-              _buildArtworkWidget(track),
-
-              const Spacer(),
-
-              // Track Info & Like Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+      body: Stack(
+        children: [
+          Positioned.fill(child: _buildBackgroundLayer(track)),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          track.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.4,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  const Spacer(),
+
+                  // Artwork View
+                  _buildArtworkWidget(track),
+
+                  const Spacer(),
+
+                  // Track Info & Like Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              track.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.4,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              track.artist,
+                              style: const TextStyle(
+                                color: Color(0xFFA1A1AA),
+                                fontSize: 16,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          track.artist,
-                          style: const TextStyle(
-                            color: Color(0xFFA1A1AA),
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          color: _isLiked ? Colors.white : Colors.white60,
+                          size: 26,
                         ),
-                      ],
-                    ),
+                        onPressed: () {
+                          widget.audioService.toggleLike(track);
+                          setState(() {
+                            _isLiked = widget.audioService.isLiked(track.id);
+                          });
+                          AppAlert.show(
+                            context,
+                            _isLiked ? 'Added to Liked Songs' : 'Removed from Liked Songs',
+                            icon: _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            isFullScreen: true,
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: Icon(
-                      _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: _isLiked ? Colors.white : Colors.white60,
-                      size: 26,
-                    ),
-                    onPressed: () {
-                      setState(() => _isLiked = !_isLiked);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
               // Progress Bar Slider + Codec Pill (Pure White & Zinc)
               Builder(
@@ -338,22 +394,18 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     onPressed: () {
                       setState(() => _isShuffle = !_isShuffle);
                       widget.audioService.setShuffleModeEnabled(_isShuffle);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(_isShuffle ? 'Shuffle enabled' : 'Shuffle disabled'),
-                          duration: const Duration(seconds: 1),
-                          backgroundColor: const Color(0xFF141414),
-                        ),
+                      AppAlert.show(
+                        context,
+                        _isShuffle ? 'Shuffle enabled' : 'Shuffle disabled',
+                        icon: Icons.shuffle_rounded,
+                        isFullScreen: true,
                       );
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 34),
-                    tooltip: 'Rewind 10s',
-                    onPressed: () {
-                      final target = _position - const Duration(seconds: 10);
-                      widget.audioService.seek(target < Duration.zero ? Duration.zero : target);
-                    },
+                    icon: const Icon(Icons.skip_previous_rounded, color: Colors.white, size: 38),
+                    tooltip: 'Previous Track',
+                    onPressed: () => widget.audioService.skipToPrevious(),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -361,9 +413,9 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                         widget.audioService.pause();
                       } else {
                         if (widget.audioService.player.audioSource == null) {
-                          widget.audioService.playTrack(widget.track);
+                          widget.audioService.playTrack(track);
                         } else {
-                          widget.audioService.resume(fallbackTrack: widget.track);
+                          widget.audioService.resume(fallbackTrack: track);
                         }
                       }
                     },
@@ -383,8 +435,8 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                               )
                             : Icon(
                                 (_isPlaying || widget.audioService.player.playing)
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
+                                     ? Icons.pause_rounded
+                                     : Icons.play_arrow_rounded,
                                 color: Colors.black,
                                 size: 38,
                               ),
@@ -392,12 +444,9 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 34),
-                    tooltip: 'Forward 10s',
-                    onPressed: () {
-                      final target = _position + const Duration(seconds: 10);
-                      widget.audioService.seek(target > _duration ? _duration : target);
-                    },
+                    icon: const Icon(Icons.skip_next_rounded, color: Colors.white, size: 38),
+                    tooltip: 'Next Track',
+                    onPressed: () => widget.audioService.skipToNext(),
                   ),
                   IconButton(
                     icon: Icon(
@@ -421,16 +470,15 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                         }
                       });
                       widget.audioService.setLoopMode(_loopMode);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            _loopMode == LoopMode.one
-                                ? 'Loop current track'
-                                : (_loopMode == LoopMode.all ? 'Loop all tracks' : 'Loop disabled'),
-                          ),
-                          duration: const Duration(seconds: 1),
-                          backgroundColor: const Color(0xFF141414),
-                        ),
+                      AppAlert.show(
+                        context,
+                        _loopMode == LoopMode.one
+                            ? 'Loop current track'
+                            : (_loopMode == LoopMode.all ? 'Loop all tracks' : 'Loop disabled'),
+                        icon: _loopMode == LoopMode.one
+                            ? Icons.repeat_one_rounded
+                            : Icons.repeat_rounded,
+                        isFullScreen: true,
                       );
                     },
                   ),
@@ -485,7 +533,10 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => LyricsView(track: track),
+                          builder: (context) => LyricsView(
+                            track: track,
+                            audioService: widget.audioService,
+                          ),
                         ),
                       );
                     },
@@ -511,25 +562,223 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
           ),
         ),
       ),
-    );
+    ],
+  ),
+);
+}
+
+  Widget _buildBackgroundLayer(Track track) {
+    final bg = SettingsService.instance.backgroundStyle;
+    switch (bg) {
+      case BackgroundStyle.pureBlack:
+        return const SizedBox.expand(
+          child: ColoredBox(color: Color(0xFF000000)),
+        );
+      case BackgroundStyle.darkGradient:
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF18181B), Color(0xFF000000)],
+            ),
+          ),
+        );
+      case BackgroundStyle.albumArtBlur:
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(track.artworkUrl, fit: BoxFit.cover),
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
+              child: Container(color: Colors.black.withValues(alpha: 0.85)),
+            ),
+          ],
+        );
+      case BackgroundStyle.dynamicColor:
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -0.3),
+              radius: 1.1,
+              colors: [Color(0xFF27272A), Color(0xFF000000)],
+            ),
+          ),
+        );
+    }
   }
 
   Widget _buildArtworkWidget(Track track) {
-    if (widget.playerStyle == PlayerStyle.vinyl) {
-      return RotationTransition(
-        turns: _vinylController,
-        child: Container(
-          width: 270,
-          height: 270,
+    final style = SettingsService.instance.playerStyle;
+    switch (style) {
+      case PlayerStyle.vinyl:
+        return RotationTransition(
+          turns: _vinylController,
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF0A0A0A),
+              border: Border.all(color: Colors.white24, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.95),
+                  blurRadius: 35,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1.5),
+                  ),
+                ),
+                Container(
+                  width: 210,
+                  height: 210,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.09), width: 1.5),
+                  ),
+                ),
+                Container(
+                  width: 170,
+                  height: 170,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.10), width: 1.5),
+                  ),
+                ),
+                Container(
+                  width: 116,
+                  height: 116,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white38, width: 2),
+                    image: DecorationImage(
+                      image: NetworkImage(track.artworkUrl),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF000000),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+      case PlayerStyle.classic:
+        return Container(
+          width: 280,
+          height: 280,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white38, width: 1.5),
+            color: const Color(0xFF141414),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.8),
+                blurRadius: 25,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(track.artworkUrl, fit: BoxFit.cover, width: double.infinity),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'SIDE A • STEREO',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    track.codec,
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+
+      case PlayerStyle.minimal:
+        return Container(
+          width: 260,
+          height: 260,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.black,
-            border: Border.all(color: Colors.white24, width: 4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
+            image: DecorationImage(
+              image: NetworkImage(track.artworkUrl),
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+
+      case PlayerStyle.glassmorphism:
+        return Container(
+          width: 285,
+          height: 285,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white.withValues(alpha: 0.08),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.05),
+                blurRadius: 30,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.network(track.artworkUrl, fit: BoxFit.cover),
+          ),
+        );
+
+      case PlayerStyle.modern:
+        return Container(
+          width: 290,
+          height: 290,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.8),
                 blurRadius: 30,
-                spreadRadius: 4,
+                spreadRadius: 2,
+                offset: const Offset(0, 10),
               ),
             ],
             image: DecorationImage(
@@ -537,30 +786,8 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
               fit: BoxFit.cover,
             ),
           ),
-        ),
-      );
+        );
     }
-
-    return Container(
-      width: 290,
-      height: 290,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.8),
-            blurRadius: 30,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        image: DecorationImage(
-          image: NetworkImage(track.artworkUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
   }
 
   void _showQueueModal(BuildContext context) {
@@ -705,57 +932,143 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) {
-        final options = [15, 30, 45, 60];
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Sleep Timer',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((mins) => ListTile(
-                      leading: const Icon(Icons.access_time_rounded, color: Colors.white),
-                      title: Text('$mins minutes', style: const TextStyle(color: Colors.white)),
-                      onTap: () {
-                        _sleepTimer?.cancel();
-                        _sleepTimer = Timer(Duration(minutes: mins), () {
-                          widget.audioService.pause();
-                        });
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Playback will stop in $mins minutes'),
-                            backgroundColor: const Color(0xFF141414),
-                            duration: const Duration(seconds: 2),
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalContext, setModalState) {
+          final options = [15, 30, 45, 60, 90];
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.bedtime_rounded, color: Colors.white, size: 24),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Sleep Timer Setup',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Live Countdown Stream Display
+                  ValueListenableBuilder<Duration?>(
+                    valueListenable: widget.audioService.sleepTimerRemaining,
+                    builder: (context, remaining, _) {
+                      if (remaining != null && remaining > Duration.zero) {
+                        final m = remaining.inMinutes;
+                        final s = (remaining.inSeconds % 60).toString().padLeft(2, '0');
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white30, width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.hourglass_top_rounded, color: Colors.white, size: 22),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Stopping in $m:$s',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {
+                                  widget.audioService.cancelSleepTimer();
+                                  setModalState(() {});
+                                },
+                                child: const Text('Cancel', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
                           ),
                         );
-                      },
-                    )),
-                ListTile(
-                  leading: const Icon(Icons.timer_off_outlined, color: Colors.white70),
-                  title: const Text('Turn Off Timer', style: TextStyle(color: Colors.white70)),
-                  onTap: () {
-                    _sleepTimer?.cancel();
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Sleep timer disabled'),
-                        backgroundColor: Color(0xFF141414),
-                        duration: Duration(seconds: 2),
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
+                  const Text(
+                    'QUICK PRESETS',
+                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: options.map((mins) {
+                      return ActionChip(
+                        backgroundColor: const Color(0xFF222222),
+                        label: Text('$mins min', style: const TextStyle(color: Colors.white)),
+                        onPressed: () {
+                          widget.audioService.setSleepTimer(Duration(minutes: mins));
+                          AppAlert.show(
+                            context,
+                            'Sleep timer set for $mins minutes',
+                            icon: Icons.bedtime_rounded,
+                            isFullScreen: true,
+                          );
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'CUSTOM TIME SETUP',
+                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                  ),
+                  const SizedBox(height: 8),
+                  _CustomSleepTimerSlider(
+                    onSetTimer: (duration) {
+                      widget.audioService.setSleepTimer(duration);
+                      AppAlert.show(
+                        context,
+                        'Sleep timer set for ${duration.inMinutes} minutes',
+                        icon: Icons.bedtime_rounded,
+                        isFullScreen: true,
+                      );
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+
+                  if (widget.audioService.isSleepTimerActive)
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.timer_off_outlined, color: Colors.white70),
+                        label: const Text('Turn Off Sleep Timer', style: TextStyle(color: Colors.white70)),
+                        onPressed: () {
+                          widget.audioService.cancelSleepTimer();
+                          AppAlert.show(
+                            context,
+                            'Sleep timer disabled',
+                            icon: Icons.timer_off_outlined,
+                            isFullScreen: true,
+                          );
+                          Navigator.pop(ctx);
+                        },
                       ),
-                    );
-                  },
-                ),
-              ],
+                    ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -787,27 +1100,27 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                   leading: const Icon(Icons.download_rounded, color: Colors.white),
                   title: const Text('Download for Offline', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.pop(ctx);
                     DownloadService.instance.downloadTrack(track, YoutubeService());
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Downloading "${track.title}" offline...'),
-                        backgroundColor: const Color(0xFF141414),
-                      ),
+                    AppAlert.show(
+                      context,
+                      'Downloading "${track.title}" offline...',
+                      icon: Icons.download_rounded,
+                      isFullScreen: true,
                     );
+                    Navigator.pop(ctx);
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.playlist_add_rounded, color: Colors.white),
                   title: const Text('Add to Playlist', style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Added "${track.title}" to Favorites'),
-                        backgroundColor: const Color(0xFF141414),
-                      ),
+                    AppAlert.show(
+                      context,
+                      'Added "${track.title}" to Favorites',
+                      icon: Icons.favorite_rounded,
+                      isFullScreen: true,
                     );
+                    Navigator.pop(ctx);
                   },
                 ),
                 ListTile(
@@ -826,6 +1139,62 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
           ),
         );
       },
+    );
+  }
+}
+
+class _CustomSleepTimerSlider extends StatefulWidget {
+  final Function(Duration) onSetTimer;
+
+  const _CustomSleepTimerSlider({required this.onSetTimer});
+
+  @override
+  State<_CustomSleepTimerSlider> createState() => _CustomSleepTimerSliderState();
+}
+
+class _CustomSleepTimerSliderState extends State<_CustomSleepTimerSlider> {
+  double _minutes = 20.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${_minutes.toInt()} minutes',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => widget.onSetTimer(Duration(minutes: _minutes.toInt())),
+              child: const Text('Start Timer', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: const SliderThemeData(
+            trackHeight: 3,
+            thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+            activeTrackColor: Colors.white,
+            inactiveTrackColor: Color(0xFF27272A),
+            thumbColor: Colors.white,
+          ),
+          child: Slider(
+            value: _minutes,
+            min: 5,
+            max: 120,
+            divisions: 23,
+            onChanged: (val) => setState(() => _minutes = val),
+          ),
+        ),
+      ],
     );
   }
 }

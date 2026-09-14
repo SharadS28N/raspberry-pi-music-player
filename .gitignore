@@ -41,3 +41,5 @@ DEPLOY.md
 *.swo
 .DS_Store
 Thumbs.db
+*.png
+!mobile/assets/*.png

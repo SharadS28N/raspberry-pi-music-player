@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
@@ -64,12 +63,13 @@ class DownloadService extends ChangeNotifier {
     final trackId = track.id;
     if (isDownloaded(trackId) || isDownloading(trackId)) return;
 
-    _downloadProgress[trackId] = 0.05;
+    _downloadProgress[trackId] = 0.02;
     notifyListeners();
 
+    final client = HttpClient();
     try {
       String? streamUrl = track.streamUrl;
-      if (streamUrl.isEmpty || streamUrl.startsWith('/storage')) {
+      if (streamUrl.isEmpty || streamUrl.startsWith('/storage') || streamUrl.startsWith('http://127.0.0.1')) {
         streamUrl = await ytService.getAudioStreamUrl(
           track.id,
           queryFallback: '${track.title} ${track.artist}',
@@ -88,40 +88,77 @@ class DownloadService extends ChangeNotifier {
 
       final sanitizedTitle = track.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
       final targetFile = File('${musicDir.path}/${track.id}_$sanitizedTitle.m4a');
+      if (targetFile.existsSync()) {
+        targetFile.deleteSync();
+      }
 
-      final request = http.Request('GET', Uri.parse(streamUrl));
-      request.headers['User-Agent'] =
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-
-      final client = http.Client();
-      final streamedResponse = await client.send(request);
-
-      final totalBytes = streamedResponse.contentLength ?? (4 * 1024 * 1024);
-      int receivedBytes = 0;
+      // Probe total length via range 0-1
+      int totalBytes = 4 * 1024 * 1024;
+      try {
+        final probeReq = await client.getUrl(Uri.parse(streamUrl));
+        probeReq.headers.set('Range', 'bytes=0-1');
+        final probeRes = await probeReq.close();
+        final contentRange = probeRes.headers.value(HttpHeaders.contentRangeHeader);
+        if (contentRange != null) {
+          final match = RegExp(r'/(\d+)').firstMatch(contentRange);
+          if (match != null) {
+            final parsed = int.tryParse(match.group(1) ?? '');
+            if (parsed != null && parsed > 0) {
+              totalBytes = parsed;
+            }
+          }
+        }
+        await probeRes.drain();
+      } catch (_) {}
 
       final fileSink = targetFile.openWrite();
-      await for (var chunk in streamedResponse.stream) {
-        fileSink.add(chunk);
-        receivedBytes += chunk.length;
-        _downloadProgress[trackId] = (receivedBytes / totalBytes).clamp(0.0, 0.99);
+      const chunkSize = 256 * 1024; // Safe 256KB bounded range
+      int current = 0;
+
+      while (current < totalBytes) {
+        final chunkEnd = (current + chunkSize - 1) < totalBytes
+            ? (current + chunkSize - 1)
+            : totalBytes - 1;
+
+        final chunkReq = await client.getUrl(Uri.parse(streamUrl));
+        chunkReq.headers.set('Range', 'bytes=$current-$chunkEnd');
+        final chunkRes = await chunkReq.close();
+
+        if (chunkRes.statusCode != 206 && chunkRes.statusCode != 200) {
+          await chunkRes.drain();
+          break;
+        }
+
+        await for (var chunk in chunkRes) {
+          fileSink.add(chunk);
+        }
+
+        current = chunkEnd + 1;
+        _downloadProgress[trackId] = (current / totalBytes).clamp(0.05, 0.99);
         notifyListeners();
       }
 
       await fileSink.flush();
       await fileSink.close();
 
-      final downloadedTrack = track.copyWith(
-        localPath: targetFile.path,
-        isDownloaded: true,
-        isLocal: true,
-        streamUrl: targetFile.path,
-      );
+      if (targetFile.existsSync() && targetFile.lengthSync() > 10000) {
+        final downloadedTrack = track.copyWith(
+          localPath: targetFile.path,
+          isDownloaded: true,
+          isLocal: true,
+          streamUrl: targetFile.path,
+        );
 
-      _downloadedTracks.add(downloadedTrack);
-      await _saveDownloads();
+        _downloadedTracks.removeWhere((t) => t.id == downloadedTrack.id);
+        _downloadedTracks.insert(0, downloadedTrack);
+        await _saveDownloads();
+      } else {
+        throw Exception('Downloaded file was incomplete or corrupted');
+      }
     } catch (e) {
       debugPrint('Download error for ${track.title}: $e');
     } finally {
+      client.close();
       _downloadProgress.remove(trackId);
       notifyListeners();
     }

@@ -65,24 +65,27 @@ class LocalStreamProxy {
     request.response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
     request.response.headers.set(HttpHeaders.contentLengthHeader, contentLength.toString());
 
-    const chunkSize = 128 * 1024; // Safe 128KB chunks for YouTube GoogleVideo
     final client = HttpClient();
 
     try {
-      int current = start;
-      while (current <= end) {
-        final chunkEnd = (current + chunkSize - 1) < end ? (current + chunkSize - 1) : end;
-        final chunkReq = await client.getUrl(Uri.parse(_targetUrl!));
-        chunkReq.headers.set('Range', 'bytes=$current-$chunkEnd');
-        final chunkRes = await chunkReq.close();
-        
-        if (chunkRes.statusCode != 206 && chunkRes.statusCode != 200) {
-          break;
-        }
-
-        await request.response.addStream(chunkRes);
-        current = chunkEnd + 1;
+      final upstreamReq = await client.getUrl(Uri.parse(_targetUrl!));
+      upstreamReq.headers.set('User-Agent', 'com.google.android.youtube/19.29.37 (Linux; U; Android 14)');
+      if (rangeHeader != null) {
+        upstreamReq.headers.set(HttpHeaders.rangeHeader, rangeHeader);
       }
+      final upstreamRes = await upstreamReq.close();
+      
+      request.response.statusCode = upstreamRes.statusCode;
+      upstreamRes.headers.forEach((name, values) {
+        final lower = name.toLowerCase();
+        if (lower != 'transfer-encoding' && lower != 'connection') {
+          for (var val in values) {
+            request.response.headers.add(name, val);
+          }
+        }
+      });
+
+      await request.response.addStream(upstreamRes);
       await request.response.close();
     } catch (_) {
       try {

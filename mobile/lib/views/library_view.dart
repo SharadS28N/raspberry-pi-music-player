@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/track.dart';
 import '../services/account_service.dart';
+import '../services/audio_player_service.dart';
+import '../services/download_service.dart';
 import '../services/local_audio_service.dart';
 import 'album_view.dart';
 import 'settings_view.dart';
+import '../widgets/app_alert.dart';
 
 class LibraryView extends StatefulWidget {
   final AccountService accountService;
   final LocalAudioService localAudioService;
   final Function(Track) onPlayTrack;
+  final AudioPlayerService? audioService;
 
   const LibraryView({
     super.key,
     required this.accountService,
     required this.localAudioService,
     required this.onPlayTrack,
+    this.audioService,
   });
 
   @override
@@ -24,6 +29,24 @@ class LibraryView extends StatefulWidget {
 class _LibraryViewState extends State<LibraryView> {
   int _selectedFilterIndex = 0;
   final List<String> _filters = ['Library', 'Playlists', 'Songs', 'Albums', 'Artists'];
+
+  @override
+  void initState() {
+    super.initState();
+    DownloadService.instance.addListener(_onStateChange);
+    widget.audioService?.addListener(_onStateChange);
+  }
+
+  void _onStateChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    DownloadService.instance.removeListener(_onStateChange);
+    widget.audioService?.removeListener(_onStateChange);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,15 +88,7 @@ class _LibraryViewState extends State<LibraryView> {
                 IconButton(
                   icon: const Icon(Icons.history_rounded, color: Colors.white70),
                   tooltip: 'History',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Listening history is up to date'),
-                        backgroundColor: Color(0xFF141414),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  },
+                  onPressed: () => _showHistoryModal(context),
                 ),
                 IconButton(
                   icon: const Icon(Icons.tune_rounded, color: Colors.white70),
@@ -263,34 +278,15 @@ class _LibraryViewState extends State<LibraryView> {
                   icon: Icons.favorite_rounded,
                   iconColor: Colors.white,
                   title: 'Liked songs',
-                  subtitle: '${activeAccount.likedSongsCount} tracks',
-                  onTap: () {
-                    widget.onPlayTrack(Track(
-                      id: 'yKNxeF4KMsY',
-                      title: 'Yellow',
-                      artist: 'Coldplay',
-                      album: 'Parachutes',
-                      duration: const Duration(minutes: 4, seconds: 29),
-                      artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
-                      streamUrl: '',
-                      codec: 'AAC 320kbps',
-                    ));
-                  },
+                  subtitle: '${widget.audioService?.likedTracks.length ?? activeAccount.likedSongsCount} tracks',
+                  onTap: () => _showLikedTracksModal(context),
                 ),
                 _buildLibraryCard(
                   icon: Icons.offline_pin_rounded,
                   iconColor: Colors.white,
                   title: 'Offline',
-                  subtitle: 'Downloaded',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Offline storage is ready for downloads'),
-                        backgroundColor: Color(0xFF141414),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
+                  subtitle: '${DownloadService.instance.downloadedTracks.length} tracks',
+                  onTap: () => _showOfflineTracksModal(context),
                 ),
                 _buildLibraryCard(
                   icon: Icons.cached_rounded,
@@ -318,11 +314,11 @@ class _LibraryViewState extends State<LibraryView> {
                   onTap: () async {
                     await widget.localAudioService.scanDeviceAudio();
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Found ${widget.localAudioService.localTracks.length} local audio files on device'),
-                          backgroundColor: const Color(0xFF141414),
-                        ),
+                      AppAlert.show(
+                        context,
+                        'Found ${widget.localAudioService.localTracks.length} local audio files on device',
+                        icon: Icons.folder_open_rounded,
+                        isSuccess: true,
                       );
                     }
                   },
@@ -390,6 +386,286 @@ class _LibraryViewState extends State<LibraryView> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showOfflineTracksModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalCtx, setModalState) {
+          final currentDownloaded = DownloadService.instance.downloadedTracks;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.offline_pin_rounded, color: Colors.white, size: 24),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Offline Tracks (${currentDownloaded.length})',
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (currentDownloaded.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      alignment: Alignment.center,
+                      child: const Column(
+                        children: [
+                          Icon(Icons.download_for_offline_outlined, color: Colors.white38, size: 48),
+                          SizedBox(height: 12),
+                          Text(
+                            'No Offline Downloads',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Tap the download button on any song while playing or searching to store it offline on your device.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: currentDownloaded.length,
+                        separatorBuilder: (c, i) => const SizedBox(height: 8),
+                        itemBuilder: (c, i) {
+                          final track = currentDownloaded[i];
+                          return ListTile(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            tileColor: Colors.white.withValues(alpha: 0.04),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(track.artworkUrl, width: 44, height: 44, fit: BoxFit.cover),
+                            ),
+                            title: Text(track.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            subtitle: Text('${track.artist} • Offline M4A', style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.white38, size: 20),
+                                  tooltip: 'Delete download',
+                                  onPressed: () async {
+                                    await DownloadService.instance.deleteDownloadedTrack(track.id);
+                                    setModalState(() {});
+                                    setState(() {});
+                                  },
+                                ),
+                                const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 28),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              widget.onPlayTrack(track);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showLikedTracksModal(BuildContext context) {
+    final liked = widget.audioService?.likedTracks ?? [];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.favorite_rounded, color: Colors.white, size: 24),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Liked Songs (${liked.length})',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (liked.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    alignment: Alignment.center,
+                    child: const Column(
+                      children: [
+                        Icon(Icons.favorite_border_rounded, color: Colors.white38, size: 48),
+                        SizedBox(height: 12),
+                        Text(
+                          'No Liked Songs Yet',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Tap the heart icon on any playing song to add it to your favorite collection.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: liked.length,
+                      separatorBuilder: (c, i) => const SizedBox(height: 8),
+                      itemBuilder: (c, i) {
+                        final track = liked[i];
+                        return ListTile(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          tileColor: Colors.white.withValues(alpha: 0.04),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(track.artworkUrl, width: 44, height: 44, fit: BoxFit.cover),
+                          ),
+                          title: Text(track.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          subtitle: Text('${track.artist} • ${track.album}', style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                          trailing: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            widget.onPlayTrack(track);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHistoryModal(BuildContext context) {
+    final history = widget.audioService?.history ?? [];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.history_rounded, color: Colors.white, size: 24),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Listening History (${history.length})',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (history.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    alignment: Alignment.center,
+                    child: const Column(
+                      children: [
+                        Icon(Icons.history_toggle_off_rounded, color: Colors.white38, size: 48),
+                        SizedBox(height: 12),
+                        Text(
+                          'No Listening History',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Songs you stream or play will appear here automatically.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: history.length,
+                      separatorBuilder: (c, i) => const SizedBox(height: 8),
+                      itemBuilder: (c, i) {
+                        final track = history[i];
+                        return ListTile(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          tileColor: Colors.white.withValues(alpha: 0.04),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(track.artworkUrl, width: 44, height: 44, fit: BoxFit.cover),
+                          ),
+                          title: Text(track.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          subtitle: Text(track.artist, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                          trailing: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            widget.onPlayTrack(track);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
