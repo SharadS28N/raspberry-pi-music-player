@@ -40,12 +40,11 @@ class BluetoothService:
 
         try:
             # Unblock bluetooth via rfkill if soft-blocked on Raspberry Pi OS
-            subprocess.run(["rfkill", "unblock", "bluetooth"], capture_output=True)
-            subprocess.run(["sudo", "rfkill", "unblock", "bluetooth"], capture_output=True)
+            self._run_cmd(["sudo", "rfkill", "unblock", "bluetooth"])
             
             # Ensure Bluetooth class is hardcoded to A2DP Audio Speaker / Receiver (0x20041C)
-            subprocess.run(["sudo", "hciconfig", "hci0", "class", "0x20041C"], capture_output=True)
-            subprocess.run(["sudo", "hciconfig", "hci0", "piscan"], capture_output=True)
+            self._run_cmd(["sudo", "hciconfig", "hci0", "class", "0x20041C"])
+            self._run_cmd(["sudo", "hciconfig", "hci0", "piscan"])
 
             cmd = ["bluetoothctl"]
 
@@ -150,8 +149,8 @@ class BluetoothService:
     def set_mode(self, mode: str) -> str:
         self.mode = "receiver"
         if self.is_linux and self.powered:
-            self._run_cmd(["hciconfig", "hci0", "class", "0x20041C"])
-            self._run_cmd(["hciconfig", "hci0", "piscan"])
+            self._run_cmd(["sudo", "hciconfig", "hci0", "class", "0x20041C"])
+            self._run_cmd(["sudo", "hciconfig", "hci0", "piscan"])
             self._run_cmd(["bluetoothctl", "discoverable", "on"])
         return "receiver"
 
@@ -161,7 +160,7 @@ class BluetoothService:
             return self.discoverable
 
         if discoverable and self.powered:
-            self._run_cmd(["hciconfig", "hci0", "piscan"])
+            self._run_cmd(["sudo", "hciconfig", "hci0", "piscan"])
             self._run_cmd(["bluetoothctl", "discoverable", "on"])
             self._run_cmd(["bluetoothctl", "pairable", "on"])
         else:
@@ -178,7 +177,7 @@ class BluetoothService:
             ]
 
         logger.info("Scanning for Bluetooth devices...")
-        self._run_cmd(["hciconfig", "hci0", "class", "0x20041C"])
+        self._run_cmd(["sudo", "hciconfig", "hci0", "class", "0x20041C"])
         # Perform scan with timeout
         self._run_cmd(["bluetoothctl", "--timeout", "4", "scan", "on"], timeout=6)
 

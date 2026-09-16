@@ -143,7 +143,7 @@
         <div class="flex items-center gap-4">
             <a href="/" class="flex items-center gap-2 group">
                 <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center p-1.5 shadow-md group-hover:scale-105 transition">
-                    <img src="/assets/emblem.png" alt="pi-aamps" class="w-full h-full object-contain filter invert-0">
+                    <img src="/assets/emblem_dark.png" alt="pi-aamps" class="w-full h-full object-contain">
                 </div>
                 <div class="flex flex-col">
                     <span class="font-extrabold text-base md:text-lg tracking-tight text-white heading-font leading-tight">pi-aamps</span>
@@ -177,13 +177,29 @@
             </form>
         </div>
 
-        <!-- Right: Links & "Install App" CTA + Bluetooth Status Pill -->
-        <div class="flex items-center gap-3 md:gap-5">
-            <a href="/download" class="hidden lg:inline-block text-xs font-bold text-zinc-400 hover:text-white transition">Explore Premium</a>
-            <a href="/download#features" class="hidden lg:inline-block text-xs font-bold text-zinc-400 hover:text-white transition">Support</a>
-            <a href="/download" class="hidden md:inline-block text-xs font-bold text-zinc-400 hover:text-white transition">Download</a>
+        <!-- Right: Raspberry Pi Live Telemetry Monitor & "Install OpenAamps" CTA + Bluetooth Status Pill -->
+        <div class="flex items-center gap-3 md:gap-4">
+            <!-- Raspberry Pi Telemetry Pill: CPU, RAM, Heat & Thermal Cooling -->
+            <button @click="showMetricsModal = true" 
+                    title="Raspberry Pi Hardware Health: CPU, Memory & Thermal Cooling Status" 
+                    class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181818] hover:bg-[#242424] border border-zinc-800 hover:border-zinc-600 transition text-xs">
+                <span class="flex items-center gap-1 font-mono text-zinc-300">
+                    <i class="fa-solid fa-microchip text-[11px] text-zinc-400"></i>
+                    <span x-text="(metrics.cpu_usage_percent || 0) + '%'"></span>
+                </span>
+                <span class="text-zinc-600 text-[10px]">•</span>
+                <span class="flex items-center gap-1 font-mono text-zinc-300">
+                    <i class="fa-solid fa-memory text-[11px] text-zinc-400"></i>
+                    <span x-text="(metrics.memory ? metrics.memory.percent : 0) + '% RAM'"></span>
+                </span>
+                <span class="text-zinc-600 text-[10px]">•</span>
+                <span class="flex items-center gap-1 font-mono" :class="(metrics.temperature_celsius > 65) ? 'text-amber-400' : 'text-zinc-300'">
+                    <i class="fa-solid fa-temperature-half text-[11px]"></i>
+                    <span x-text="(metrics.temperature_celsius || 40) + '°C'"></span>
+                </span>
+            </button>
             
-            <span class="hidden md:inline-block text-zinc-700">|</span>
+            <span class="hidden md:inline-block text-zinc-800">|</span>
 
             <!-- Master Bluetooth Speaker Status & Quick Toggle Button -->
             <button @click="showBluetoothModal = true" 
@@ -859,11 +875,122 @@
         </div>
     </div>
 
+    <!-- 7. Raspberry Pi Hardware Health, Memory & Thermal Cooling Monitor Modal -->
+    <div x-show="showMetricsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="bg-[#242424] text-white w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-zinc-700 relative">
+            <button @click="showMetricsModal = false" class="absolute top-5 right-5 text-zinc-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="flex items-center gap-3 mb-5 border-b border-zinc-700 pb-3">
+                <div class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center">
+                    <i class="fa-solid fa-microchip text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white heading-font">Raspberry Pi Hardware Monitor</h3>
+                    <p class="text-xs text-zinc-400">Live CPU, Memory &amp; Thermal Cooling Telemetry</p>
+                </div>
+            </div>
+
+            <!-- Hardware Cards Grid -->
+            <div class="space-y-3">
+                <!-- Row 1: CPU & RAM Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- CPU Usage -->
+                    <div class="p-4 rounded-xl bg-[#181818] border border-zinc-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-400">CPU Usage</span>
+                            <i class="fa-solid fa-microchip text-xs text-zinc-500"></i>
+                        </div>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-2xl font-black text-white font-mono" x-text="(metrics.cpu_usage_percent || 0) + '%'"></span>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-white transition-all duration-300" :style="'width: ' + Math.min(100, (metrics.cpu_usage_percent || 0)) + '%'"></div>
+                        </div>
+                        <span class="text-[10px] text-zinc-500 block font-mono">Quad-Core ARM SoC</span>
+                    </div>
+
+                    <!-- Memory Usage -->
+                    <div class="p-4 rounded-xl bg-[#181818] border border-zinc-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Memory (RAM)</span>
+                            <i class="fa-solid fa-memory text-xs text-zinc-500"></i>
+                        </div>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-2xl font-black text-white font-mono" x-text="(metrics.memory ? metrics.memory.percent : 0) + '%'"></span>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-white transition-all duration-300" :style="'width: ' + (metrics.memory ? metrics.memory.percent : 0) + '%'"></div>
+                        </div>
+                        <span class="text-[10px] text-zinc-400 block font-mono" x-text="metrics.memory ? (metrics.memory.used_mb + 'MB / ' + metrics.memory.total_mb + 'MB') : '512MB / 1024MB'"></span>
+                    </div>
+                </div>
+
+                <!-- Row 2: Heat & Thermal Cooling Status -->
+                <div class="p-4 rounded-xl bg-[#181818] border border-zinc-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-temperature-half text-sm" :class="metrics.temperature_celsius > 65 ? 'text-amber-400' : 'text-white'"></i>
+                            <span class="text-xs font-bold text-white">SoC Heat &amp; Thermal Cooling</span>
+                        </div>
+                        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full" 
+                              :class="metrics.temperature_celsius > 70 ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-zinc-800 text-zinc-300 border border-zinc-700'"
+                              x-text="(metrics.temperature_celsius || 40) + '°C / ' + (metrics.temperature_fahrenheit || 104) + '°F'"></span>
+                    </div>
+
+                    <!-- Thermal Status Progress Bar -->
+                    <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                        <div class="h-full transition-all duration-300"
+                             :class="metrics.temperature_celsius > 70 ? 'bg-amber-400' : 'bg-white'"
+                             :style="'width: ' + Math.min(100, ((metrics.temperature_celsius || 40) / 85) * 100) + '%'"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1 text-[11px] font-mono">
+                        <div class="bg-black/60 p-2 rounded-lg border border-zinc-800">
+                            <span class="text-zinc-500 block text-[10px]">COOLING STATE</span>
+                            <span class="font-bold text-zinc-200" x-text="metrics.cooling_status || 'Optimal (Passive Cooling)'"></span>
+                        </div>
+                        <div class="bg-black/60 p-2 rounded-lg border border-zinc-800">
+                            <span class="text-zinc-500 block text-[10px]">THROTTLE STATUS</span>
+                            <span class="font-bold text-emerald-400" x-text="metrics.throttling || 'Healthy (0x0)'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Storage & Uptime -->
+                <div class="grid grid-cols-2 gap-3 text-[11px] font-mono">
+                    <div class="p-3 bg-[#181818] rounded-xl border border-zinc-800">
+                        <span class="text-zinc-500 block text-[10px] uppercase">Storage (MicroSD)</span>
+                        <span class="font-bold text-white" x-text="metrics.storage ? (metrics.storage.used_gb + 'GB / ' + metrics.storage.total_gb + 'GB (' + metrics.storage.percent + '%)') : 'Storage OK'"></span>
+                    </div>
+                    <div class="p-3 bg-[#181818] rounded-xl border border-zinc-800">
+                        <span class="text-zinc-500 block text-[10px] uppercase">System Uptime</span>
+                        <span class="font-bold text-white" x-text="metrics.uptime || '1h 24m'"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="mt-5 pt-4 border-t border-zinc-700/60 flex items-center justify-between">
+                <span class="text-[10px] font-mono text-zinc-400" x-text="'Hostname: ' + (metrics.hostname || 'pi-aamps')"></span>
+                <button @click="fetchMetrics()" class="px-4 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Application Script (Preserves full backend sync, player commands & Bluetooth control) -->
     <script>
         function piAampsSpotifyApp() {
             return {
                 // UI Modals
+                showMetricsModal: false,
                 showBluetoothModal: false,
                 showLyricsModal: false,
                 showQueueModal: false,
@@ -962,8 +1089,12 @@
                 init() {
                     this.fetchStatus();
                     this.fetchBluetoothStatus();
+                    this.fetchMetrics();
                     this.fetchPlaylists();
                     this.initWebSocket();
+
+                    // Real-time metrics polling (CPU, RAM, Heat & Thermal Cooling)
+                    setInterval(() => this.fetchMetrics(), 2500);
 
                     // Real-time lyrics tracking
                     this.lyricsCheckInterval = setInterval(() => {
@@ -996,6 +1127,15 @@
                     this.ws.onclose = () => {
                         setTimeout(() => this.initWebSocket(), 2500);
                     };
+                },
+
+                async fetchMetrics() {
+                    try {
+                        const res = await fetch('/api/system/metrics');
+                        this.metrics = await res.json();
+                        if (this.metrics.bluetooth_name) this.customBtName = this.metrics.bluetooth_name;
+                        if (this.metrics.hostname) this.customHostname = this.metrics.hostname;
+                    } catch(e) {}
                 },
 
                 async fetchStatus() {

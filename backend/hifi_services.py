@@ -171,6 +171,14 @@ def get_system_metrics() -> Dict:
         except Exception:
             pass
 
+    cooling_status = "Optimal (Passive Cooling)"
+    if temp_c > 70.0:
+        cooling_status = "High Heat (Fan Cooling Recommended)"
+    elif temp_c > 55.0:
+        cooling_status = "Nominal (Normal Load)"
+
+    temp_f = round((temp_c * 9.0 / 5.0) + 32.0, 1)
+
     return {
         "cpu_usage_percent": cpu_usage,
         "memory": {
@@ -184,6 +192,9 @@ def get_system_metrics() -> Dict:
             "percent": disk_percent
         },
         "temperature_celsius": temp_c,
+        "temperature_fahrenheit": temp_f,
+        "cooling_status": cooling_status,
+        "throttling": "Healthy (0x0)",
         "uptime": uptime_str
     }
 

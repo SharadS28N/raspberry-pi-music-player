@@ -43,3 +43,4 @@ DEPLOY.md
 Thumbs.db
 *.png
 !mobile/assets/*.png
+!frontend/assets/*.png
