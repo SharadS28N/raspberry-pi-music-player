@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-black text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>OpenAamps — Download Next-Gen Audiophile Music Player</title>
+    
+    <!-- Meta & Open Graph Tags -->
+    <meta name="description" content="OpenAamps is the premier open-source Android music player & Raspberry Pi Hi-Fi hub with real-time synced lyrics, 10-band DSP, lossless casting, and Bluetooth speaker mode.">
+    <meta name="theme-color" content="#000000">
+    <link rel="icon" type="image/png" href="/assets/app_icon.png">
+    <link rel="apple-touch-icon" href="/assets/app_icon.png">
+
+    <!-- Tailwind CSS, FontAwesome 6, Google Fonts Inter -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #333333 transparent;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+        .heading-font {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+        }
+        .glass-card {
+            background-color: #121212;
+            border: 1px solid #242424;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-card:hover {
+            border-color: #404040;
+            transform: translateY(-2px);
+            background-color: #181818;
+        }
+        .btn-white {
+            background-color: #FFFFFF;
+            color: #000000;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .btn-white:hover {
+            background-color: #E6E6E6;
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+        }
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #333333;
+            color: #FFFFFF;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-outline:hover {
+            border-color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .badge-monochrome {
+            background: #1A1A1A;
+            border: 1px solid #333333;
+            color: #CCCCCC;
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col bg-black text-white antialiased selection:bg-white selection:text-black">
+
+    <!-- Top Sticky Header -->
+    <header class="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-zinc-900 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="/" class="flex items-center gap-3 group">
+                <img src="/assets/app_icon.png" alt="OpenAamps" class="w-9 h-9 rounded-xl shadow border border-zinc-800 object-cover group-hover:scale-105 transition">
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-lg tracking-tight text-white heading-font leading-tight">OpenAamps</span>
+                    <span class="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">Hi-Fi Audio OS</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
+                <a href="#about" class="hover:text-white transition">Overview</a>
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#screenshots" class="hover:text-white transition">Screenshots</a>
+                <a href="#updates" class="hover:text-white transition">Changelog</a>
+                <a href="#install" class="hover:text-white transition">Install Guide</a>
+            </nav>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-3">
+                <a href="/" class="px-4 py-2 text-xs font-semibold text-zinc-300 hover:text-white rounded-full transition flex items-center gap-2 border border-zinc-800 hover:border-zinc-700">
+                    <i class="fa-solid fa-play text-xs"></i>
+                    <span>Web Player</span>
+                </a>
+                <a href="/api/app/download" class="px-5 py-2 text-xs rounded-full btn-white flex items-center gap-2 shadow-lg">
+                    <i class="fa-brands fa-android text-sm"></i>
+                    <span>Download APK</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1">
+
+        <!-- Hero Section -->
+        <section id="about" class="pt-20 pb-16 px-6 max-w-5xl mx-auto text-center">
+            <!-- App Icon Squircle Hero -->
+            <div class="inline-block relative mb-8">
+                <div class="w-32 h-32 md:w-36 md:h-36 mx-auto rounded-3xl p-1 bg-gradient-to-b from-zinc-700 via-zinc-900 to-black border border-zinc-700 shadow-2xl overflow-hidden">
+                    <img src="/assets/app_icon.png" alt="OpenAamps Icon" class="w-full h-full object-cover rounded-[22px]">
+                </div>
+                <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 badge-monochrome px-3 py-0.5 rounded-full text-[11px] font-mono font-bold tracking-wider uppercase whitespace-nowrap shadow">
+                    v1.0.0 Production
+                </div>
+            </div>
+
+            <!-- Main Hero Typography -->
+            <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white mb-6 heading-font leading-tight">
+                Audiophile Freedom.<br>
+                <span class="text-zinc-400">Android &amp; Raspberry Pi Unified.</span>
+            </h1>
+
+            <!-- What is OpenAamps? Descriptive Explanation -->
+            <div class="max-w-3xl mx-auto space-y-4 text-base md:text-lg text-zinc-300 leading-relaxed font-normal">
+                <p>
+                    <strong class="text-white font-semibold">OpenAamps</strong> is an open-source, hardware-accelerated music ecosystem engineered for true audio enthusiasts.
+                    It combines a standalone, full-featured native Android music application with remote management for your 
+                    <strong class="text-white font-semibold">Raspberry Pi Hi-Fi Music Station</strong>.
+                </p>
+                <p class="text-sm md:text-base text-zinc-400">
+                    Stream millions of songs with word-by-word synchronized LRC lyrics, adjust sound characteristics via a 10-band parametric studio DSP equalizer, wirelessly cast lossless streams with zero buffering, and switch your Raspberry Pi into a dedicated high-fidelity Bluetooth wireless speaker at a single tap.
+                </p>
+            </div>
+
+            <!-- Download CTA Card -->
+            <div class="mt-10 p-6 rounded-2xl glass-card max-w-xl mx-auto flex flex-col items-center border border-zinc-800">
+                <a href="/api/app/download" class="w-full sm:w-auto px-8 py-4 rounded-full btn-white flex items-center justify-center gap-3 text-base shadow-xl">
+                    <i class="fa-brands fa-android text-xl"></i>
+                    <span>Download OpenAamps APK</span>
+                </a>
+                <div class="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-mono text-zinc-400">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-file-arrow-down text-zinc-500"></i> OpenAamps-v1.0.0.apk</span>
+                    <span class="text-zinc-600">•</span>
+                    <span>58.5 MB</span>
+                    <span class="text-zinc-600">•</span>
+                    <span>Android 8.0+</span>
+                    <span class="text-zinc-600">•</span>
+                    <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-shield-halved"></i> Verified Safe</span>
+                </div>
+            </div>
+
+            <!-- Quick Specs Row -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 max-w-4xl mx-auto text-left">
+                <div class="p-4 rounded-xl glass-card border border-zinc-800">
+                    <span class="text-xs text-zinc-500 block uppercase font-mono">License</span>
+                    <span class="text-base font-bold text-white">100% Free &amp; Open Source</span>
+                </div>
+                <div class="p-4 rounded-xl glass-card border border-zinc-800">
+                    <span class="text-xs text-zinc-500 block uppercase font-mono">Audio Engine</span>
+                    <span class="text-base font-bold text-white">10-Band Studio DSP</span>
+                </div>
+                <div class="p-4 rounded-xl glass-card border border-zinc-800">
+                    <span class="text-xs text-zinc-500 block uppercase font-mono">Lyrics Engine</span>
+                    <span class="text-base font-bold text-white">LRCLIB Synced (Word/LRC)</span>
+                </div>
+                <div class="p-4 rounded-xl glass-card border border-zinc-800">
+                    <span class="text-xs text-zinc-500 block uppercase font-mono">Connectivity</span>
+                    <span class="text-base font-bold text-white">Wi-Fi Cast + A2DP BT Sink</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid Section -->
+        <section id="features" class="py-16 px-6 max-w-6xl mx-auto border-t border-zinc-900">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-mono tracking-widest text-zinc-500 uppercase">Core Capabilities</span>
+                <h2 class="text-3xl md:text-4xl font-black text-white tracking-tight heading-font mt-2">
+                    Engineered for Precision &amp; Power
+                </h2>
+                <p class="text-zinc-400 text-sm mt-3">
+                    Every feature in OpenAamps is built for uncompromising audio quality, responsiveness, and control.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Feature 1 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-solid fa-tower-broadcast"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Lossless Remote Casting</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Control your Raspberry Pi playback remotely over Wi-Fi with synchronized track progress, volume control, and queue management.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">ZERO LATENCY CAST</span>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-solid fa-align-left"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">LRCLIB Synced Lyrics</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Full-screen real-time lyrics synchronization with smooth autoscroll, high-contrast typography, and instant jump-to-time tap seeking.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">WORD-BY-WORD ACCURACY</span>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">10-Band Studio DSP EQ</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Professional parametric equalizer bands with curated audiophile presets: Bass Boost, Vocal Warmth, Acoustic, Electronic, and Flat Studio.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">MPV FILTER PIPELINE</span>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-brands fa-bluetooth-b"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Pi Bluetooth Speaker Mode</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Turn your Raspberry Pi into a high-grade wireless Bluetooth speaker (A2DP Sink). Toggle BlueZ RF power completely on or off anytime.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">BLUEZ 5 A2DP SINK</span>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Lock Screen Notification</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Hardware media session integration: control playback, scrub progress, and skip tracks straight from your phone lock screen or status bar.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">NATIVE MEDIA NOTIFICATION</span>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-solid fa-moon"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Pure AMOLED Aesthetic</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Striking true black and white theme designed for maximum contrast, zero eye strain in dark rooms, and battery efficiency on OLED displays.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">MONOCHROME PERFECTION</span>
+                </div>
+
+                <!-- Feature 7 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Offline Downloads</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Cache full songs and playlists locally onto your Android device for reliable, uninterrupted listening without an internet connection.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">LOCAL FLAC &amp; MP3 STORAGE</span>
+                </div>
+
+                <!-- Feature 8 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white mb-4 text-xl">
+                            <i class="fa-brands fa-youtube"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Multi-Platform Search</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">
+                            Instant search across YouTube Music, Spotify sync support, seamless queue scheduling, and automatic smart recommendation autoplay.
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-mono text-zinc-500 mt-4 pt-4 border-t border-zinc-900">YOUTUBE &amp; SPOTIFY SYNC</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real Screenshots Gallery -->
+        <section id="screenshots" class="py-16 px-6 max-w-6xl mx-auto border-t border-zinc-900">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-mono tracking-widest text-zinc-500 uppercase">Visual Showcase</span>
+                <h2 class="text-3xl md:text-4xl font-black text-white tracking-tight heading-font mt-2">
+                    Actual App Screenshots
+                </h2>
+                <p class="text-zinc-400 text-sm mt-3">
+                    Experience the clean black and white UI of OpenAamps in action on Android.
+                </p>
+            </div>
+
+            <!-- Screenshots Horizontal Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Screenshot 1: Home View -->
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
+                        <img src="/assets/screenshot_home.png" alt="OpenAamps Home Screen" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[10px] font-mono text-zinc-500 uppercase">Interface</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Home &amp; Discovery</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Trending charts, quick play cards, and library search.</p>
+                    </div>
+                </div>
+
+                <!-- Screenshot 2: Full Player View -->
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
+                        <img src="/assets/screenshot_player.png" alt="OpenAamps Full Player" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[10px] font-mono text-zinc-500 uppercase">Now Playing</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Audiophile Player View</h4>
+                        <p class="text-xs text-zinc-400 mt-1">High-contrast waveform, lyrics toggle, and DSP shortcuts.</p>
+                    </div>
+                </div>
+
+                <!-- Screenshot 3: Synced Lyrics -->
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
+                        <img src="/assets/screenshot_lyrics.png" alt="OpenAamps Synchronized Lyrics" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[10px] font-mono text-zinc-500 uppercase">Lyrics Engine</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Synchronized Lyrics</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Live LRC autoscroll with interactive line seeking.</p>
+                    </div>
+                </div>
+
+                <!-- Screenshot 4: Media Notification & Lock Screen -->
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
+                        <img src="/assets/screenshot_notification.png" alt="OpenAamps Notification Panel" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[10px] font-mono text-zinc-500 uppercase">System Integration</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Notification &amp; Lockscreen</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Direct playback controls from Android notification bar.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Changelog & Updates Section -->
+        <section id="updates" class="py-16 px-6 max-w-4xl mx-auto border-t border-zinc-900">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-mono tracking-widest text-zinc-500 uppercase">Release History</span>
+                <h2 class="text-3xl md:text-4xl font-black text-white tracking-tight heading-font mt-2">
+                    Updates &amp; Improvements
+                </h2>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Version 1.0.1 -->
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg font-black text-white">v1.0.1</span>
+                            <span class="badge-monochrome px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold">LATEST RELEASE</span>
+                        </div>
+                        <span class="text-xs font-mono text-zinc-500">September 2026</span>
+                    </div>
+                    <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Lockscreen Media Session:</strong> Full playback controls (Play, Pause, Seek, Next, Previous) directly accessible on screenlock.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Notification Bar Controls:</strong> Interactive seekbar and quick-action media player in notification tray.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Bluetooth Speaker (A2DP Sink) Hard-Power Toggle:</strong> Full support to cut Raspberry Pi Bluetooth radio via BlueZ and rfkill.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Official Squircle Branding:</strong> High-resolution icon and emblem integrated across all app channels.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Version 1.0.0 -->
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg font-black text-white">v1.0.0</span>
+                            <span class="badge-monochrome px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold">STABLE RELEASE</span>
+                        </div>
+                        <span class="text-xs font-mono text-zinc-500">September 2026</span>
+                    </div>
+                    <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Initial Production Release:</strong> Standalone native Android client with high-definition YouTube streaming.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Real-Time Synchronized Lyrics:</strong> Automatic LRC integration via LRCLIB.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>10-Band Equalizer:</strong> Audio DSP engine with audiophile curve presets.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-white text-xs mt-1"></i>
+                            <span><strong>Sleep Timer:</strong> Custom timer with smooth volume fade-out.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Install Guide Section -->
+        <section id="install" class="py-16 px-6 max-w-4xl mx-auto border-t border-zinc-900">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-mono tracking-widest text-zinc-500 uppercase">Getting Started</span>
+                <h2 class="text-3xl md:text-4xl font-black text-white tracking-tight heading-font mt-2">
+                    How to Install on Android
+                </h2>
+                <p class="text-zinc-400 text-sm mt-3">
+                    Install in 3 straightforward steps with no computer required.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800 flex flex-col">
+                    <span class="w-8 h-8 rounded-full bg-white text-black font-bold flex items-center justify-center text-sm mb-4">1</span>
+                    <h4 class="text-base font-bold text-white mb-2">Download APK</h4>
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        Tap the download button to save <code class="text-white bg-zinc-900 px-1 py-0.5 rounded">OpenAamps-v1.0.0.apk</code> directly to your device.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800 flex flex-col">
+                    <span class="w-8 h-8 rounded-full bg-white text-black font-bold flex items-center justify-center text-sm mb-4">2</span>
+                    <h4 class="text-base font-bold text-white mb-2">Allow Unknown Sources</h4>
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        When prompted by Android, enable "Install unknown apps" permission for your browser in system settings.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800 flex flex-col">
+                    <span class="w-8 h-8 rounded-full bg-white text-black font-bold flex items-center justify-center text-sm mb-4">3</span>
+                    <h4 class="text-base font-bold text-white mb-2">Install &amp; Launch</h4>
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        Tap Install. Open the app, and either play directly on your phone or connect to your Raspberry Pi on your home Wi-Fi network!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bottom Direct Download Banner -->
+            <div class="mt-12 p-8 rounded-3xl bg-gradient-to-b from-zinc-900 to-black border border-zinc-800 text-center flex flex-col items-center">
+                <h3 class="text-2xl font-black text-white heading-font mb-2">Ready for Audiophile Audio?</h3>
+                <p class="text-sm text-zinc-400 mb-6 max-w-lg">Get the latest release of OpenAamps for Android and experience lossless casting and live synced lyrics today.</p>
+                <a href="/api/app/download" class="px-8 py-4 rounded-full btn-white flex items-center justify-center gap-3 text-base shadow-2xl">
+                    <i class="fa-brands fa-android text-xl"></i>
+                    <span>Download OpenAamps v1.0.0 (58.5 MB)</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-zinc-950 border-t border-zinc-900 py-10 px-6 mt-16">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <img src="/assets/app_icon.png" alt="OpenAamps" class="w-7 h-7 rounded-lg border border-zinc-800">
+                <span class="font-bold text-white tracking-tight heading-font">OpenAamps &amp; pi-aamps</span>
+            </div>
+            <div class="flex items-center gap-6 text-xs text-zinc-500 font-mono">
+                <a href="/" class="hover:text-white transition">Launch Web Player</a>
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player" target="_blank" class="hover:text-white transition">GitHub Repository</a>
+                <a href="#install" class="hover:text-white transition">Install Guide</a>
+            </div>
+            <div class="text-xs text-zinc-600 font-mono">
+                Designed for Raspberry Pi &amp; Android. Audiophile grade.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

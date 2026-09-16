@@ -138,6 +138,7 @@ class BluetoothService:
             self._stop_agent()
             self._run_cmd(["bluetoothctl", "discoverable", "off"])
             self._run_cmd(["bluetoothctl", "power", "off"])
+            self._run_cmd(["sudo", "rfkill", "block", "bluetooth"])
             self.powered = False
             self.discoverable = False
 

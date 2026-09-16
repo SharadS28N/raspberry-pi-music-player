@@ -36,6 +36,13 @@ database.init_database()
 static_dir = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    assets_dir = os.path.join(static_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+releases_dir = os.path.join(os.path.dirname(BASE_DIR), "releases")
+if os.path.exists(releases_dir):
+    app.mount("/releases", StaticFiles(directory=releases_dir), name="releases")
 
 
 # Pydantic models
@@ -133,34 +140,59 @@ async def get_app_info():
     return {
         "app_name": "OpenAamps",
         "package_name": "com.openaamps.open_aamps",
-        "version": "2.6.0",
+        "version": "1.0.0",
         "description": "Standalone Android Music Player & pi-aamps Remote Control Hub",
         "download_url": "/api/app/download",
-        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v2.6.0"
+        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.0.0"
     }
 
 
 @app.get("/api/app/download")
 async def download_app_apk():
-    apk_path = os.path.join(BASE_DIR, "releases", "OpenAamps-v2.6.0.apk")
-    if not os.path.exists(apk_path):
-        apk_path = os.path.join(BASE_DIR, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk")
-    if os.path.exists(apk_path):
-        return FileResponse(
-            apk_path,
-            media_type="application/vnd.android.package-archive",
-            filename="OpenAamps-v2.6.0.apk"
-        )
+    project_root = os.path.dirname(BASE_DIR)
+    # 1. Check root releases directory for OpenAamps-v1.0.0.apk
+    candidate_paths = [
+        os.path.join(project_root, "releases", "OpenAamps-v1.0.0.apk"),
+        os.path.join(project_root, "releases", "OpenAamps-v2.6.0.apk"),
+        os.path.join(BASE_DIR, "releases", "OpenAamps-v1.0.0.apk"),
+        os.path.join(project_root, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk"),
+    ]
+    # Check any apk in releases dir
+    rel_dir = os.path.join(project_root, "releases")
+    if os.path.exists(rel_dir):
+        for f in os.listdir(rel_dir):
+            if f.endswith(".apk"):
+                candidate_paths.insert(0, os.path.join(rel_dir, f))
+
+    for apk_path in candidate_paths:
+        if os.path.exists(apk_path):
+            filename = os.path.basename(apk_path)
+            return FileResponse(
+                apk_path,
+                media_type="application/vnd.android.package-archive",
+                filename=filename,
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            )
+
     from fastapi.responses import RedirectResponse
     return RedirectResponse(
-        "https://raw.githubusercontent.com/SharadS28N/raspberry-pi-music-player/main/releases/OpenAamps-v2.6.0.apk",
+        "https://github.com/SharadS28N/raspberry-pi-music-player/releases/download/v1.0.0/OpenAamps-v1.0.0.apk",
         status_code=302
     )
 
 
+# Serve OpenAamps Dedicated Download Showcase Page
+@app.get("/download")
+@app.get("/download.html")
+async def read_download_page():
+    download_path = os.path.join(os.path.dirname(BASE_DIR), "frontend", "download.html")
+    if os.path.exists(download_path):
+        return FileResponse(download_path)
+    return HTMLResponse("<h1>OpenAamps Download</h1><p><a href='/api/app/download'>Download APK</a></p>")
+
+
 # Serve PWA manifest and service worker at root paths
 @app.get("/manifest.json")
-
 async def get_manifest():
     manifest_path = os.path.join(os.path.dirname(BASE_DIR), "frontend", "manifest.json")
     if os.path.exists(manifest_path):
@@ -182,6 +214,7 @@ async def read_root():
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return HTMLResponse("<h1>pi-aamps Web OS</h1>")
+
 
 
 # AI Audio Insights Endpoint (Acoustic analysis, mood key, BPM estimation & recommendations)
