@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import 'youtube_service.dart';
@@ -69,6 +70,14 @@ class AudioPlayerService extends ChangeNotifier {
           _player.play();
         } else {
           skipToNext();
+        }
+      }
+    });
+    _player.durationStream.listen((dur) {
+      if (dur != null && dur > Duration.zero && _currentTrack != null) {
+        if (_currentTrack!.duration == Duration.zero) {
+          _currentTrack = _currentTrack!.copyWith(duration: dur);
+          notifyListeners();
         }
       }
     });
@@ -225,6 +234,8 @@ class AudioPlayerService extends ChangeNotifier {
       title: track.title,
       artist: track.artist.isNotEmpty ? track.artist : 'OpenAamps Artist',
       artUri: artUri,
+      duration: track.duration > Duration.zero ? track.duration : null,
+      playable: true,
     );
   }
 
@@ -276,6 +287,14 @@ class AudioPlayerService extends ChangeNotifier {
   }
 
   Future<void> playTrack(Track track) async {
+    // Proactively verify notification permissions for Android 13+ lockscreen / notification panel
+    try {
+      final status = await Permission.notification.status;
+      if (!status.isGranted) {
+        await Permission.notification.request();
+      }
+    } catch (_) {}
+
     _currentTrack = track;
     _isLoading = true;
 

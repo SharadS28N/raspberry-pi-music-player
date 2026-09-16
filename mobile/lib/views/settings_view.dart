@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/account_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/integration_service.dart';
@@ -244,6 +245,54 @@ class _SettingsViewState extends State<SettingsView> {
             onChanged: (val) {
               _settings.setLoudnessNormalization(val);
               _audio.setLoudnessNormalization(val);
+            },
+          ),
+          const SizedBox(height: 28),
+
+          // Section 4: Notification & System Media Controls
+          const Text(
+            'NOTIFICATION & SYSTEM MEDIA CONTROLS',
+            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+          ),
+          const SizedBox(height: 12),
+
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            tileColor: const Color(0xFF141414),
+            leading: const Icon(Icons.notifications_active_rounded, color: Colors.white),
+            title: const Text('Status Bar & Lock Screen Media Player', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Always display real-time playback controls, scrubber & artwork in notification shade', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              child: const Text('ACTIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            ),
+            onTap: () async {
+              final status = await Permission.notification.status;
+              if (!status.isGranted) {
+                final req = await Permission.notification.request();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(req.isGranted ? 'Notification permissions granted!' : 'Permission denied. Please enable notifications in Android Settings.'),
+                      backgroundColor: const Color(0xFF222222),
+                    ),
+                  );
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Notification & Lock Screen controls are active and granted.'),
+                      backgroundColor: const Color(0xFF222222),
+                    ),
+                  );
+                }
+              }
             },
           ),
           const SizedBox(height: 28),

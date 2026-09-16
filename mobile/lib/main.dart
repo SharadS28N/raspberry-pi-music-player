@@ -20,13 +20,10 @@ Future<void> main() async {
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.openaamps.open_aamps.channel.audio',
     androidNotificationChannelName: 'OpenAamps Playback',
-    androidNotificationOngoing: false,
+    androidNotificationOngoing: true,
     androidStopForegroundOnPause: false,
-    androidNotificationIcon: 'mipmap/ic_launcher',
+    androidNotificationIcon: 'drawable/ic_bg_service_small',
   );
-  try {
-    await Permission.notification.request();
-  } catch (_) {}
   runApp(const OpenAampsApp());
 }
 
@@ -81,11 +78,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    _requestNotificationPermission();
     _playerStateSub = _audioService.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
           _isPlaying = state.playing;
         });
+      }
+    });
+  }
+
+  void _requestNotificationPermission() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final status = await Permission.notification.status;
+        if (!status.isGranted) {
+          await Permission.notification.request();
+        }
+      } catch (e) {
+        debugPrint('Notification permission request error: $e');
       }
     });
   }
