@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>OpenAamps — Spotify Web Audio Experience</title>
+    <title>pi-aamps — Raspberry Pi Music Player</title>
     
     <!-- PWA & Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -139,13 +139,16 @@
 
     <!-- Top Navigation Bar (Spotify Web Style) -->
     <header class="h-16 bg-black px-4 md:px-6 flex items-center justify-between z-30 flex-shrink-0 border-b border-zinc-900/60">
-        <!-- Left: OpenAamps Logo + Home Button -->
+        <!-- Left: pi-aamps Logo + Home Button -->
         <div class="flex items-center gap-4">
             <a href="/" class="flex items-center gap-2 group">
                 <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center p-1.5 shadow-md group-hover:scale-105 transition">
-                    <img src="/assets/emblem.png" alt="OpenAamps" class="w-full h-full object-contain filter invert-0">
+                    <img src="/assets/emblem.png" alt="pi-aamps" class="w-full h-full object-contain filter invert-0">
                 </div>
-                <span class="font-extrabold text-base md:text-lg tracking-tight text-white heading-font hidden sm:inline-block">OpenAamps</span>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-base md:text-lg tracking-tight text-white heading-font leading-tight">pi-aamps</span>
+                    <span class="text-[9px] text-zinc-400 font-mono tracking-wider uppercase hidden sm:block">Raspberry Pi Player</span>
+                </div>
             </a>
 
             <button @click="clearSearch()" title="Home" class="w-11 h-11 bg-[#1F1F1F] hover:bg-[#2A2A2A] rounded-full flex items-center justify-center text-white transition hover:scale-105">
@@ -191,11 +194,12 @@
                 <span class="hidden sm:inline" x-text="bluetoothStatus.powered ? 'BT Speaker: ON' : 'BT Speaker: OFF'"></span>
             </button>
 
-            <!-- Install App Button Redirecting to OpenAamps Download Page -->
+            <!-- Install OpenAamps Android App Button -->
             <a href="/download" 
+               title="Install OpenAamps Android App for pi-aamps"
                class="px-4 py-2 bg-black hover:bg-zinc-900 border border-white text-white hover:scale-105 transition duration-200 rounded-full text-xs font-bold flex items-center gap-2 shadow">
-                <i class="fa-solid fa-circle-arrow-down text-sm"></i>
-                <span class="hidden sm:inline">Install App</span>
+                <i class="fa-brands fa-android text-sm"></i>
+                <span class="hidden sm:inline">Install OpenAamps</span>
             </a>
 
             <!-- System Customization Gear -->
@@ -243,7 +247,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs font-bold text-white truncate" x-text="pl.name"></p>
-                                        <p class="text-[11px] text-zinc-400">Playlist • OpenAamps</p>
+                                        <p class="text-[11px] text-zinc-400">Playlist • pi-aamps</p>
                                     </div>
                                     <button @click.stop="deletePlaylist(pl.id)" class="text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 p-1 transition text-xs">
                                         <i class="fa-solid fa-trash-can"></i>
