@@ -6,6 +6,7 @@ import '../services/account_service.dart';
 import '../services/integration_service.dart';
 import '../widgets/account_switcher_modal.dart';
 import '../widgets/spotify_import_modal.dart';
+import '../widgets/output_target_modal.dart';
 import 'stats_view.dart';
 import '../widgets/app_alert.dart';
 
@@ -13,12 +14,14 @@ class HomeView extends StatefulWidget {
   final Function(Track) onPlayTrack;
   final AudioTarget? currentTarget;
   final PiAampsService? piService;
+  final AudioPlayerService? audioService;
 
   const HomeView({
     super.key,
     required this.onPlayTrack,
     this.currentTarget,
     this.piService,
+    this.audioService,
   });
 
   @override
@@ -241,57 +244,85 @@ class _HomeViewState extends State<HomeView> {
                 listenable: PiAampsService.instance,
                 builder: (context, _) {
                   final pi = PiAampsService.instance.currentState;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF141416),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: pi.isConnected ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
+                  return GestureDetector(
+                    onTap: () {
+                      final audio = widget.audioService;
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        builder: (modalCtx) => OutputTargetModal(
+                          currentTarget: audio?.target ?? AudioTarget.phoneLocal,
+                          onSelectTarget: (target) {
+                            audio?.setAudioTarget(target);
+                          },
+                          piService: PiAampsService.instance,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF141416),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: pi.isConnected ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: pi.isConnected ? Colors.greenAccent : Colors.white24,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: pi.isConnected ? Colors.greenAccent : Colors.white24,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                pi.isConnected ? 'pi-aamps Hardware Streamer Active' : 'pi-aamps Streamer Disconnected',
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                pi.isConnected
-                                    ? '${pi.ipAddress} • ${pi.activeDac} • ${pi.tempCelsius.toStringAsFixed(0)}°C'
-                                    : 'Tap pi-aamps in bottom bar to connect and stream to Raspberry Pi DAC',
-                                style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 11),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  pi.isConnected ? 'pi-aamps Hardware Streamer Active' : 'pi-aamps Streamer Disconnected',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  pi.isConnected
+                                      ? '${pi.ipAddress} • ${pi.activeDac} • ${pi.tempCelsius.toStringAsFixed(0)}°C'
+                                      : 'Tap here to configure or connect to Raspberry Pi DAC streamer',
+                                  style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 11),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (pi.isConnected)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text('READY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            child: Row(
+                              children: [
+                                Text(
+                                  pi.isConnected ? 'READY' : 'OFFLINE',
+                                  style: TextStyle(
+                                    color: pi.isConnected ? Colors.white : Colors.redAccent,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 10),
+                              ],
+                            ),
                           ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

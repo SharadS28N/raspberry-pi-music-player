@@ -40,10 +40,18 @@ class YoutubeService {
 
   Future<StreamData?> getBestAudioStream(String videoId, {String? queryFallback}) async {
     try {
-      final manifest = await _yt.videos.streamsClient.getManifest(
-        videoId,
-        ytClients: [YoutubeApiClient.android],
-      );
+      final manifest = await _yt.videos.streamsClient.getManifest(videoId);
+      
+      // 1. Prioritize itag 18 (360p MP4 with AAC stereo audio) which has ratebypass=yes and never 403s on streaming
+      final muxed18 = manifest.muxed.where((s) => s.tag == 18 || s.url.toString().contains('ratebypass=yes')).firstOrNull;
+      if (muxed18 != null) {
+        return StreamData(
+          url: muxed18.url.toString(),
+          totalBytes: muxed18.size.totalBytes,
+          container: 'mp4',
+        );
+      }
+
       final audioOnly = manifest.audioOnly;
       if (audioOnly.isNotEmpty) {
         // Prioritize itag 140 (128kbps AAC), then 251 (Opus), then any mp4

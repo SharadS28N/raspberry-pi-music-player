@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/track.dart';
 import '../services/audio_player_service.dart';
+import 'output_target_modal.dart';
 
 class NowPlayingBar extends StatelessWidget {
   final Track track;
@@ -92,6 +93,34 @@ class NowPlayingBar extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // Target Switcher Button
+                    IconButton(
+                      icon: Icon(
+                        audioService.target == AudioTarget.piSpeaker
+                            ? Icons.radio_rounded
+                            : Icons.phone_android_rounded,
+                        color: audioService.target == AudioTarget.piSpeaker
+                            ? const Color(0xFF22C55E)
+                            : Colors.white70,
+                        size: 22,
+                      ),
+                      tooltip: audioService.target == AudioTarget.piSpeaker
+                          ? 'Streaming to pi-aamps'
+                          : 'Playing on this Phone',
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          builder: (modalCtx) => OutputTargetModal(
+                            currentTarget: audioService.target,
+                            onSelectTarget: (target) {
+                              audioService.setAudioTarget(target);
+                            },
+                            piService: audioService.piService,
+                          ),
+                        );
+                      },
+                    ),
                     IconButton(
                       icon: Icon(
                         isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
@@ -108,8 +137,8 @@ class NowPlayingBar extends StatelessWidget {
               StreamBuilder<Duration>(
                 stream: audioService.positionStream,
                 builder: (context, snapshot) {
-                  final pos = snapshot.data ?? audioService.player.position;
-                  final dur = audioService.player.duration ?? (track.duration > Duration.zero ? track.duration : const Duration(seconds: 230));
+                  final pos = snapshot.data ?? audioService.currentPosition;
+                  final dur = audioService.currentDuration;
                   final maxSec = dur.inSeconds > 0 ? dur.inSeconds.toDouble() : 230.0;
                   final ratio = (pos.inSeconds / maxSec).clamp(0.0, 1.0);
 

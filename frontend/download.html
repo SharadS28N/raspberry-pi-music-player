@@ -8,8 +8,8 @@
     <!-- Meta & Open Graph Tags -->
     <meta name="description" content="OpenAamps is the premier open-source Android music player & Raspberry Pi Hi-Fi hub with real-time synced lyrics, 10-band DSP, lossless casting, and Bluetooth speaker mode.">
     <meta name="theme-color" content="#000000">
-    <link rel="icon" type="image/png" href="/assets/app_icon.png">
-    <link rel="apple-touch-icon" href="/assets/app_icon.png">
+    <link rel="icon" type="image/png" href="assets/app_icon.png">
+    <link rel="apple-touch-icon" href="assets/app_icon.png">
 
     <!-- Tailwind CSS, FontAwesome 6, Google Fonts Inter -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -78,7 +78,7 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <!-- Brand Logo -->
             <a href="/" class="flex items-center gap-3 group">
-                <img src="/assets/app_icon.png" alt="OpenAamps" class="w-9 h-9 rounded-xl shadow border border-zinc-800 object-cover group-hover:scale-105 transition">
+                <img src="assets/app_icon.png" alt="OpenAamps" class="w-9 h-9 rounded-xl shadow border border-zinc-800 object-cover group-hover:scale-105 transition">
                 <div class="flex flex-col">
                     <span class="font-extrabold text-lg tracking-tight text-white heading-font leading-tight">OpenAamps</span>
                     <span class="text-[10px] text-zinc-400 font-mono tracking-wider uppercase">Android App for pi-aamps</span>
@@ -317,52 +317,76 @@
             </div>
 
             <!-- Screenshots Horizontal Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Screenshot 1: Home View -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Screenshot 1: Pi DAC Player View -->
                 <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
-                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
-                        <img src="/assets/screenshot_home.png" alt="OpenAamps Home Screen" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    <div class="bg-zinc-950 p-3 border-b border-zinc-900 flex justify-center">
+                        <img src="assets/screenshot_player_pi.png" alt="OpenAamps Pi Streamer Player" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
                     </div>
                     <div class="p-4">
-                        <span class="text-[10px] font-mono text-zinc-500 uppercase">Interface</span>
-                        <h4 class="text-sm font-bold text-white mt-0.5">Home &amp; Discovery</h4>
-                        <p class="text-xs text-zinc-400 mt-1">Trending charts, quick play cards, and library search.</p>
+                        <span class="text-[10px] font-mono text-emerald-400 font-bold uppercase">Hardware Streaming • Live Verified</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Pi-Aamps DAC Player</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Spinning vinyl record disc with Shaggy playback, OPUS badge, and emerald Pi output pill.</p>
                     </div>
                 </div>
 
-                <!-- Screenshot 2: Full Player View -->
+                <!-- Screenshot 2: Choose Audio Output Target Modal -->
                 <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
-                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
-                        <img src="/assets/screenshot_player.png" alt="OpenAamps Full Player" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    <div class="bg-zinc-950 p-3 border-b border-zinc-900 flex justify-center">
+                        <img src="assets/screenshot_target_modal.png" alt="Output Target Modal" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
                     </div>
                     <div class="p-4">
-                        <span class="text-[10px] font-mono text-zinc-500 uppercase">Now Playing</span>
-                        <h4 class="text-sm font-bold text-white mt-0.5">Audiophile Player View</h4>
-                        <p class="text-xs text-zinc-400 mt-1">High-contrast waveform, lyrics toggle, and DSP shortcuts.</p>
+                        <span class="text-[10px] font-mono text-cyan-400 font-bold uppercase">Dual Output Routing</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Output Target Picker</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Switch in 1-tap between phone speakers and Raspberry Pi with live ONLINE indicator.</p>
                     </div>
                 </div>
 
-                <!-- Screenshot 3: Synced Lyrics -->
+                <!-- Screenshot 3: IP:Port Configuration Modal -->
                 <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
-                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
-                        <img src="/assets/screenshot_lyrics.png" alt="OpenAamps Synchronized Lyrics" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    <div class="bg-zinc-950 p-3 border-b border-zinc-900 flex justify-center">
+                        <img src="assets/screenshot_ip_config.png" alt="Configure Pi-Aamps IP:Port" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
                     </div>
                     <div class="p-4">
-                        <span class="text-[10px] font-mono text-zinc-500 uppercase">Lyrics Engine</span>
-                        <h4 class="text-sm font-bold text-white mt-0.5">Synchronized Lyrics</h4>
-                        <p class="text-xs text-zinc-400 mt-1">Live LRC autoscroll with interactive line seeking.</p>
+                        <span class="text-[10px] font-mono text-purple-400 font-bold uppercase">Network Discovery</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Configure Pi IP:Port</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Easily customize Raspberry Pi IP address (192.168.18.159) and port (8000) directly in-app.</p>
                     </div>
                 </div>
 
-                <!-- Screenshot 4: Media Notification & Lock Screen -->
+                <!-- Screenshot 4: Local Phone Playback -->
                 <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
-                    <div class="bg-zinc-950 p-2 border-b border-zinc-900 flex justify-center">
-                        <img src="/assets/screenshot_notification.png" alt="OpenAamps Notification Panel" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    <div class="bg-zinc-950 p-3 border-b border-zinc-900 flex justify-center">
+                        <img src="assets/screenshot_player_local.png" alt="Phone Local Audio Playback" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
                     </div>
                     <div class="p-4">
-                        <span class="text-[10px] font-mono text-zinc-500 uppercase">System Integration</span>
-                        <h4 class="text-sm font-bold text-white mt-0.5">Notification &amp; Lockscreen</h4>
-                        <p class="text-xs text-zinc-400 mt-1">Direct playback controls from Android notification bar.</p>
+                        <span class="text-[10px] font-mono text-amber-400 font-bold uppercase">Local Audio Engine</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Phone Speakers / Headphones</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Moving timeline on local phone speakers with ratebypass 403 Forbidden resolution.</p>
+                    </div>
+                </div>
+
+                <!-- Screenshot 5: Multi-Format Search -->
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="bg-zinc-950 p-3 border-b border-zinc-900 flex justify-center">
+                        <img src="assets/screenshot_search_shaggy.png" alt="Instant Search" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[10px] font-mono text-pink-400 font-bold uppercase">Multi-Source Search</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Instant Query &amp; Play</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Instant query matching for songs, videos, and albums with 1-tap playback and queueing.</p>
+                    </div>
+                </div>
+
+                <!-- Screenshot 6: System Notification & Lockscreen -->
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+                    <div class="bg-zinc-950 p-3 border-b border-zinc-900 flex justify-center">
+                        <img src="assets/screenshot_notification_real.png" alt="Android Media Notification" class="w-full h-auto max-h-96 object-contain rounded-xl hover:scale-105 transition duration-300">
+                    </div>
+                    <div class="p-4">
+                        <span class="text-[10px] font-mono text-blue-400 font-bold uppercase">System Integration</span>
+                        <h4 class="text-sm font-bold text-white mt-0.5">Media Notification</h4>
+                        <p class="text-xs text-zinc-400 mt-1">Native Android Media Session with lockscreen seekbar, track controls, and status bar drawer.</p>
                     </div>
                 </div>
             </div>
@@ -378,12 +402,41 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Version 1.1.0 -->
+                <div class="glass-card p-6 rounded-2xl border border-zinc-700 bg-zinc-900/40">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg font-black text-white">v1.1.0</span>
+                            <span class="badge-monochrome px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-emerald-400 border-emerald-800/60 bg-emerald-950/40">LATEST VERIFIED RELEASE</span>
+                        </div>
+                        <span class="text-xs font-mono text-zinc-400">September 2026</span>
+                    </div>
+                    <ul class="mt-4 space-y-2.5 text-sm text-zinc-300">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 text-xs mt-1"></i>
+                            <span><strong>YouTube 403 Forbidden Rate-Bypass Fix:</strong> Switched stream prioritizer to ratebypass-enabled muxed audio formats (itag 18) with fallback to LocalStreamProxy, permanently eliminating stream stalling and 403 Forbidden errors.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 text-xs mt-1"></i>
+                            <span><strong>Dual Output Target Routing (Phone vs Pi):</strong> Seamlessly switch playback between Raspberry Pi DAC streamer and Android phone speakers/headphones with live ONLINE/OFFLINE heartbeat detection.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 text-xs mt-1"></i>
+                            <span><strong>Customizable Pi-Aamps IP:Port Dialog:</strong> In-app settings modal to input, save, and verify custom Raspberry Pi IP and port on local Wi-Fi.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 text-xs mt-1"></i>
+                            <span><strong>Hardware Telemetry Monitor:</strong> Live Raspberry Pi CPU load (30.2%), RAM utilization (35%), and SoC temperature (59.1°C) displayed directly on mobile.</span>
+                        </li>
+                    </ul>
+                </div>
+
                 <!-- Version 1.0.1 -->
                 <div class="glass-card p-6 rounded-2xl border border-zinc-800">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-4">
                         <div class="flex items-center gap-3">
                             <span class="text-lg font-black text-white">v1.0.1</span>
-                            <span class="badge-monochrome px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold">LATEST RELEASE</span>
+                            <span class="badge-monochrome px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold">STABLE RELEASE</span>
                         </div>
                         <span class="text-xs font-mono text-zinc-500">September 2026</span>
                     </div>

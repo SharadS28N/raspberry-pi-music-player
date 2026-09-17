@@ -1,161 +1,171 @@
-# 🎵 pi-aamps — Pi Advanced Audio & Music Player System
+# pi-aamps & OpenAamps
 
 <p align="center">
-  <img src="https://img.shields.io/badge/pi--aamps-v2.6.0--production-blue?style=for-the-badge&logo=raspberrypi&logoColor=white" alt="pi-aamps Version">
+  <img src="docs/assets/app_icon.png" alt="OpenAamps Logo" width="128" style="border-radius: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+</p>
 
-  <img src="https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github-actions" alt="Build Status">
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License">
-  <img src="https://img.shields.io/badge/Platform-Raspberry%20Pi%203%2F4%2F5%2FZero2W-red?style=for-the-badge&logo=raspberrypi" alt="Platform">
+<h3 align="center">Audiophile Raspberry Pi Hi-Fi Hub &amp; Native Android Music Player</h3>
+
+<p align="center">
+  <em>Bit-perfect ALSA DAC hardware streaming, real-time synced lyrics, 10-band DSP, dual-target output routing, and zero advertisements.</em>
 </p>
 
 <p align="center">
-  <a href="releases/OpenAamps-v2.6.0.apk">
-    <img src="https://img.shields.io/badge/📥%20Download-OpenAamps%20v2.6.0%20Android%20APK-brightgreen?style=for-the-badge&logo=android" alt="Download OpenAamps APK">
+  <a href="https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.0.0">
+    <img src="https://img.shields.io/badge/Release-v1.0.0-10B981?style=for-the-badge&logo=github" alt="Release v1.0.0">
+  </a>
+  <a href="releases/OpenAamps-v1.0.0.apk">
+    <img src="https://img.shields.io/badge/Download_APK-v1.0.0_(62MB)-06B6D4?style=for-the-badge&logo=android&logoColor=white" alt="Download APK">
+  </a>
+  <a href="https://sharads28n.github.io/raspberry-pi-music-player/">
+    <img src="https://img.shields.io/badge/Live_Website-GitHub_Pages-8B5CF6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Website">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-white?style=for-the-badge" alt="MIT License">
   </a>
 </p>
 
 ---
 
-## 🌟 Overview
+## Visual Showcase & Live Screenshots
 
-**pi-aamps** (Pi Advanced Audio & Music Player System) is a state-of-the-art, zero-glitch Web Operating System dedicated to high-fidelity audio playback on Raspberry Pi devices. Inspired by CasaOS and premium Hi-Fi streaming hardware, **pi-aamps** delivers ultra-low RAM (<50MB) and CPU usage while converting your Raspberry Pi into a full-fledged music engine.
+All screenshots below were captured during real-world verification on a physical **Samsung Galaxy A16 (`SM-A166P`)** and **Raspberry Pi 4 Streamer** (`192.168.18.159:8000`).
 
-Whether connected to a high-end USB DAC, an audiophile HAT DAC (HiFiBerry, Allo Boss, IQaudio), or standard 3.5mm/HDMI outputs, **pi-aamps** acts as a unified hub supporting **Roon Endpoint**, **AirPlay Receiver**, **UPnP/DLNA Renderer**, **Spotify Connect**, and **YouTube Streaming**.
+### Mobile Android App (OpenAamps)
+
+| Audiophile DAC Player (Pi Streaming) | Dual Output Target Routing | Network IP:Port Discovery |
+| :---: | :---: | :---: |
+| <img src="docs/assets/screenshot_player_pi.png" alt="Pi DAC Player" width="260"> | <img src="docs/assets/screenshot_target_modal.png" alt="Output Target Modal" width="260"> | <img src="docs/assets/screenshot_ip_config.png" alt="IP Config Dialog" width="260"> |
+| *Streaming Shaggy to Pi with moving timeline and OPUS/AAC badge.* | *1-tap toggle between Phone Audio and Pi DAC.* | *Custom IP and port configuration with connection test.* |
+
+| Local Phone Playback Mode | Multi-Format Music Search | Android Media Notification |
+| :---: | :---: | :---: |
+| <img src="docs/assets/screenshot_player_local.png" alt="Local Phone Playback" width="260"> | <img src="docs/assets/screenshot_search_shaggy.png" alt="Search Results" width="260"> | <img src="docs/assets/screenshot_notification_real.png" alt="Media Notification" width="260"> |
+| *Native ExoPlayer playback on phone speakers / headphones.* | *Instant query matching with 1-tap playback & queueing.* | *System lockscreen & notification drawer media session.* |
+
+### Desktop Web Player (pi-aamps)
+
+<p align="center">
+  <img src="docs/assets/screenshot_home.png" alt="pi-aamps Web Interface" width="900" style="border-radius: 12px; border: 1px solid #333;">
+  <br>
+  <em>Spotify-style desktop web player served directly by the Raspberry Pi at <code>http://&lt;pi-ip&gt;:8000</code> with real-time hardware telemetry.</em>
+</p>
 
 ---
 
-## 🖥️ Web OS Interface Snapshot
+## Key Highlights
+
+- **Lossless Bit-Perfect DAC Streaming**: Bypasses Android and Linux software mixers. Direct ALSA hardware routing to I2S DAC HATs (HiFiBerry, Allo Boss, PCM5102), USB DACs, and 3.5mm analog audio up to 32-bit / 192kHz.
+- **YouTube 403 Rate-Bypass Engine**: Automatically selects ratebypass-enabled muxed audio formats (`itag 18`) with `LocalStreamProxy` fallback, completely eliminating buffer stalls and Google Video 403 Forbidden errors.
+- **Dual Output Target Switcher**: Toggle audio output on the fly between your **Raspberry Pi DAC Streamer** (`pi-aamps`) and **This Phone (Local Audio)** without interrupting your queue.
+- **Configurable Network IP:Port**: Easily discover and configure the Raspberry Pi's local network address (`192.168.18.159:8000`) directly within the app interface.
+- **Synchronized LRC Lyrics Engine**: Karaoke-style real-time scrolling lyrics with interactive line-seeking powered by LRCLIB.
+- **10-Band Graphic Equalizer & DSP**: Full parametric equalizer with acoustic bass boost, virtualizer, and audiophile presets.
+- **True AMOLED Black Aesthetic**: High-contrast true black (`#000000`) theme designed to conserve battery on OLED screens and eliminate eye strain.
+- **System Media Session Integration**: Full playback controls (Play, Pause, Seek, Skip, Previous) directly from the Android lockscreen, status bar drawer, and Bluetooth car stereos.
+- **Bluetooth A2DP Sink Mode**: Transform your Raspberry Pi into a high-fidelity Bluetooth receiver with a hardware radio power toggle.
+- **Offline Song Caching**: Download songs and playlists locally to your Android device or Pi storage for offline playback.
+- **Zero Ads & Zero Telemetry**: 100% free and open-source under the MIT license.
+
+---
+
+## System Architecture
 
 ```
-+-------------------------------------------------------------------------------------------------------------------------+
-|  🎵 pi-aamps v2.5 OS | pi-aamps.local  |  [CPU 12%] [RAM 180MB] [42°C] [DAC: HiFiBerry DAC+] [BT Receiver: On]   [Hi-Fi Hub] |
-+-------------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                         |
-|   +----------------------------------------------------+   +----------------------------------------------------+       |
-|   | 🎵 NOW PLAYING (Spotify / Apple Music Deck)        |   | 🔍 SEARCH & QUEUE ENGINE                           |       |
-|   | +------------------------------------------------+ |   | [ Search songs, artists, albums...        [Search] ]|       |
-|   | |                                                | |   |                                                    |       |
-|   | |             [ HIGH-RES ALBUM ART ]             | |   | Playing Queue (4 tracks)               Clear Queue |       |
-|   | |                                                | |   | 1. Bohemian Rhapsody — Queen                      |       |
-|   | +------------------------------------------------+ |   | 2. Hotel California — Eagles                      |       |
-|   |                                                    |   | 3. Starboy — The Weeknd                            |       |
-|   | Starboy — The Weeknd ft. Daft Punk                 |   | 4. Blinding Lights — The Weeknd                    |       |
-|   | 02:45 [======================-------] 03:50        |   |                                                    |       |
-|   |      [Shuffle] [⏮]  [ ⏸ ]  [⏭] [Repeat]          |   | +------------------------------------------------+ |       |
-|   | Volume: [==============------] 85%                |   | | 🎛️ 10-Band Parametric Equalizer                 | |       |
-|   +----------------------------------------------------+   | | [31Hz] [62Hz] [125Hz] [250Hz] [500Hz] [1k]...   | |       |
-|                                                            | +------------------------------------------------+ |       |
-|   +----------------------------------------------------+   +----------------------------------------------------+       |
-|   | 📡 HI-FI STREAMING DAEMONS                         |                                                            |
-|   | [Roon Endpoint: ON]     [AirPlay Receiver: ON]     |   +----------------------------------------------------+       |
-|   | [UPnP/DLNA: ON]         [Spotify Connect: ON]      |   | ⚙️ SYSTEM CUSTOMIZATION & HARDWARE DAC SELECTOR    |       |
-|   +----------------------------------------------------+   +----------------------------------------------------+       |
-|                                                                                                                         |
-+-------------------------------------------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------+
+|                           OPENAAMPS ANDROID FRONTEND                              |
+|   Flutter + Dart | ExoPlayer | LocalStreamProxy (403 Ratebypass) | MediaSession   |
++-----------------------------------------------------------------------------------+
+                                         |
+                                         | REST API + WebSocket State Sync
+                                         v
++-----------------------------------------------------------------------------------+
+|                             PI-AAMPS BACKEND HUB                                  |
+|   FastAPI + Python | MPV Playback Engine | yt-dlp Cache | SQLite Metadata         |
++-----------------------------------------------------------------------------------+
+                                         |
+                                         | Direct Hardware Control
+                                         v
++-----------------------------------------------------------------------------------+
+|                                AUDIO HARDWARE                                     |
+|   ALSA Bit-Perfect Driver | I2S DACs / USB Audio / 3.5mm / BlueZ A2DP Sink        |
++-----------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 🔥 Key Features
+## Quick Start Installation
 
-- **CasaOS-Style Web OS Interface**: Glassmorphic top bar with live telemetry (CPU %, RAM MB, Storage, Temp °C, Active DAC badge, Bluetooth status).
-- **Roon Endpoint Integration**: Minimal, stable audio bridge designed for USB & HAT DACs.
-- **AirPlay Receiver (Shairport-Sync)**: Lossless streaming receiver from Apple iOS & macOS devices.
-- **UPnP / DLNA Renderer**: Seamless DLNA media target for BubbleUPnP, mconnect, and Audirvana.
-- **Spotify Connect (Librespot)**: Hardware playback sink directly controllable from Spotify apps.
-- **10-Band Parametric/Graphic Equalizer**: Sliders from `31Hz` to `16kHz` powered by MPV `lavfi` audio filters with 9 presets (Bass Boost, Vocal, Treble, Party, Rock, Jazz, Electronic, Acoustic).
-- **HAT DAC & Hardware Audio Switcher**: Instant detection and auto-configuration for HiFiBerry DAC+, Allo Boss, IQaudio DAC+, USB DACs, 3.5mm Analog Jack, and HDMI.
-- **Full Customization**:
-  - Customize Bluetooth Advertising Device Name (`set_device_name`).
-  - Customize Raspberry Pi Hostname (`set_system_hostname`).
-  - Clear and Reset Database with 1-click modal.
-- **Endless Autoplay & Real-Time Syncing**: WebSocket real-time broadcast across all connected browsers.
-- **OpenAamps Dual-Mode Android App (.apk)**: A modern Flutter-based mobile music application (inspired by **OpenTune** and **ArchiveTune**) featuring YouTube Music streaming, offline `.mp3` track downloader, local device audio player, combined with 1-tap remote control over Raspberry Pi speakers, hardware ALSA volume, 10-band EQ, and Bluetooth receiver mode.
+### 1. Raspberry Pi Server Setup (pi-aamps)
 
----
-
-## 📱 OpenAamps Mobile App (`.apk`) — Flutter Android Music Player & Pi Hub
-
-**OpenAamps** (located in [`mobile/`](file:///d:/Code/Projects/raspberry-pi-music-player/mobile)) is a standalone, open-source Android Mobile Application built with Flutter and Material Design 3 (inspired by **OpenTune** and **ArchiveTune**). It serves two distinct roles:
-
-### 1. 📱 Open-Source Standalone Android Music Player (Phone Mode)
-- **YouTube Music Streaming & Search**: Search and stream high-quality music directly on your Android phone's speakers or headphones without needing a connection to a Raspberry Pi.
-- **Offline `.mp3` Track Downloader**: Download tracks directly to device storage for offline library playback anywhere.
-- **Local Queue & Playlist Management**: Organize tracks, manage playlists, and view high-resolution album art & lyrics.
-
-### 2. 📻 pi-aamps Raspberry Pi Remote Control (Hub Mode)
-- **1-Tap Output Switcher**: Instantly toggle audio playback between `📱 This Phone Speaker` and `📻 pi-aamps (Raspberry Pi)` directly from the bottom mini-player bar.
-- **Bi-Directional WebSocket & REST Sync**: Real-time state synchronization with laptop web browsers and Raspberry Pi hardware.
-- **1-Tap Bluetooth Speaker Mode**: Toggle your Pi's Bluetooth Receiver ON/OFF from your phone. Turn it ON to transform your Raspberry Pi into a "Just Works" NoPIN Bluetooth A2DP wireless speaker.
-- **Remote Hardware Volume & 10-Band Equalizer**: Control the Pi's ALSA PCM hardware volume and 10-band equalizer presets (`Bass Boost`, `Rock`, `Vocal`, `Jazz`) from anywhere on your WiFi network.
-
-### 🛠️ Building the OpenAamps `.apk`
-To build the standalone `.apk` package for Android using Flutter:
+Run the official one-line installation script on your Raspberry Pi (Raspberry Pi OS Bookworm or Bullseye):
 
 ```bash
-# Navigate to the mobile directory
+curl -sSL https://raw.githubusercontent.com/SharadS28N/raspberry-pi-music-player/main/install.sh | bash
+```
+
+The script automatically installs MPV, yt-dlp, Python dependencies, configures ALSA audio output, and registers `pi-aamps.service` as a background systemd daemon.
+
+To manage the background service:
+```bash
+sudo systemctl status pi-aamps
+sudo systemctl restart pi-aamps
+```
+
+Access the desktop web player in your browser at `http://<your-pi-ip>:8000`.
+
+### 2. Android App Installation (OpenAamps)
+
+1. Download the release APK directly to your phone:
+   - **Download Link**: [OpenAamps-v1.0.0.apk](releases/OpenAamps-v1.0.0.apk)
+   - Or from GitHub Releases: [Releases / v1.0.0](https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.0.0)
+2. Tap the downloaded file and select **Install** (allow installation from unknown sources if prompted).
+3. Open **OpenAamps**. Tap the audio pill in the player or settings to verify the connection to your Raspberry Pi.
+
+---
+
+## Building from Source
+
+### Building OpenAamps Android APK
+```bash
 cd mobile
-
-# Run Flutter code analysis
-flutter analyze
-
-# Build Release APK for Android devices
+flutter pub get
 flutter build apk --release
 ```
-
-The compiled Android `.apk` package will be located at:
+The compiled binary will be generated at:
 `mobile/build/app/outputs/flutter-apk/app-release.apk`
 
----
-
-## ⚡ Installation (Standard Debian / APT Pattern)
-
-### Method 1: Installing via APT / Debian Package (Recommended)
-
-Download or build the `.deb` package and install using standard Linux package manager:
-
+### Building Debian Package (`.deb`)
 ```bash
-# Build the package (or download pi-aamps_2.5.0_all.deb)
 sudo bash build_deb.sh
-
-# Install using apt / dpkg
-sudo apt install ./pi-aamps_2.5.0_all.deb
-```
-
-### Method 2: One-Line Installer Script
-
-Run the automated 1-line installation script on your Raspberry Pi:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/SharadS28N/raspberry-pi-music-player/main/install.sh | sudo bash
 ```
 
 ---
 
-## 🏗️ System Architecture
+## Project Structure
 
-```mermaid
-graph TD;
-    Client[Web Browser / Phone App] -->|WebSocket / HTTP REST| FastAPI[FastAPI Backend Server]
-    FastAPI -->|IPC Socket| MPV[MPV Media Engine + lavfi 10-Band EQ]
-    FastAPI -->|SQLite| DB[(pi_aamps.db)]
-    FastAPI -->|DBus / Systemctl| BlueZ[BlueZ A2DP Bluetooth Service]
-    FastAPI -->|Daemon Control| HiFi[Hi-Fi Services: Roon / AirPlay / UPnP / Spotify]
-    MPV -->|ALSA Direct Passthrough| DAC[Hardware DAC: HiFiBerry / USB / Analog Jack]
+```
+raspberry-pi-music-player/
+├── backend/                  # FastAPI backend, MPV controller, yt-dlp engine
+├── database/                 # SQLite schema, playlist, and track models
+├── docs/                     # Public showcase website & architectural documentation
+│   ├── assets/               # Production screenshots & branding
+│   └── index.html            # GitHub Pages public landing page
+├── frontend/                 # Pi local web interface & download showcase
+│   ├── assets/               # Web player icons & screenshots
+│   ├── download.html         # Local APK download & release notes page
+│   └── index.html            # Spotify-style web player
+├── mobile/                   # OpenAamps Flutter Android application
+│   ├── android/              # Native Android gradle configuration & drawables
+│   └── lib/                  # Dart UI views, services, models, & proxy
+├── releases/                 # Production compiled APK binaries
+│   └── OpenAamps-v1.0.0.apk  # Verified 62 MB standalone release APK
+├── install.sh                # Single-line automated Raspberry Pi installer
+└── run.py                    # Local development launcher
 ```
 
 ---
 
-## 🧪 Running Unit & System Tests
+## License
 
-**pi-aamps** includes a 100% pass test suite verifying all REST API endpoints, equalizer processing, system metrics, and database resets:
-
-```bash
-python -m pytest
-```
-
----
-
-## 📜 License
-
-This project is open-source under the [MIT License](LICENSE).
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.

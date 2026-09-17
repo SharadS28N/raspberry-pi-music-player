@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class LocalStreamProxy {
   HttpServer? _server;
   String? _targetUrl;
-  int _totalBytes = 0;
 
   int get port => _server?.port ?? 0;
 
@@ -14,9 +14,8 @@ class LocalStreamProxy {
     _server!.listen(_handleRequest);
   }
 
-  void setStream(String url, int totalBytes) {
+  void setStream(String url) {
     _targetUrl = url;
-    _totalBytes = totalBytes > 0 ? totalBytes : 5000000;
   }
 
   String getProxyUrl(String filename) {
@@ -31,50 +30,20 @@ class LocalStreamProxy {
     }
 
     final rangeHeader = request.headers.value(HttpHeaders.rangeHeader);
-    int start = 0;
-    int end = _totalBytes - 1;
-
-    if (rangeHeader != null) {
-      final match = RegExp(r'bytes=(\d+)-(\d*)').firstMatch(rangeHeader);
-      if (match != null) {
-        start = int.tryParse(match.group(1) ?? '') ?? 0;
-        final endParsed = int.tryParse(match.group(2) ?? '');
-        if (endParsed != null && endParsed > 0) {
-          end = endParsed;
-        }
-      }
-    }
-
-    if (end >= _totalBytes && _totalBytes > 0) {
-      end = _totalBytes - 1;
-    }
-    if (start > end) {
-      start = 0;
-    }
-
-    final contentLength = end - start + 1;
-
-    if (rangeHeader != null) {
-      request.response.statusCode = HttpStatus.partialContent;
-      request.response.headers.set(HttpHeaders.contentRangeHeader, 'bytes $start-$end/$_totalBytes');
-    } else {
-      request.response.statusCode = HttpStatus.ok;
-    }
-    final contentType = request.uri.path.endsWith('.webm') ? 'audio/webm' : 'audio/mp4';
-    request.response.headers.set(HttpHeaders.contentTypeHeader, contentType);
-    request.response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
-    request.response.headers.set(HttpHeaders.contentLengthHeader, contentLength.toString());
-
     final client = HttpClient();
 
     try {
       final upstreamReq = await client.getUrl(Uri.parse(_targetUrl!));
-      upstreamReq.headers.set('User-Agent', 'com.google.android.youtube/19.29.37 (Linux; U; Android 14)');
+      upstreamReq.headers.set(
+        HttpHeaders.userAgentHeader,
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      );
+      upstreamReq.headers.set('Referer', 'https://www.youtube.com/');
       if (rangeHeader != null) {
         upstreamReq.headers.set(HttpHeaders.rangeHeader, rangeHeader);
       }
       final upstreamRes = await upstreamReq.close();
-      
+
       request.response.statusCode = upstreamRes.statusCode;
       upstreamRes.headers.forEach((name, values) {
         final lower = name.toLowerCase();
@@ -84,10 +53,12 @@ class LocalStreamProxy {
           }
         }
       });
+      request.response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
 
       await request.response.addStream(upstreamRes);
       await request.response.close();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('LocalStreamProxy stream proxy error: $e');
       try {
         await request.response.close();
       } catch (_) {}

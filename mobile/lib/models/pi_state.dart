@@ -37,6 +37,7 @@ class PiState {
   final String currentTrackUrl;
   final double currentPosition;
   final double currentDuration;
+  double get duration => currentDuration;
   final bool isPlaying;
   final double cpuUsage;
   final double ramUsage;

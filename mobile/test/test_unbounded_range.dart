@@ -15,12 +15,13 @@ void main() async {
   print("1. Bounded range (0-1024): ${res1.statusCode}");
   c1.close();
 
-  // Test 2: Unbounded range: bytes=0-
+  // Test 2: Bounded full range: bytes=0-${stream.size.totalBytes - 1}
   final c2 = HttpClient();
   final r2 = await c2.getUrl(Uri.parse(url));
-  r2.headers.set('Range', 'bytes=0-');
+  r2.headers.set('Range', 'bytes=0-${stream.size.totalBytes - 1}');
+  r2.headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
   final res2 = await r2.close();
-  print("2. Unbounded range (bytes=0-): ${res2.statusCode}");
+  print("2. Bounded full range (bytes=0-${stream.size.totalBytes - 1}): ${res2.statusCode}");
   c2.close();
 
   // Test 3: No Range header

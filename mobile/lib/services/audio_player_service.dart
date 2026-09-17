@@ -42,6 +42,11 @@ class AudioPlayerService extends ChangeNotifier {
   final List<Track> _queue = [];
   int _queueIndex = -1;
 
+  // Stream Controllers for unified local & Pi telemetry
+  final StreamController<PlayerState> _playerStateController = StreamController<PlayerState>.broadcast();
+  final StreamController<Duration?> _durationController = StreamController<Duration?>.broadcast();
+  final StreamController<Duration> _positionController = StreamController<Duration>.broadcast();
+
   AudioPlayer get player => _player;
   PiAampsService get piService => _piService;
   AudioTarget get target => _target;
@@ -60,13 +65,33 @@ class AudioPlayerService extends ChangeNotifier {
   List<Track> get queue => List.unmodifiable(_queue);
   int get queueIndex => _queueIndex;
 
-  Stream<PlayerState> get playerStateStream => _player.playerStateStream;
-  Stream<Duration?> get durationStream => _player.durationStream;
-  Stream<Duration> get positionStream => _player.positionStream;
+  Stream<PlayerState> get playerStateStream => _playerStateController.stream;
+  Stream<Duration?> get durationStream => _durationController.stream;
+  Stream<Duration> get positionStream => _positionController.stream;
+
+  Duration get currentPosition {
+    if (_target == AudioTarget.piSpeaker) {
+      return Duration(milliseconds: (_piService.currentState.currentPosition * 1000).toInt());
+    }
+    return _player.position;
+  }
+
+  Duration get currentDuration {
+    if (_target == AudioTarget.piSpeaker) {
+      final d = _piService.currentState.duration;
+      if (d > 0) return Duration(milliseconds: (d * 1000).toInt());
+    }
+    return _player.duration ?? (_currentTrack?.duration ?? Duration.zero);
+  }
 
   AudioPlayerService() {
     _loadHistoryAndLikes();
+
+    // Local player listeners
     _player.playerStateStream.listen((state) {
+      if (_target == AudioTarget.phoneLocal) {
+        _playerStateController.add(state);
+      }
       if (state.processingState == ProcessingState.completed) {
         if (_player.loopMode == LoopMode.one) {
           seek(Duration.zero);
@@ -76,7 +101,11 @@ class AudioPlayerService extends ChangeNotifier {
         }
       }
     });
+
     _player.durationStream.listen((dur) {
+      if (_target == AudioTarget.phoneLocal) {
+        _durationController.add(dur);
+      }
       if (dur != null && dur > Duration.zero && _currentTrack != null) {
         if (_currentTrack!.duration == Duration.zero) {
           _currentTrack = _currentTrack!.copyWith(duration: dur);
@@ -84,6 +113,44 @@ class AudioPlayerService extends ChangeNotifier {
         }
       }
     });
+
+    _player.positionStream.listen((pos) {
+      if (_target == AudioTarget.phoneLocal) {
+        _positionController.add(pos);
+      }
+    });
+
+    // Raspberry Pi telemetry listener
+    _piService.stateStream.listen((piState) {
+      if (_target == AudioTarget.piSpeaker) {
+        _positionController.add(Duration(milliseconds: (piState.currentPosition * 1000).toInt()));
+        if (piState.duration > 0) {
+          _durationController.add(Duration(milliseconds: (piState.duration * 1000).toInt()));
+        }
+        _playerStateController.add(
+          PlayerState(
+            piState.isPlaying,
+            piState.isPlaying ? ProcessingState.ready : ProcessingState.idle,
+          ),
+        );
+      }
+    });
+
+    _player.playbackEventStream.listen(
+      (_) {},
+      onError: (Object e, StackTrace st) async {
+        debugPrint('Playback error observed on local player: $e');
+        if (_currentTrack != null && !_currentTrack!.isLocal && _resolvedStreamCache.containsKey(_currentTrack!.id)) {
+          final url = _resolvedStreamCache[_currentTrack!.id];
+          if (url != null) {
+            try {
+              await _playThroughProxy(url, 'mp4', _currentTrack!);
+              _player.play();
+            } catch (_) {}
+          }
+        }
+      },
+    );
   }
 
   Future<void> _loadHistoryAndLikes() async {
@@ -286,9 +353,9 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
-  Future<void> _playThroughProxy(String streamUrl, int totalBytes, String container, Track track) async {
+  Future<void> _playThroughProxy(String streamUrl, String container, Track track) async {
     await _proxy.start();
-    _proxy.setStream(streamUrl, totalBytes);
+    _proxy.setStream(streamUrl);
     final ext = container.isEmpty ? 'mp4' : container;
     final proxyUrl = _proxy.getProxyUrl('stream.$ext');
     final audioSource = AudioSource.uri(
@@ -336,10 +403,17 @@ class AudioPlayerService extends ChangeNotifier {
     try {
       bool playedLocal = false;
       if (track.localPath != null && track.localPath!.isNotEmpty) {
-        final file = File(track.localPath!);
+        var file = File(track.localPath!);
+        if (!file.existsSync() && track.localPath!.startsWith('/storage/emulated/0/')) {
+          final alt = File(track.localPath!.replaceFirst('/storage/emulated/0/', '/sdcard/'));
+          if (alt.existsSync()) file = alt;
+        } else if (!file.existsSync() && track.localPath!.startsWith('/sdcard/')) {
+          final alt = File(track.localPath!.replaceFirst('/sdcard/', '/storage/emulated/0/'));
+          if (alt.existsSync()) file = alt;
+        }
         if (file.existsSync()) {
           final audioSource = AudioSource.uri(
-            Uri.file(track.localPath!),
+            Uri.file(file.path),
             tag: _mediaItemForTrack(track),
           );
           await _player.setAudioSource(audioSource);
@@ -358,24 +432,35 @@ class AudioPlayerService extends ChangeNotifier {
           throw Exception('No stream URL found for track "${track.title}"');
         }
 
+        final codecName = streamData.container.toLowerCase() == 'mp4' ? 'AAC' : 'OPUS';
+        _currentTrack = _currentTrack!.copyWith(codec: codecName);
+        notifyListeners();
+
+        final desktopHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.youtube.com/',
+        };
+
         try {
           final audioSource = AudioSource.uri(
             Uri.parse(streamData.url),
-            headers: {'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 14)'},
-            tag: _mediaItemForTrack(track),
+            headers: desktopHeaders,
+            tag: _mediaItemForTrack(_currentTrack!),
           );
           await _player.setAudioSource(audioSource);
-        } catch (_) {
-          await _playThroughProxy(streamData.url, streamData.totalBytes, streamData.container, track);
+          _resolvedStreamCache[track.id] = streamData.url;
+        } catch (e) {
+          debugPrint('Direct audio source failed, falling back to proxy: $e');
+          await _playThroughProxy(streamData.url, streamData.container, _currentTrack!);
+          _resolvedStreamCache[track.id] = streamData.url;
         }
-        _resolvedStreamCache[track.id] = streamData.url;
       }
       _isLoading = false;
       await _player.setSpeed(_playbackSpeed);
       await _player.setPitch(_pitch);
       _player.play();
     } catch (e) {
-      debugPrint('Error playing real track "${track.title}": $e');
+      debugPrint('Error playing track "${track.title}": $e');
       _isLoading = false;
     }
   }
@@ -433,6 +518,9 @@ class AudioPlayerService extends ChangeNotifier {
     _sleepTimer?.cancel();
     _sleepTicker?.cancel();
     _proxy.stop();
+    _playerStateController.close();
+    _durationController.close();
+    _positionController.close();
     _player.dispose();
     _ytService.dispose();
     super.dispose();

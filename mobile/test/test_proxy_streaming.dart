@@ -11,7 +11,7 @@ void main() async {
 
   final proxy = LocalStreamProxy();
   await proxy.start();
-  proxy.setStream(stream.url.toString(), stream.size.totalBytes);
+  proxy.setStream(stream.url.toString());
   final proxyUrl = proxy.getProxyUrl('audio.mp4');
   print("Proxy URL: $proxyUrl");
 

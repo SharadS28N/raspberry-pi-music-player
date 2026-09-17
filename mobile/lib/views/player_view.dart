@@ -12,6 +12,7 @@ import 'lyrics_view.dart';
 import 'settings_view.dart';
 import '../widgets/app_alert.dart';
 import '../widgets/equalizer_sheet.dart';
+import '../widgets/output_target_modal.dart';
 
 class PlayerView extends StatefulWidget {
   final Track track;
@@ -375,6 +376,54 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                           ],
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => _showOutputTargetModal(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: widget.audioService.target == AudioTarget.piSpeaker
+                                ? const Color(0xFF16A34A).withValues(alpha: 0.2)
+                                : const Color(0xFF18181B),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: widget.audioService.target == AudioTarget.piSpeaker
+                                  ? const Color(0xFF22C55E)
+                                  : Colors.white24,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                widget.audioService.target == AudioTarget.piSpeaker
+                                    ? Icons.radio_rounded
+                                    : Icons.phone_android_rounded,
+                                color: widget.audioService.target == AudioTarget.piSpeaker
+                                    ? const Color(0xFF22C55E)
+                                    : Colors.white70,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                widget.audioService.target == AudioTarget.piSpeaker
+                                    ? 'pi-aamps • ${widget.audioService.piService.ipAddress}:${widget.audioService.piService.port}'
+                                    : 'This Phone Audio',
+                                style: TextStyle(
+                                  color: widget.audioService.target == AudioTarget.piSpeaker
+                                      ? const Color(0xFF22C55E)
+                                      : Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_drop_down_rounded, color: Colors.white54, size: 18),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -518,7 +567,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 16),
 
-              // Bottom Action Bar (Queue List, Lyrics, Sleep Timer, Equalizer/DSP)
+              // Bottom Action Bar (Queue List, Lyrics, Output Target, Sleep Timer, Equalizer/DSP)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -541,6 +590,19 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                         ),
                       );
                     },
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      widget.audioService.target == AudioTarget.piSpeaker
+                          ? Icons.radio_rounded
+                          : Icons.speaker_group_rounded,
+                      color: widget.audioService.target == AudioTarget.piSpeaker
+                          ? const Color(0xFF22C55E)
+                          : const Color(0xFFA1A1AA),
+                      size: 22,
+                    ),
+                    tooltip: 'Output Target (Phone / pi-aamps)',
+                    onPressed: () => _showOutputTargetModal(context),
                   ),
                   IconButton(
                     icon: const Icon(Icons.bedtime_outlined, color: Color(0xFFA1A1AA), size: 22),
@@ -568,7 +630,30 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
     ],
   ),
 );
-}
+  }
+
+  void _showOutputTargetModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => OutputTargetModal(
+        currentTarget: widget.audioService.target,
+        piService: widget.audioService.piService,
+        onSelectTarget: (newTarget) {
+          widget.audioService.setAudioTarget(newTarget);
+          if (mounted) setState(() {});
+          AppAlert.show(
+            context,
+            newTarget == AudioTarget.piSpeaker
+                ? 'Streaming on pi-aamps (${widget.audioService.piService.ipAddress}:${widget.audioService.piService.port})'
+                : 'Playing on This Phone',
+            icon: newTarget == AudioTarget.piSpeaker ? Icons.radio_rounded : Icons.phone_android_rounded,
+            isFullScreen: true,
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildBackgroundLayer(Track track) {
     final bg = SettingsService.instance.backgroundStyle;

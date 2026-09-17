@@ -119,7 +119,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeView(onPlayTrack: _onPlayTrack),
+      HomeView(
+        onPlayTrack: _onPlayTrack,
+        audioService: _audioService,
+      ),
       SearchView(onPlayTrack: _onPlayTrack),
       LibraryView(
         accountService: AccountService.instance,
@@ -161,14 +164,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 );
               },
               onPlayPause: () {
-                if (_audioService.player.playing) {
+                if (_isPlaying) {
                   _audioService.pause();
                 } else {
-                  if (_audioService.player.audioSource == null) {
-                    _audioService.playTrack(_activeTrack);
-                  } else {
-                    _audioService.resume(fallbackTrack: _activeTrack);
-                  }
+                  _audioService.resume(fallbackTrack: _activeTrack);
                 }
               },
             ),
