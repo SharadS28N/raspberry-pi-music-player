@@ -267,19 +267,180 @@
             z-index: 50;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             height: 72px;
             display: flex;
             align-items: center;
         }
+
+        .hero-title {
+            font-size: clamp(32px, 5vw, 52px);
+            font-weight: 900;
+            line-height: 1.12;
+            letter-spacing: -1.2px;
+            margin-bottom: 20px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .section-title {
+            font-size: clamp(24px, 4vw, 38px);
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            line-height: 1.25;
+            margin-top: 8px;
+            margin-bottom: 16px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Responsive Media Queries */
+        @media (max-width: 1080px) {
+            .hero-grid {
+                grid-template-columns: 1fr !important;
+                gap: 48px !important;
+                text-align: center;
+            }
+            .hero-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .hero-cta-group {
+                justify-content: center !important;
+            }
+            .hero-telemetry {
+                justify-content: center !important;
+            }
+            .install-grid {
+                grid-template-columns: 1fr !important;
+                gap: 40px !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .desktop-nav {
+                display: none !important;
+            }
+            .mobile-menu-btn {
+                display: inline-flex !important;
+            }
+            .arch-row {
+                grid-template-columns: 1fr !important;
+                gap: 14px !important;
+            }
+            .routing-grid {
+                grid-template-columns: 1fr !important;
+                gap: 24px !important;
+            }
+            .download-grid {
+                grid-template-columns: 1fr !important;
+                gap: 24px !important;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .section-py {
+                padding: 60px 0 !important;
+            }
+            .container {
+                padding: 0 16px !important;
+            }
+            br.desktop-br, .desktop-br {
+                display: none !important;
+            }
+            h1.hero-title, .hero-title {
+                font-size: clamp(24px, 6.2vw, 30px) !important;
+                letter-spacing: -0.8px !important;
+                line-height: 1.18 !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+            }
+            h2.section-title, .section-title {
+                font-size: clamp(20px, 5.2vw, 24px) !important;
+                letter-spacing: -0.5px !important;
+                line-height: 1.25 !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+            }
+            .hero-telemetry {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .hero-telemetry-divider {
+                display: none !important;
+            }
+            .hero-cta-group {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 12px !important;
+            }
+            .hero-cta-group .btn-primary,
+            .hero-cta-group .btn-secondary {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            .phone-frame {
+                max-width: 290px !important;
+                border-radius: 36px !important;
+                padding: 10px !important;
+            }
+            .phone-screen {
+                border-radius: 26px !important;
+                padding: 16px 12px !important;
+            }
+            .code-box {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+            .code-box button {
+                margin-left: 0 !important;
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            .brand-subtitle {
+                display: none !important;
+            }
+            .github-btn-text {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 420px) {
+            h1.hero-title, .hero-title {
+                font-size: 26px !important;
+            }
+            .glass-panel {
+                padding: 20px 16px !important;
+                border-radius: 16px !important;
+            }
+            .phone-frame {
+                max-width: 270px !important;
+            }
+            .vinyl-wrap {
+                width: 190px !important;
+                height: 190px !important;
+            }
+            .vinyl-spin {
+                width: 190px !important;
+                height: 190px !important;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Ambient Glow Blobs -->
-    <div class="ambient-glow glow-emerald" style="top: 100px; left: 10%; width: 500px; height: 500px;"></div>
-    <div class="ambient-glow glow-cyan" style="top: 600px; right: 8%; width: 450px; height: 450px;"></div>
-    <div class="ambient-glow glow-purple" style="top: 1400px; left: 5%; width: 600px; height: 600px;"></div>
+    <!-- Ambient Glow Blobs Background (Contained to prevent horizontal scrolling) -->
+    <div style="position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;">
+        <div class="ambient-glow glow-emerald" style="top: 100px; left: 10%; width: 500px; height: 500px;"></div>
+        <div class="ambient-glow glow-cyan" style="top: 600px; right: 8%; width: 450px; height: 450px;"></div>
+        <div class="ambient-glow glow-purple" style="top: 1400px; left: 5%; width: 600px; height: 600px;"></div>
+    </div>
 
     <!-- Navigation Header -->
     <header class="nav-header">
@@ -289,7 +450,7 @@
                 <img src="assets/app_icon.png" alt="OpenAamps Icon" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);">
                 <div>
                     <div style="font-weight: 800; font-size: 18px; letter-spacing: -0.5px; font-family: 'Outfit', sans-serif;">pi-aamps <span style="color: var(--primary-emerald);">&amp; OpenAamps</span></div>
-                    <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace;">Audiophile Streamer &amp; Android App</div>
+                    <div class="brand-subtitle" style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace;">Audiophile Streamer &amp; Android App</div>
                 </div>
             </a>
 
@@ -305,18 +466,33 @@
             </nav>
 
             <!-- Actions -->
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <a href="https://github.com/SharadS28N/raspberry-pi-music-player" target="_blank" rel="noopener noreferrer" style="color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 9999px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); transition: background 0.2s;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player" target="_blank" rel="noopener noreferrer" style="color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); transition: background 0.2s;">
                     <i class="fa-brands fa-github text-base"></i>
-                    <span>GitHub</span>
+                    <span class="github-btn-text">GitHub</span>
                 </a>
-                <a href="#download" class="btn-primary" style="padding: 9px 20px; font-size: 13px;">
+                <a href="#download" class="btn-primary" style="padding: 8px 18px; font-size: 13px;">
                     <i class="fa-brands fa-android"></i>
                     <span>Get APK</span>
                 </a>
+                <!-- Mobile Hamburger Button -->
+                <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Toggle Navigation Menu" style="display: none; background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle); color: #FFFFFF; width: 38px; height: 38px; border-radius: 9999px; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+                    <i class="fa-solid fa-bars text-base" id="menu-icon"></i>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu-drawer" style="display: none; position: fixed; top: 72px; left: 0; right: 0; background: rgba(8, 8, 12, 0.98); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-subtle); padding: 16px 24px; z-index: 49; flex-direction: column; gap: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+        <a href="#overview" class="mobile-nav-link" style="color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Overview</a>
+        <a href="#routing" class="mobile-nav-link" style="color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Dual Output Routing</a>
+        <a href="#features" class="mobile-nav-link" style="color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Key Features</a>
+        <a href="#screenshots" class="mobile-nav-link" style="color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Live Hardware Testing</a>
+        <a href="#architecture" class="mobile-nav-link" style="color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Architecture</a>
+        <a href="#docs" class="mobile-nav-link" style="color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Technical Docs</a>
+        <a href="#download" class="mobile-nav-link" style="color: var(--primary-emerald); text-decoration: none; font-size: 15px; font-weight: 700; padding: 8px 0;">Download OpenAamps APK</a>
+    </div>
 
     <!-- Hero Section -->
     <section id="overview" class="section-py" style="padding-top: 60px;">
@@ -324,7 +500,7 @@
             <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 48px; align-items: center;" class="hero-grid">
                 
                 <!-- Left: Headline & Call To Action -->
-                <div>
+                <div class="hero-content">
                     <!-- Badge -->
                     <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 9999px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); margin-bottom: 24px;">
                         <span class="status-dot"></span>
@@ -332,8 +508,8 @@
                     </div>
 
                     <!-- Main Headline -->
-                    <h1 style="font-size: 52px; font-weight: 900; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px;">
-                        Studio-Grade Hi-Fi DAC Hub. <br>
+                    <h1 class="hero-title">
+                        Studio-Grade Hi-Fi DAC Hub. <br class="desktop-br">
                         <span style="background: linear-gradient(135deg, #FFFFFF 30%, #9CA3AF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Controlled From Your Phone.</span>
                     </h1>
 
@@ -343,7 +519,7 @@
                     </p>
 
                     <!-- CTA Buttons -->
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 40px;">
+                    <div class="hero-cta-group" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 40px;">
                         <a href="#download" class="btn-primary">
                             <i class="fa-brands fa-android text-lg"></i>
                             <span>Download APK v1.0.0</span>
@@ -355,7 +531,7 @@
                     </div>
 
                     <!-- Live Telemetry Pill -->
-                    <div class="glass-panel" style="padding: 16px 20px; display: inline-flex; flex-wrap: wrap; gap: 24px; align-items: center;">
+                    <div class="glass-panel hero-telemetry" style="padding: 16px 20px; display: inline-flex; flex-wrap: wrap; gap: 24px; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-microchip" style="color: var(--primary-emerald); font-size: 18px;"></i>
                             <div>
@@ -363,7 +539,7 @@
                                 <div style="font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">30.2% <span style="font-size: 11px; color: var(--text-dim); font-weight: 400;">ARM Cortex-A</span></div>
                             </div>
                         </div>
-                        <div style="height: 28px; width: 1px; background: rgba(255,255,255,0.1);"></div>
+                        <div class="hero-telemetry-divider" style="height: 28px; width: 1px; background: rgba(255,255,255,0.1);"></div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-temperature-half" style="color: #F59E0B; font-size: 18px;"></i>
                             <div>
@@ -371,7 +547,7 @@
                                 <div style="font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">59.1°C <span style="font-size: 11px; color: #10B981; font-weight: 600;">Cooling OK</span></div>
                             </div>
                         </div>
-                        <div style="height: 28px; width: 1px; background: rgba(255,255,255,0.1);"></div>
+                        <div class="hero-telemetry-divider" style="height: 28px; width: 1px; background: rgba(255,255,255,0.1);"></div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-wave-square" style="color: var(--accent-cyan); font-size: 18px;"></i>
                             <div>
@@ -405,7 +581,7 @@
                             </div>
 
                             <!-- Animated Rotating Vinyl Record Mockup -->
-                            <div style="position: relative; width: 220px; height: 220px; margin: 8px auto 20px; display: flex; align-items: center; justify-content: center;">
+                            <div class="vinyl-wrap" style="position: relative; width: 220px; height: 220px; margin: 8px auto 20px; display: flex; align-items: center; justify-content: center;">
                                 <!-- Vinyl Disc Outer Ring -->
                                 <div class="vinyl-spin" style="width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, #27272A 0%, #18181B 45%, #09090B 70%, #000000 100%); border: 3px solid #3F3F46; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; position: relative;">
                                     <!-- Vinyl Grooves -->
@@ -479,7 +655,7 @@
         <div class="container">
             <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
                 <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary-emerald); letter-spacing: 1px; text-transform: uppercase;">SEAMLESS AUDIO ROUTING</span>
-                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                <h2 class="section-title">
                     Play on Raspberry Pi or on Your Phone
                 </h2>
                 <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
@@ -575,7 +751,7 @@
         <div class="container">
             <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
                 <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-cyan); letter-spacing: 1px; text-transform: uppercase;">VALIDATED ON REAL HARDWARE</span>
-                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                <h2 class="section-title">
                     Tested on Samsung Galaxy A16 &amp; Raspberry Pi
                 </h2>
                 <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
@@ -667,7 +843,7 @@
         <div class="container">
             <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
                 <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-purple); letter-spacing: 1px; text-transform: uppercase;">END-TO-END STACK</span>
-                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                <h2 class="section-title">
                     How pi-aamps &amp; OpenAamps Work Together
                 </h2>
                 <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
@@ -679,7 +855,7 @@
             <div style="display: flex; flex-direction: column; gap: 16px; max-width: 900px; margin: 0 auto;">
                 
                 <!-- Layer 1 -->
-                <div class="glass-panel" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;" class="arch-row">
+                <div class="glass-panel arch-row" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;">
                     <div>
                         <span style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #9CA3AF; text-transform: uppercase;">LAYER 1 • MOBILE FRONTEND</span>
                         <h4 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">OpenAamps Android</h4>
@@ -690,7 +866,7 @@
                 </div>
 
                 <!-- Layer 2 -->
-                <div class="glass-panel" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;" class="arch-row">
+                <div class="glass-panel arch-row" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;">
                     <div>
                         <span style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--primary-emerald); text-transform: uppercase;">LAYER 2 • TRANSPORT &amp; DISCOVERY</span>
                         <h4 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">Dual-Mode Gateway</h4>
@@ -701,7 +877,7 @@
                 </div>
 
                 <!-- Layer 3 -->
-                <div class="glass-panel" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;" class="arch-row">
+                <div class="glass-panel arch-row" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;">
                     <div>
                         <span style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan); text-transform: uppercase;">LAYER 3 • STREAMER CORE</span>
                         <h4 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">pi-aamps Backend</h4>
@@ -712,7 +888,7 @@
                 </div>
 
                 <!-- Layer 4 -->
-                <div class="glass-panel" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;" class="arch-row">
+                <div class="glass-panel arch-row" style="padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;">
                     <div>
                         <span style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent-purple); text-transform: uppercase;">LAYER 4 • AUDIO HARDWARE</span>
                         <h4 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">ALSA &amp; DAC Drivers</h4>
@@ -731,7 +907,7 @@
         <div class="container">
             <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
                 <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-cyan); letter-spacing: 1px; text-transform: uppercase;">TECHNICAL DOCUMENTATION</span>
-                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                <h2 class="section-title">
                     Comprehensive Architectural Guides
                 </h2>
                 <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
@@ -809,7 +985,7 @@
         <div class="container">
             <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
                 <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary-emerald); letter-spacing: 1px; text-transform: uppercase;">FEATURES &amp; ADVANTAGES</span>
-                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                <h2 class="section-title">
                     Engineered for True Audiophiles
                 </h2>
                 <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
@@ -895,7 +1071,7 @@
                 
                 <div>
                     <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary-emerald); letter-spacing: 1px; text-transform: uppercase;">RASPBERRY PI SETUP</span>
-                    <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                    <h2 class="section-title">
                         Get Up and Running in 60 Seconds
                     </h2>
                     <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
@@ -961,7 +1137,7 @@
         <div class="container">
             <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
                 <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary-emerald); letter-spacing: 1px; text-transform: uppercase;">DOWNLOADS &amp; RELEASES</span>
-                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                <h2 class="section-title">
                     Get OpenAamps for Android
                 </h2>
                 <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
@@ -1119,6 +1295,24 @@
             if (e.key === 'Escape') closeLightbox();
         });
 
+        // Mobile Menu Drawer Toggle
+        const menuBtn = document.getElementById('mobile-menu-toggle');
+        const menuDrawer = document.getElementById('mobile-menu-drawer');
+        const menuIcon = document.getElementById('menu-icon');
+        if (menuBtn && menuDrawer) {
+            menuBtn.addEventListener('click', () => {
+                const isOpen = menuDrawer.style.display === 'flex';
+                menuDrawer.style.display = isOpen ? 'none' : 'flex';
+                menuIcon.className = isOpen ? 'fa-solid fa-bars text-base' : 'fa-solid fa-xmark text-base';
+            });
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    menuDrawer.style.display = 'none';
+                    menuIcon.className = 'fa-solid fa-bars text-base';
+                });
+            });
+        }
+
         // Interactive Output Pill Demo on Hero Phone
         const outputPill = document.getElementById('interactive-output-pill');
         let currentMode = 'pi';
@@ -1131,7 +1325,7 @@
                     outputPill.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-mobile-screen" style="color: #FFFFFF; font-size: 12px;"></i>
-                            <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #FFFFFF; font-weight: 700;">📱 This Phone Audio</span>
+                            <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #FFFFFF; font-weight: 700;">This Phone Audio</span>
                         </div>
                         <i class="fa-solid fa-caret-down" style="color: #FFFFFF; font-size: 10px;"></i>
                     `;
