@@ -234,7 +234,68 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // Pi-Aamps Live Hardware Connectivity Banner
+              ListenableBuilder(
+                listenable: PiAampsService.instance,
+                builder: (context, _) {
+                  final pi = PiAampsService.instance.currentState;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141416),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: pi.isConnected ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: pi.isConnected ? Colors.greenAccent : Colors.white24,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                pi.isConnected ? 'pi-aamps Hardware Streamer Active' : 'pi-aamps Streamer Disconnected',
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                pi.isConnected
+                                    ? '${pi.ipAddress} • ${pi.activeDac} • ${pi.tempCelsius.toStringAsFixed(0)}°C'
+                                    : 'Tap pi-aamps in bottom bar to connect and stream to Raspberry Pi DAC',
+                                style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 11),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (pi.isConnected)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text('READY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
 
               // Category / Mood Filter Chips (Monochrome)
               SizedBox(

@@ -68,8 +68,8 @@ class OutputTargetModal extends StatelessWidget {
               color: currentTarget == AudioTarget.piSpeaker ? Colors.white : Colors.white70,
               size: 28,
             ),
-            title: const Text('pi-aamps (Hardware Streamer)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            subtitle: const Text('Stream audio to external DAC & Hi-Fi Speakers (Coming Soon)', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            title: const Text('pi-aamps (Raspberry Pi Hub)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Direct bit-perfect streaming to Raspberry Pi DAC & Speakers', style: TextStyle(color: Colors.white54, fontSize: 12)),
             trailing: currentTarget == AudioTarget.piSpeaker ? const Icon(Icons.check_circle_rounded, color: Colors.white) : null,
             onTap: () {
               onSelectTarget(AudioTarget.piSpeaker);

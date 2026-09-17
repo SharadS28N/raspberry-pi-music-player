@@ -6,6 +6,7 @@ import '../services/integration_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/account_switcher_modal.dart';
 import '../widgets/spotify_import_modal.dart';
+import '../widgets/equalizer_sheet.dart';
 
 class SettingsView extends StatefulWidget {
   final AudioPlayerService? audioService;
@@ -288,7 +289,7 @@ class _SettingsViewState extends State<SettingsView> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Notification & Lock Screen controls are active and granted.'),
-                      backgroundColor: const Color(0xFF222222),
+                      backgroundColor: Color(0xFF222222),
                     ),
                   );
                 }
@@ -527,70 +528,9 @@ class _SettingsViewState extends State<SettingsView> {
   void _showEqualizerPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF141414),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Equalizer DSP Preset', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.close_rounded, color: Colors.white70), onPressed: () => Navigator.pop(ctx)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...EqualizerPreset.values.map((preset) {
-                  final isSelected = _settings.equalizerPreset == preset;
-                  String desc = '';
-                  switch (preset) {
-                    case EqualizerPreset.flat:
-                      desc = 'Studio reference direct flat frequency response';
-                      break;
-                    case EqualizerPreset.bassBoost:
-                      desc = 'Warm low-end harmonic enhancement for sub-bass';
-                      break;
-                    case EqualizerPreset.vocalBoost:
-                      desc = 'Enhanced mid-range clarity for vocals and acoustic';
-                      break;
-                    case EqualizerPreset.trebleBoost:
-                      desc = 'Airy high frequencies for cymbals and strings';
-                      break;
-                    case EqualizerPreset.hifi:
-                      desc = 'Dynamic wide-spectrum audiophile soundstage tuning';
-                      break;
-                  }
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF222222) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isSelected ? Colors.white : Colors.white12),
-                    ),
-                    child: ListTile(
-                      title: Text(preset.name.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      subtitle: Text(desc, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
-                      trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Colors.white) : null,
-                      onTap: () {
-                        _settings.setEqualizerPreset(preset);
-                        Navigator.pop(ctx);
-                        setState(() {});
-                      },
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => const EqualizerSheet(),
     );
   }
 }

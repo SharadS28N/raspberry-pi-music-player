@@ -11,6 +11,7 @@ import '../services/settings_service.dart';
 import 'lyrics_view.dart';
 import 'settings_view.dart';
 import '../widgets/app_alert.dart';
+import '../widgets/equalizer_sheet.dart';
 
 class PlayerView extends StatefulWidget {
   final Track track;
@@ -548,11 +549,13 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                   ),
                   IconButton(
                     icon: const Icon(Icons.equalizer_rounded, color: Color(0xFFA1A1AA), size: 22),
-                    tooltip: 'Audio Settings & Equalizer',
+                    tooltip: '15-Band Equalizer & AutoEq',
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SettingsView()),
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        isScrollControlled: true,
+                        builder: (context) => const EqualizerSheet(),
                       );
                     },
                   ),

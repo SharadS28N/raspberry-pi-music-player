@@ -1,21 +1,82 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 
 class LocalAudioService extends ChangeNotifier {
+  static final LocalAudioService instance = LocalAudioService._internal();
+  factory LocalAudioService() => instance;
+
+  LocalAudioService._internal() {
+    _loadPreferencesAndTracks();
+  }
+
   bool _isScanning = false;
-  List<Track> _localTracks = [];
+  final List<Track> _allLocalTracks = [];
+  final Set<String> _excludedFolders = {};
+  final Map<String, Map<String, String>> _tagOverrides = {};
 
   bool get isScanning => _isScanning;
-  List<Track> get localTracks => List.unmodifiable(_localTracks);
+  Set<String> get excludedFolders => Set.unmodifiable(_excludedFolders);
 
-  LocalAudioService() {
+  List<Track> get localTracks {
+    return _allLocalTracks.where((track) {
+      if (track.localPath == null) return true;
+      final parentFolder = _getParentDirectory(track.localPath!);
+      return !_excludedFolders.contains(parentFolder);
+    }).toList();
+  }
+
+  Map<String, List<Track>> get folderTracks {
+    final Map<String, List<Track>> map = {};
+    for (var track in localTracks) {
+      final folder = track.localPath != null
+          ? _getParentDirectory(track.localPath!)
+          : 'Storage / Music';
+      map.putIfAbsent(folder, () => []).add(track);
+    }
+    return map;
+  }
+
+  List<String> get folders => folderTracks.keys.toList();
+
+  String _getParentDirectory(String filePath) {
+    try {
+      final separator = filePath.contains('/') ? '/' : '\\';
+      final parts = filePath.split(separator);
+      if (parts.length > 1) {
+        parts.removeLast();
+        return parts.join(separator);
+      }
+    } catch (_) {}
+    return 'Music';
+  }
+
+  Future<void> _loadPreferencesAndTracks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final excluded = prefs.getStringList('excluded_folders') ?? [];
+      _excludedFolders.addAll(excluded);
+
+      final overridesStr = prefs.getString('track_tag_overrides');
+      if (overridesStr != null) {
+        final decoded = jsonDecode(overridesStr) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          if (val is Map<String, dynamic>) {
+            _tagOverrides[key] = val.map((k, v) => MapEntry(k, v.toString()));
+          }
+        });
+      }
+    } catch (_) {}
+
     _loadSampleLocalTracks();
   }
 
   void _loadSampleLocalTracks() {
-    _localTracks = [
+    _allLocalTracks.clear();
+    final samples = [
       Track(
         id: 'local_track_1',
         title: 'ハイスペックニート - High Spec Neet',
@@ -36,7 +97,7 @@ class LocalAudioService extends ChangeNotifier {
         duration: const Duration(minutes: 5, seconds: 6),
         artworkUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400',
         streamUrl: '',
-        localPath: '/storage/emulated/0/Music/Marigold.flac',
+        localPath: '/storage/emulated/0/Music/Acoustic/Marigold.flac',
         isLocal: true,
         codec: 'ALAC 96kHz',
       ),
@@ -48,12 +109,71 @@ class LocalAudioService extends ChangeNotifier {
         duration: const Duration(minutes: 4, seconds: 12),
         artworkUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
         streamUrl: '',
-        localPath: '/storage/emulated/0/Music/Sukidakara.m4a',
+        localPath: '/storage/emulated/0/Music/Piano/Sukidakara.m4a',
         isLocal: true,
         codec: 'AAC 320kbps',
       ),
     ];
+
+    for (var track in samples) {
+      _allLocalTracks.add(_applyTagOverrides(track));
+    }
+    notifyListeners();
   }
+
+  Track _applyTagOverrides(Track track) {
+    if (_tagOverrides.containsKey(track.id)) {
+      final override = _tagOverrides[track.id]!;
+      return track.copyWith(
+        title: override['title'] ?? track.title,
+        artist: override['artist'] ?? track.artist,
+        album: override['album'] ?? track.album,
+      );
+    }
+    return track;
+  }
+
+  Future<void> updateTrackMetadata(String trackId, {String? title, String? artist, String? album, String? lyrics}) async {
+    final current = _tagOverrides[trackId] ?? {};
+    if (title != null) current['title'] = title;
+    if (artist != null) current['artist'] = artist;
+    if (album != null) current['album'] = album;
+    if (lyrics != null) current['lyrics'] = lyrics;
+    _tagOverrides[trackId] = current;
+
+    // Update in memory track
+    final index = _allLocalTracks.indexWhere((t) => t.id == trackId);
+    if (index != -1) {
+      _allLocalTracks[index] = _applyTagOverrides(_allLocalTracks[index]);
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('track_tag_overrides', jsonEncode(_tagOverrides));
+    } catch (_) {}
+
+    notifyListeners();
+  }
+
+  Future<void> excludeFolder(String folderPath) async {
+    _excludedFolders.add(folderPath);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('excluded_folders', _excludedFolders.toList());
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  Future<void> includeFolder(String folderPath) async {
+    _excludedFolders.remove(folderPath);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('excluded_folders', _excludedFolders.toList());
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  bool isFolderExcluded(String folderPath) => _excludedFolders.contains(folderPath);
 
   Future<void> scanDeviceAudio() => scanDeviceMusic();
 
@@ -71,25 +191,24 @@ class LocalAudioService extends ChangeNotifier {
             final path = entity.path.toLowerCase();
             if (path.endsWith('.mp3') || path.endsWith('.flac') || path.endsWith('.m4a') || path.endsWith('.wav')) {
               final fileName = entity.path.split(Platform.pathSeparator).last;
-              discovered.add(
-                Track(
-                  id: 'local_${entity.path.hashCode}',
-                  title: fileName.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), ''),
-                  artist: 'Device Storage',
-                  album: 'Local Music',
-                  duration: const Duration(minutes: 3, seconds: 45),
-                  artworkUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400',
-                  streamUrl: entity.path,
-                  localPath: entity.path,
-                  isLocal: true,
-                  codec: path.endsWith('.flac') ? 'FLAC' : 'MP3',
-                ),
+              final rawTrack = Track(
+                id: 'local_${entity.path.hashCode}',
+                title: fileName.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), ''),
+                artist: 'Device Storage',
+                album: 'Local Music',
+                duration: const Duration(minutes: 3, seconds: 45),
+                artworkUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400',
+                streamUrl: entity.path,
+                localPath: entity.path,
+                isLocal: true,
+                codec: path.endsWith('.flac') ? 'FLAC' : 'MP3',
               );
+              discovered.add(_applyTagOverrides(rawTrack));
             }
           }
         }
         if (discovered.isNotEmpty) {
-          _localTracks.addAll(discovered);
+          _allLocalTracks.addAll(discovered);
         }
       }
     } catch (e) {

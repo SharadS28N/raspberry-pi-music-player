@@ -127,7 +127,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onPlayTrack: _onPlayTrack,
         audioService: _audioService,
       ),
-      const PiHubView(),
+      PiHubView(piService: _audioService.piService),
     ];
 
     return Scaffold(

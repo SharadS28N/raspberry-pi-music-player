@@ -23,6 +23,7 @@ class _LyricsViewState extends State<LyricsView> {
   LyricsData? _lyricsData;
   bool _isLoading = true;
   int _activeLineIndex = -1;
+  bool _showTranslations = true;
 
   StreamSubscription<Duration>? _posSub;
   Duration _currentPosition = Duration.zero;
@@ -104,7 +105,7 @@ class _LyricsViewState extends State<LyricsView> {
         _activeLineIndex = newIndex;
       });
       if (_scrollController.hasClients) {
-        final targetOffset = (newIndex * 70.0) - 140.0;
+        final targetOffset = (newIndex * 75.0) - 140.0;
         _scrollController.animateTo(
           targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
           duration: const Duration(milliseconds: 350),
@@ -144,7 +145,7 @@ class _LyricsViewState extends State<LyricsView> {
                   image: NetworkImage(track.artworkUrl),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.92),
+                    Colors.black.withValues(alpha: 0.94),
                     BlendMode.darken,
                   ),
                 ),
@@ -196,23 +197,32 @@ class _LyricsViewState extends State<LyricsView> {
                           ],
                         ),
                       ),
-                      if (_lyricsData?.isSynced == true)
-                        Container(
+                      // Translations toggle
+                      InkWell(
+                        onTap: () => setState(() => _showTranslations = !_showTranslations),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
+                            color: _showTranslations ? Colors.white : Colors.white12,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Row(
                             children: [
-                              Icon(Icons.sync_rounded, color: Colors.white, size: 14),
-                              SizedBox(width: 4),
-                              Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              Icon(Icons.translate_rounded, color: _showTranslations ? Colors.black : Colors.white70, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                'A/文',
+                                style: TextStyle(
+                                  color: _showTranslations ? Colors.black : Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
+                      ),
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 28),
@@ -222,7 +232,7 @@ class _LyricsViewState extends State<LyricsView> {
                   ),
                 ),
 
-                // Lyrics Body
+                // Lyrics Body with Word-by-Word Animation
                 Expanded(
                   child: _isLoading
                       ? const Center(
@@ -276,16 +286,35 @@ class _LyricsViewState extends State<LyricsView> {
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 14.0),
-                                    child: Text(
-                                      line.text,
-                                      style: TextStyle(
-                                        color: isActive
-                                            ? Colors.white
-                                            : Colors.white.withValues(alpha: 0.32),
-                                        fontSize: isActive ? 26 : 19,
-                                        fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                                        letterSpacing: -0.3,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (isActive && line.words.isNotEmpty)
+                                          _buildWordByWordLine(line)
+                                        else
+                                          Text(
+                                            line.text,
+                                            style: TextStyle(
+                                              color: isActive
+                                                  ? Colors.white
+                                                  : Colors.white.withValues(alpha: 0.32),
+                                              fontSize: isActive ? 26 : 19,
+                                              fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                                              letterSpacing: -0.3,
+                                            ),
+                                          ),
+                                        if (_showTranslations && line.translation != null) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            line.translation!,
+                                            style: TextStyle(
+                                              color: isActive ? const Color(0xFFFDE68A) : Colors.white24,
+                                              fontSize: isActive ? 14 : 12,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                 );
@@ -325,7 +354,7 @@ class _LyricsViewState extends State<LyricsView> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -340,43 +369,43 @@ class _LyricsViewState extends State<LyricsView> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
 
-                      // Control Buttons Row
+                      // Playback Controls Row
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 28),
-                            onPressed: () {
-                              final newPos = _currentPosition - const Duration(seconds: 10);
-                              widget.audioService?.seek(newPos < Duration.zero ? Duration.zero : newPos);
-                            },
+                            icon: const Icon(Icons.skip_previous_rounded, color: Colors.white, size: 28),
+                            onPressed: () => widget.audioService?.skipToPrevious(),
                           ),
+                          const SizedBox(width: 16),
                           GestureDetector(
                             onTap: () {
                               if (_isPlaying) {
                                 widget.audioService?.pause();
                               } else {
-                                widget.audioService?.resume(fallbackTrack: widget.track);
+                                widget.audioService?.resume();
                               }
                             },
-                            child: CircleAvatar(
-                              radius: 26,
-                              backgroundColor: Colors.white,
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
                               child: Icon(
                                 _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                                 color: Colors.black,
-                                size: 30,
+                                size: 28,
                               ),
                             ),
                           ),
+                          const SizedBox(width: 16),
                           IconButton(
-                            icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 28),
-                            onPressed: () {
-                              final newPos = _currentPosition + const Duration(seconds: 10);
-                              widget.audioService?.seek(newPos > _totalDuration ? _totalDuration : newPos);
-                            },
+                            icon: const Icon(Icons.skip_next_rounded, color: Colors.white, size: 28),
+                            onPressed: () => widget.audioService?.skipToNext(),
                           ),
                         ],
                       ),
@@ -388,6 +417,32 @@ class _LyricsViewState extends State<LyricsView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWordByWordLine(SyncedLine line) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: line.words.map((w) {
+        final isSung = _currentPosition >= w.offset;
+        return Text(
+          w.word,
+          style: TextStyle(
+            color: isSung ? Colors.white : Colors.white.withValues(alpha: 0.38),
+            fontSize: 26,
+            fontWeight: isSung ? FontWeight.bold : FontWeight.w600,
+            shadows: isSung
+                ? [
+                    const Shadow(
+                      color: Colors.white38,
+                      blurRadius: 8,
+                    )
+                  ]
+                : null,
+          ),
+        );
+      }).toList(),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import 'youtube_service.dart';
 import 'local_stream_proxy.dart';
+import 'pi_aamps_service.dart';
 
 enum AudioTarget { phoneLocal, piSpeaker }
 
@@ -16,6 +17,7 @@ class AudioPlayerService extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final YoutubeService _ytService = YoutubeService();
   final LocalStreamProxy _proxy = LocalStreamProxy();
+  final PiAampsService _piService = PiAampsService.instance;
   AudioTarget _target = AudioTarget.phoneLocal;
   Track? _currentTrack;
   bool _isLoading = false;
@@ -41,6 +43,7 @@ class AudioPlayerService extends ChangeNotifier {
   int _queueIndex = -1;
 
   AudioPlayer get player => _player;
+  PiAampsService get piService => _piService;
   AudioTarget get target => _target;
   Track? get currentTrack => _currentTrack;
   bool get isLoading => _isLoading;
@@ -185,7 +188,16 @@ class AudioPlayerService extends ChangeNotifier {
     _target = newTarget;
     if (_target == AudioTarget.piSpeaker) {
       _player.pause();
+      if (_currentTrack != null) {
+        _piService.playTrackOnPi(_currentTrack!);
+      }
+    } else {
+      _piService.pause();
+      if (_currentTrack != null) {
+        resume();
+      }
     }
+    notifyListeners();
   }
 
   Future<void> setPlaybackSpeed(double speed) async {
@@ -313,6 +325,14 @@ class AudioPlayerService extends ChangeNotifier {
     _saveHistory();
     notifyListeners();
 
+    // If target is Pi Speaker, dispatch to Raspberry Pi
+    if (_target == AudioTarget.piSpeaker) {
+      _isLoading = false;
+      notifyListeners();
+      await _piService.playTrackOnPi(track);
+      return;
+    }
+
     try {
       bool playedLocal = false;
       if (track.localPath != null && track.localPath!.isNotEmpty) {
@@ -361,10 +381,25 @@ class AudioPlayerService extends ChangeNotifier {
   }
 
   Future<void> pause() async {
-    await _player.pause();
+    if (_target == AudioTarget.piSpeaker) {
+      await _piService.pause();
+    } else {
+      await _player.pause();
+    }
+    notifyListeners();
   }
 
   Future<void> resume({Track? fallbackTrack}) async {
+    if (_target == AudioTarget.piSpeaker) {
+      final trackToPlay = _currentTrack ?? fallbackTrack;
+      if (trackToPlay != null) {
+        await _piService.playTrackOnPi(trackToPlay);
+      } else {
+        await _piService.resume();
+      }
+      notifyListeners();
+      return;
+    }
     if (_player.audioSource == null) {
       final trackToPlay = _currentTrack ?? fallbackTrack;
       if (trackToPlay != null) {
@@ -376,11 +411,21 @@ class AudioPlayerService extends ChangeNotifier {
   }
 
   Future<void> seek(Duration position) async {
-    await _player.seek(position);
+    if (_target == AudioTarget.piSpeaker) {
+      await _piService.seek(position.inSeconds.toDouble());
+    } else {
+      await _player.seek(position);
+    }
+    notifyListeners();
   }
 
   Future<void> setVolume(double volume) async {
-    await _player.setVolume(volume / 100.0);
+    if (_target == AudioTarget.piSpeaker) {
+      await _piService.setVolume(volume.toInt());
+    } else {
+      await _player.setVolume(volume / 100.0);
+    }
+    notifyListeners();
   }
 
   @override
