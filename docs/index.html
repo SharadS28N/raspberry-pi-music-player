@@ -300,6 +300,7 @@
                 <a href="#features" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='var(--text-muted)'">Features</a>
                 <a href="#screenshots" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='var(--text-muted)'">Live Testing</a>
                 <a href="#architecture" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='var(--text-muted)'">Architecture</a>
+                <a href="#docs" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='var(--text-muted)'">Docs</a>
                 <a href="#download" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#FFFFFF'" onmouseout="this.style.color='var(--text-muted)'">Download</a>
             </nav>
 
@@ -721,6 +722,84 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Markdown Index Section -->
+    <section id="docs" class="section-py" style="border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
+        <div class="container">
+            <div style="text-align: center; max-width: 720px; margin: 0 auto 56px;">
+                <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-cyan); letter-spacing: 1px; text-transform: uppercase;">TECHNICAL DOCUMENTATION</span>
+                <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 8px; margin-bottom: 16px;">
+                    Comprehensive Architectural Guides
+                </h2>
+                <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
+                    Deep-dive into the markdown documentation covering hardware configuration, MPV integration, yt-dlp rate-bypass, and API specs.
+                </p>
+            </div>
+
+            <!-- Docs Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/00-overview.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--primary-emerald); font-weight: 700;">DOC 00</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">System Overview &amp; Ecosystem</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">High-level philosophy, zero-glitch goals, and dual-mode streaming overview.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/01-system-architecture.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan); font-weight: 700;">DOC 01</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">System Architecture</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Detailed data flow, WebSocket sync, REST pipelines, and thread management.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/02-raspberry-pi.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent-purple); font-weight: 700;">DOC 02</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">Raspberry Pi &amp; Hardware DACs</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">I2S HATs, USB audio interfaces, ALSA device tree, and thermal cooling.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/03-backend.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #F59E0B; font-weight: 700;">DOC 03</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">FastAPI Backend Engine</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Asynchronous endpoints, SQLite models, IPC control, and telemetry publisher.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/04-frontend.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #EC4899; font-weight: 700;">DOC 04</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">Web Player &amp; OpenAamps</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Spotify-style Alpine.js web player and Flutter mobile architecture.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/05-mpv-integration.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #60A5FA; font-weight: 700;">DOC 05</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">MPV Audio Engine &amp; IPC</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">JSON IPC socket interface, gapless queuing, and ALSA hardware volume scaling.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/06-ytdlp-integration.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #34D399; font-weight: 700;">DOC 06</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">yt-dlp &amp; Stream Caching</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">High-speed metadata extraction, rate-bypass stream resolution, and disk cache.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/07-api.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #A78BFA; font-weight: 700;">DOC 07</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">REST API Reference</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Full request/response schemas for `/api/play`, `/api/status`, and telemetry.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/08-websocket.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #F472B6; font-weight: 700;">DOC 08</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">WebSocket Live Events</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Real-time bi-directional broadcast for playback progress, state, and volume.</p>
+                </a>
+
+                <a href="https://github.com/SharadS28N/raspberry-pi-music-player/blob/main/docs/09-14-project-reference.md" target="_blank" rel="noopener noreferrer" class="glass-panel" style="padding: 20px; text-decoration: none; color: inherit; display: block;">
+                    <div style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #38BDF8; font-weight: 700;">DOC 09-14</div>
+                    <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px; margin-bottom: 6px; color: #FFFFFF;">Reference &amp; Troubleshooting</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Deployment patterns, systemd services, BlueZ debugging, and ALSA diagnostics.</p>
+                </a>
             </div>
         </div>
     </section>

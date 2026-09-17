@@ -166,6 +166,25 @@ raspberry-pi-music-player/
 
 ---
 
+## Technical Documentation
+
+Detailed architectural and developer guides are available in the [`docs/`](docs/) directory:
+
+| Document | Description |
+| :--- | :--- |
+| [00. Overview & Ecosystem](docs/00-overview.md) | High-level philosophy, hardware streamer design, and dual-mode architecture. |
+| [01. System Architecture](docs/01-system-architecture.md) | End-to-end data pipeline, threading model, and WebSocket synchronization. |
+| [02. Raspberry Pi & Hardware DACs](docs/02-raspberry-pi.md) | I2S HATs (HiFiBerry, Allo Boss, PCM5102), USB DACs, and ALSA configuration. |
+| [03. Backend Engine (FastAPI & MPV)](docs/03-backend.md) | Asynchronous backend API, SQLite data store, and telemetry publisher. |
+| [04. Frontend & Web Player](docs/04-frontend.md) | Spotify-style web player interface and OpenAamps Android client design. |
+| [05. MPV Integration & IPC](docs/05-mpv-integration.md) | Low-latency JSON IPC control, hardware volume scaling, and gapless playback. |
+| [06. yt-dlp Caching & YouTube Bypass](docs/06-ytdlp-integration.md) | Stream resolution, metadata caching, and 403 rate-bypass implementation. |
+| [07. REST API Reference](docs/07-api.md) | Request and response specifications for `/api/play`, `/api/status`, and control endpoints. |
+| [08. WebSocket Real-Time Events](docs/08-websocket.md) | Real-time bi-directional messaging for playback position, queue, and telemetry. |
+| [09-14. Reference & Troubleshooting](docs/09-14-project-reference.md) | Production systemd setup, BlueZ Bluetooth pairing, and ALSA diagnostics. |
+
+---
+
 ## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.

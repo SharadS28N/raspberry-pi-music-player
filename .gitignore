@@ -44,3 +44,5 @@ Thumbs.db
 *.png
 !mobile/assets/*.png
 !frontend/assets/*.png
+!docs/assets/*.png
+!docs/assets/**
