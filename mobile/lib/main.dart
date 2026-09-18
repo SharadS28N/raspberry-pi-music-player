@@ -21,7 +21,7 @@ Future<void> main() async {
     androidNotificationChannelId: 'com.openaamps.open_aamps.channel.audio',
     androidNotificationChannelName: 'OpenAamps Playback',
     androidNotificationOngoing: true,
-    androidStopForegroundOnPause: false,
+    androidStopForegroundOnPause: true,
     androidNotificationIcon: 'drawable/ic_bg_service_small',
   );
   runApp(const OpenAampsApp());
