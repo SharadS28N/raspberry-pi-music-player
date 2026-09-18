@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../models/track.dart';
 
@@ -33,11 +35,32 @@ class YoutubeService {
           streamUrl: '',
         ));
       }
-      return tracks;
+      if (tracks.isNotEmpty) return tracks;
     } catch (e) {
-      debugPrint('searchTracks error: $e');
-      return [];
+      debugPrint('searchTracks primary error: $e');
     }
+
+    try {
+      final backendUrl = Uri.parse('http://192.168.18.159:8000/api/search?q=${Uri.encodeComponent(query)}&limit=15');
+      final resp = await http.get(backendUrl).timeout(const Duration(seconds: 4));
+      if (resp.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(resp.body);
+        final tracks = data.map((item) => Track(
+          id: item['id'] as String? ?? '',
+          title: item['title'] as String? ?? 'Unknown Title',
+          artist: item['artist'] as String? ?? 'Unknown Artist',
+          album: 'YouTube Music',
+          duration: Duration(seconds: (item['duration'] as num?)?.toInt() ?? 0),
+          artworkUrl: item['thumbnail'] as String? ?? item['artworkUrl'] as String? ?? '',
+          streamUrl: '',
+        )).toList();
+        if (tracks.isNotEmpty) return tracks;
+      }
+    } catch (e) {
+      debugPrint('searchTracks backend fallback error: $e');
+    }
+
+    return [];
   }
 
   Future<StreamData?> getBestAudioStream(String videoId, {String? queryFallback}) async {
