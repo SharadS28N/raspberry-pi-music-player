@@ -234,11 +234,11 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
                       final track = displayList[index];
                       final trackNumber = index + 1;
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF141414),
+                      return Material(
+                        color: const Color(0xFF141414),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../models/track.dart';
 
@@ -33,7 +34,8 @@ class YoutubeService {
         ));
       }
       return tracks;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('searchTracks error: $e');
       return [];
     }
   }
@@ -108,6 +110,68 @@ class YoutubeService {
   Future<String?> getAudioStreamUrl(String videoId, {String? queryFallback}) async {
     final streamData = await getBestAudioStream(videoId, queryFallback: queryFallback);
     return streamData?.url;
+  }
+
+  Future<Channel?> getChannelByHandle(String handleOrQuery) async {
+    try {
+      final clean = handleOrQuery.trim();
+      final handle = clean.startsWith('@') ? clean : '@$clean';
+      return await _yt.channels.getByHandle(handle);
+    } catch (_) {
+      try {
+        // Fallback: search channels
+        final clean = handleOrQuery.replaceAll('@', '').trim();
+        final searchResults = await _yt.search.search(clean);
+        if (searchResults.isNotEmpty) {
+          final channelId = searchResults.first.channelId;
+          return await _yt.channels.get(channelId);
+        }
+      } catch (_) {}
+      return null;
+    }
+  }
+
+  Future<List<Track>> getChannelUploads(dynamic channelId, {int limit = 20}) async {
+    try {
+      final uploads = _yt.channels.getUploads(channelId);
+      final tracks = <Track>[];
+      await for (var video in uploads.take(limit)) {
+        tracks.add(Track(
+          id: video.id.value,
+          title: video.title,
+          artist: video.author,
+          album: 'YouTube Uploads',
+          duration: video.duration ?? Duration.zero,
+          artworkUrl: video.thumbnails.highResUrl,
+          streamUrl: '',
+        ));
+      }
+      return tracks;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Track>> getPlaylistTracks(String playlistId, {int limit = 50}) async {
+    try {
+      final playlist = await _yt.playlists.get(playlistId);
+      final tracks = <Track>[];
+      final videos = _yt.playlists.getVideos(playlistId);
+      await for (var video in videos.take(limit)) {
+        tracks.add(Track(
+          id: video.id.value,
+          title: video.title,
+          artist: video.author,
+          album: playlist.title,
+          duration: video.duration ?? Duration.zero,
+          artworkUrl: video.thumbnails.highResUrl,
+          streamUrl: '',
+        ));
+      }
+      return tracks;
+    } catch (_) {
+      return [];
+    }
   }
 
   void dispose() {

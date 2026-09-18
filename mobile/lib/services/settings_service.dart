@@ -2,14 +2,43 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum PlayerStyle { modern, classic, vinyl, minimal, glassmorphism }
-enum BackgroundStyle { pureBlack, darkGradient, albumArtBlur, dynamicColor }
+enum BackgroundStyle { pureBlack, darkGradient, albumArtBlur, dynamicColor, deepNebula, cyberNoir, velvetNight, customWallpaper }
 enum EqualizerPreset { flat, bassBoost, vocalBoost, trebleBoost, hifi }
 
 class SettingsService extends ChangeNotifier {
   static final SettingsService instance = SettingsService();
 
+  static const List<Map<String, String>> defaultWallpapers = [
+    {
+      'id': 'deepNebula',
+      'name': 'Deep Cosmic Nebula',
+      'url': 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1080',
+    },
+    {
+      'id': 'cyberNoir',
+      'name': 'Cyber Noir Studio',
+      'url': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1080',
+    },
+    {
+      'id': 'velvetNight',
+      'name': 'Velvet Aurora Midnight',
+      'url': 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1080',
+    },
+    {
+      'id': 'minimalAcoustic',
+      'name': 'Dark Vinyl Studio',
+      'url': 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1080',
+    },
+    {
+      'id': 'astralWaves',
+      'name': 'Astral Soundwaves',
+      'url': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1080',
+    },
+  ];
+
   PlayerStyle _playerStyle = PlayerStyle.modern;
   BackgroundStyle _backgroundStyle = BackgroundStyle.pureBlack;
+  String _customWallpaperUrl = '';
   EqualizerPreset _equalizerPreset = EqualizerPreset.flat;
 
   double _playbackSpeed = 1.0;
@@ -19,6 +48,7 @@ class SettingsService extends ChangeNotifier {
 
   PlayerStyle get playerStyle => _playerStyle;
   BackgroundStyle get backgroundStyle => _backgroundStyle;
+  String get customWallpaperUrl => _customWallpaperUrl;
   EqualizerPreset get equalizerPreset => _equalizerPreset;
   double get playbackSpeed => _playbackSpeed;
   double get pitch => _pitch;
@@ -32,15 +62,14 @@ class SettingsService extends ChangeNotifier {
   Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final pIndex = prefs.getInt('pref_player_style') ?? 0;
-      if (pIndex >= 0 && pIndex < PlayerStyle.values.length) {
-        _playerStyle = PlayerStyle.values[pIndex];
-      }
+      _playerStyle = PlayerStyle.modern;
 
       final bIndex = prefs.getInt('pref_bg_style') ?? 0;
       if (bIndex >= 0 && bIndex < BackgroundStyle.values.length) {
         _backgroundStyle = BackgroundStyle.values[bIndex];
       }
+
+      _customWallpaperUrl = prefs.getString('pref_custom_wallpaper') ?? '';
 
       final eIndex = prefs.getInt('pref_eq_preset') ?? 0;
       if (eIndex >= 0 && eIndex < EqualizerPreset.values.length) {
@@ -57,10 +86,8 @@ class SettingsService extends ChangeNotifier {
   }
 
   Future<void> setPlayerStyle(PlayerStyle style) async {
-    _playerStyle = style;
+    _playerStyle = PlayerStyle.modern;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('pref_player_style', style.index);
   }
 
   Future<void> setBackgroundStyle(BackgroundStyle style) async {
@@ -68,6 +95,15 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('pref_bg_style', style.index);
+  }
+
+  Future<void> setCustomWallpaperUrl(String url) async {
+    _customWallpaperUrl = url;
+    _backgroundStyle = BackgroundStyle.customWallpaper;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pref_custom_wallpaper', url);
+    await prefs.setInt('pref_bg_style', BackgroundStyle.customWallpaper.index);
   }
 
   Future<void> setEqualizerPreset(EqualizerPreset preset) async {

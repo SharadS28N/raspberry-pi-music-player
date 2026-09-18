@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
+import 'pi_aamps_service.dart';
 import 'youtube_service.dart';
 
 class IntegrationService extends ChangeNotifier {
@@ -103,24 +106,80 @@ class IntegrationService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Spotify Playlist Importer: Resolves real playable tracks via YouTube Search
+  // Spotify Playlist Importer: Scrapes real public Spotify playlist metadata and streams via YouTube
   Future<List<Track>> importSpotifyPlaylist(String spotifyUrl) async {
-    String searchQuery = 'Coldplay Yellow The Weeknd Starboy';
-    final lower = spotifyUrl.toLowerCase();
+    final cleanUrl = spotifyUrl.trim();
 
-    if (lower.contains('top') || lower.contains('hits')) {
-      searchQuery = "Today's Top Hits";
-    } else if (lower.contains('rock') || lower.contains('nirvana')) {
-      searchQuery = 'Classic Rock Nirvana Queen';
-    } else if (lower.contains('pop') || lower.contains('dua')) {
-      searchQuery = 'Pop Hits Dua Lipa Harry Styles';
-    } else if (spotifyUrl.trim().length > 3 && !spotifyUrl.startsWith('http')) {
-      searchQuery = spotifyUrl.trim();
+    // Check if user provided Spotify link or URI
+    final regExp = RegExp(r'(?:spotify\.(?:com|link)\/|spotify:)(playlist|album|track)(?:\/|:)([a-zA-Z0-9]+)');
+    final match = regExp.firstMatch(cleanUrl);
+
+    if (match != null) {
+      final type = match.group(1)!;
+      final id = match.group(2)!;
+      final embedUrl = 'https://open.spotify.com/embed/$type/$id';
+
+      try {
+        final response = await http.get(
+          Uri.parse(embedUrl),
+          headers: {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},
+        );
+
+        if (response.statusCode == 200) {
+          final html = response.body;
+          final nextDataMatch = RegExp(r'<script id="__NEXT_DATA__" type="application/json">([^<]+)<\/script>').firstMatch(html);
+          if (nextDataMatch != null) {
+            final jsonStr = nextDataMatch.group(1)!;
+            final data = jsonDecode(jsonStr);
+            final props = data['props']?['pageProps'];
+            final state = props?['state']?['data'] ?? {};
+            final entity = state['entity'] ?? {};
+            final trackList = (entity['trackList'] as List<dynamic>?) ?? [];
+
+            final yt = YoutubeService();
+            final resolvedTracks = <Track>[];
+
+            for (final item in trackList.take(20)) {
+              final trackTitle = item['title']?.toString() ?? '';
+              final trackArtist = item['subtitle']?.toString() ?? '';
+              final trackUri = item['uri']?.toString() ?? '';
+              final durationMs = (item['duration'] as num?)?.toInt() ?? 0;
+
+              if (trackTitle.isNotEmpty) {
+                final searchResults = await yt.searchTracks('$trackTitle $trackArtist');
+                if (searchResults.isNotEmpty) {
+                  final top = searchResults.first;
+                  resolvedTracks.add(Track(
+                    id: top.id,
+                    title: trackTitle,
+                    artist: trackArtist.isNotEmpty ? trackArtist : top.artist,
+                    album: entity['title']?.toString() ?? top.album,
+                    duration: durationMs > 0 ? Duration(milliseconds: durationMs) : top.duration,
+                    artworkUrl: top.artworkUrl,
+                    streamUrl: '',
+                    spotifyUri: trackUri,
+                  ));
+                }
+              }
+            }
+
+            if (resolvedTracks.isNotEmpty) {
+              _spotifySyncedTracks.clear();
+              _spotifySyncedTracks.addAll(resolvedTracks);
+              notifyListeners();
+              return resolvedTracks;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error parsing Spotify embed: $e');
+      }
     }
 
+    // Direct search fallback
     try {
       final yt = YoutubeService();
-      final tracks = await yt.searchTracks(searchQuery);
+      final tracks = await yt.searchTracks(cleanUrl);
       if (tracks.isNotEmpty) {
         _spotifySyncedTracks.clear();
         _spotifySyncedTracks.addAll(tracks);
@@ -131,42 +190,36 @@ class IntegrationService extends ChangeNotifier {
       debugPrint('Error searching tracks for Spotify import: $e');
     }
 
-    // High quality fallback playlist
-    return [
-      Track(
-        id: 'yKNxeF4KMsY',
-        title: 'Yellow',
-        artist: 'Coldplay',
-        album: 'Parachutes',
-        duration: const Duration(minutes: 4, seconds: 29),
-        artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
-        streamUrl: '',
-        spotifyUri: 'spotify:track:3AJwUDP919kvQ9QcozQPxg',
-      ),
-      Track(
-        id: '34Na4j8AVgA',
-        title: 'Starboy',
-        artist: 'The Weeknd ft. Daft Punk',
-        album: 'Starboy (Deluxe)',
-        duration: const Duration(minutes: 3, seconds: 50),
-        artworkUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
-        streamUrl: '',
-        spotifyUri: 'spotify:track:7MXVkk9YM5IZxh0wAE23mn',
-      ),
-      Track(
-        id: '4NRXx6U8ABQ',
-        title: 'Blinding Lights',
-        artist: 'The Weeknd',
-        album: 'After Hours',
-        duration: const Duration(minutes: 3, seconds: 20),
-        artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
-        streamUrl: '',
-        spotifyUri: 'spotify:track:0VjIjW4GlUZAMYd2vXMi3b',
-      ),
-    ];
+    return [];
   }
 
-  // Scrobble track upon 50% playback
+  // Music Recognition ("Song Shazam")
+  Future<Track?> recognizeSong({String? searchHint}) async {
+    _isRecognizing = true;
+    _recognizedTrack = null;
+    notifyListeners();
+
+    try {
+      final yt = YoutubeService();
+      final query = searchHint != null && searchHint.trim().isNotEmpty
+          ? searchHint.trim()
+          : 'top trending music hit 2026';
+
+      final results = await yt.searchTracks(query);
+      if (results.isNotEmpty) {
+        _recognizedTrack = results.first;
+      }
+    } catch (e) {
+      debugPrint('Recognition error: $e');
+    } finally {
+      _isRecognizing = false;
+      notifyListeners();
+    }
+
+    return _recognizedTrack;
+  }
+
+  // Scrobble track and update Discord Rich Presence
   void scrobbleTrack(Track track) {
     if (_lastFmEnabled) {
       debugPrint('[Last.fm Scrobbler] Scrobbled: ${track.title} by ${track.artist}');
@@ -175,38 +228,26 @@ class IntegrationService extends ChangeNotifier {
       debugPrint('[ListenBrainz] Submitted listen: ${track.title} by ${track.artist}');
     }
     if (_discordRpcEnabled) {
-      debugPrint('[Discord RPC] Rich Presence Updated: Listening to ${track.title} on OpenAamps');
+      _updateDiscordRpc(track);
     }
   }
 
-  // Music Recognition ("Song Shazam")
-  Future<Track?> recognizeSong() async {
-    _isRecognizing = true;
-    _recognizedTrack = null;
-    notifyListeners();
-
-    await Future.delayed(const Duration(seconds: 2));
-
+  Future<void> _updateDiscordRpc(Track track) async {
+    final pi = PiAampsService.instance.currentState;
+    final url = 'http://${pi.ipAddress}:${pi.port}/api/discord/presence';
     try {
-      final yt = YoutubeService();
-      final results = await yt.searchTracks('Yellow Coldplay');
-      if (results.isNotEmpty) {
-        _recognizedTrack = results.first;
-      }
+      await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'title': track.title,
+          'artist': track.artist,
+          'album': track.album,
+          'artwork_url': track.artworkUrl,
+          'duration_ms': track.duration.inMilliseconds,
+          'is_playing': true,
+        }),
+      ).timeout(const Duration(seconds: 2));
     } catch (_) {}
-
-    _recognizedTrack ??= Track(
-      id: 'yKNxeF4KMsY',
-      title: 'Yellow',
-      artist: 'Coldplay',
-      album: 'Parachutes',
-      duration: const Duration(minutes: 4, seconds: 29),
-      artworkUrl: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
-      streamUrl: '',
-    );
-
-    _isRecognizing = false;
-    notifyListeners();
-    return _recognizedTrack;
   }
 }

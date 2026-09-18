@@ -708,220 +708,117 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
         return const SizedBox.expand(
           child: ColoredBox(color: Color(0xFF000000)),
         );
+
       case BackgroundStyle.darkGradient:
         return Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF18181B), Color(0xFF000000)],
+              colors: [Color(0xFF1E1E22), Color(0xFF0E0E10), Color(0xFF000000)],
             ),
           ),
         );
+
       case BackgroundStyle.albumArtBlur:
         return Stack(
           fit: StackFit.expand,
           children: [
             Image.network(track.artworkUrl, fit: BoxFit.cover),
             BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
-              child: Container(color: Colors.black.withValues(alpha: 0.85)),
+              filter: ImageFilter.blur(sigmaX: 42, sigmaY: 42),
+              child: Container(color: Colors.black.withValues(alpha: 0.82)),
             ),
           ],
         );
+
       case BackgroundStyle.dynamicColor:
         return Container(
           decoration: const BoxDecoration(
             gradient: RadialGradient(
               center: Alignment(0, -0.3),
-              radius: 1.1,
-              colors: [Color(0xFF27272A), Color(0xFF000000)],
+              radius: 1.2,
+              colors: [Color(0xFF282830), Color(0xFF121214), Color(0xFF000000)],
             ),
           ),
+        );
+
+      case BackgroundStyle.deepNebula:
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1080',
+              fit: BoxFit.cover,
+            ),
+            Container(color: Colors.black.withValues(alpha: 0.78)),
+          ],
+        );
+
+      case BackgroundStyle.cyberNoir:
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1080',
+              fit: BoxFit.cover,
+            ),
+            Container(color: Colors.black.withValues(alpha: 0.80)),
+          ],
+        );
+
+      case BackgroundStyle.velvetNight:
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1080',
+              fit: BoxFit.cover,
+            ),
+            Container(color: Colors.black.withValues(alpha: 0.82)),
+          ],
+        );
+
+      case BackgroundStyle.customWallpaper:
+        final customUrl = SettingsService.instance.customWallpaperUrl;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (customUrl.isNotEmpty)
+              Image.network(
+                customUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF000000)),
+              )
+            else
+              const ColoredBox(color: Color(0xFF000000)),
+            Container(color: Colors.black.withValues(alpha: 0.78)),
+          ],
         );
     }
   }
 
   Widget _buildArtworkWidget(Track track) {
-    final style = SettingsService.instance.playerStyle;
-    switch (style) {
-      case PlayerStyle.vinyl:
-        return RotationTransition(
-          turns: _vinylController,
-          child: Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF0A0A0A),
-              border: Border.all(color: Colors.white24, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.95),
-                  blurRadius: 35,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1.5),
-                  ),
-                ),
-                Container(
-                  width: 210,
-                  height: 210,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.09), width: 1.5),
-                  ),
-                ),
-                Container(
-                  width: 170,
-                  height: 170,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.10), width: 1.5),
-                  ),
-                ),
-                Container(
-                  width: 116,
-                  height: 116,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white38, width: 2),
-                    image: DecorationImage(
-                      image: NetworkImage(track.artworkUrl),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF000000),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
-            ),
+    return Container(
+      width: 290,
+      height: 290,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.85),
+            blurRadius: 32,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
           ),
-        );
-
-      case PlayerStyle.classic:
-        return Container(
-          width: 280,
-          height: 280,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white38, width: 1.5),
-            color: const Color(0xFF141414),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.8),
-                blurRadius: 25,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(track.artworkUrl, fit: BoxFit.cover, width: double.infinity),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'SIDE A • STEREO',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 10,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    track.codec,
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-
-      case PlayerStyle.minimal:
-        return Container(
-          width: 260,
-          height: 260,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
-            image: DecorationImage(
-              image: NetworkImage(track.artworkUrl),
-              fit: BoxFit.cover,
-            ),
-          ),
-        );
-
-      case PlayerStyle.glassmorphism:
-        return Container(
-          width: 285,
-          height: 285,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            color: Colors.white.withValues(alpha: 0.08),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: 0.05),
-                blurRadius: 30,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.network(track.artworkUrl, fit: BoxFit.cover),
-          ),
-        );
-
-      case PlayerStyle.modern:
-        return Container(
-          width: 290,
-          height: 290,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.8),
-                blurRadius: 30,
-                spreadRadius: 2,
-                offset: const Offset(0, 10),
-              ),
-            ],
-            image: DecorationImage(
-              image: NetworkImage(track.artworkUrl),
-              fit: BoxFit.cover,
-            ),
-          ),
-        );
-    }
+        ],
+        image: DecorationImage(
+          image: NetworkImage(track.artworkUrl),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
   }
 
   void _showQueueModal(BuildContext context) {
@@ -1258,6 +1155,18 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                   },
                 ),
                 ListTile(
+                  leading: const Icon(Icons.wallpaper_rounded, color: Colors.white),
+                  title: const Text('Player Wallpaper & Canvas', style: TextStyle(color: Colors.white)),
+                  subtitle: Text(
+                    SettingsService.instance.backgroundStyle.name.toUpperCase(),
+                    style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showWallpaperPickerModal(context);
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.equalizer_rounded, color: Colors.white),
                   title: const Text('Audio Settings & DSP', style: TextStyle(color: Colors.white)),
                   onTap: () {
@@ -1273,6 +1182,153 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
           ),
         );
       },
+    );
+  }
+
+  void _showWallpaperPickerModal(BuildContext context) {
+    final customUrlCtrl = TextEditingController(text: SettingsService.instance.customWallpaperUrl);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, scrollCtrl) => ListView(
+            controller: scrollCtrl,
+            padding: const EdgeInsets.all(20),
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Player Canvas & Wallpapers', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close_rounded, color: Colors.white70), onPressed: () => Navigator.pop(sheetCtx)),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Wallpaper options
+              ...BackgroundStyle.values.map((bg) {
+                final isSelected = SettingsService.instance.backgroundStyle == bg;
+                String title = '';
+                String desc = '';
+                IconData icon = Icons.wallpaper_rounded;
+
+                switch (bg) {
+                  case BackgroundStyle.pureBlack:
+                    title = 'Pure AMOLED Black';
+                    desc = 'Battery-saving pure black canvas';
+                    icon = Icons.brightness_1_rounded;
+                    break;
+                  case BackgroundStyle.albumArtBlur:
+                    title = 'Album Art Glow Blur';
+                    desc = 'Cinematic real-time blurred backdrop';
+                    icon = Icons.blur_on_rounded;
+                    break;
+                  case BackgroundStyle.darkGradient:
+                    title = 'Dark Zinc Gradient';
+                    desc = 'Monochrome vertical gradient';
+                    icon = Icons.gradient_rounded;
+                    break;
+                  case BackgroundStyle.dynamicColor:
+                    title = 'Luminescent Radial';
+                    desc = 'Adaptive atmospheric glow';
+                    icon = Icons.radio_button_checked_rounded;
+                    break;
+                  case BackgroundStyle.deepNebula:
+                    title = 'Deep Cosmic Nebula (Default)';
+                    desc = 'AMOLED deep space starlight preset';
+                    icon = Icons.auto_awesome_rounded;
+                    break;
+                  case BackgroundStyle.cyberNoir:
+                    title = 'Cyber Noir Studio (Default)';
+                    desc = 'Sleek dark studio ambience preset';
+                    icon = Icons.nightlife_rounded;
+                    break;
+                  case BackgroundStyle.velvetNight:
+                    title = 'Velvet Aurora Midnight (Default)';
+                    desc = 'Atmospheric dark aurora preset';
+                    icon = Icons.landscape_rounded;
+                    break;
+                  case BackgroundStyle.customWallpaper:
+                    title = 'Custom Wallpaper';
+                    desc = 'Your custom image URL wallpaper';
+                    icon = Icons.image_rounded;
+                    break;
+                }
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF222222) : Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: isSelected ? Colors.white : Colors.white10),
+                  ),
+                  child: ListTile(
+                    leading: Icon(icon, color: isSelected ? Colors.white : Colors.white54),
+                    title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text(desc, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                    trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Colors.white) : null,
+                    onTap: () {
+                      SettingsService.instance.setBackgroundStyle(bg);
+                      setSheetState(() {});
+                      setState(() {});
+                      AppAlert.show(context, 'Set background to "$title"', icon: Icons.check_circle_rounded, isFullScreen: true);
+                    },
+                  ),
+                );
+              }),
+
+              const SizedBox(height: 16),
+              const Text('SET CUSTOM WALLPAPER URL', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: customUrlCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'https://images.unsplash.com/...',
+                        hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.05),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      final url = customUrlCtrl.text.trim();
+                      if (url.isNotEmpty) {
+                        SettingsService.instance.setCustomWallpaperUrl(url);
+                        setSheetState(() {});
+                        setState(() {});
+                        AppAlert.show(context, 'Applied custom player wallpaper', icon: Icons.check_circle_rounded, isFullScreen: true);
+                      }
+                    },
+                    child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

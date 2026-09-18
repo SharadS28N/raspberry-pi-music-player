@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
 import '../services/account_service.dart';
 import '../services/audio_player_service.dart';
@@ -40,12 +42,242 @@ class _LibraryViewState extends State<LibraryView> {
   bool _isWebDavConnected = false;
   bool _isSyncingWebDav = false;
 
+  List<Map<String, dynamic>> _userPlaylists = [];
+
   @override
   void initState() {
     super.initState();
     DownloadService.instance.addListener(_onStateChange);
     widget.audioService?.addListener(_onStateChange);
     widget.localAudioService.addListener(_onStateChange);
+    _loadUserPlaylists();
+  }
+
+  Future<void> _loadUserPlaylists() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList('user_custom_playlists_v1');
+      if (list != null && list.isNotEmpty) {
+        _userPlaylists = list.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
+      } else {
+        final defaultTracks = widget.localAudioService.localTracks;
+        _userPlaylists = [
+          {
+            'id': 'pl_favorites',
+            'name': 'My Favorite Mix',
+            'desc': 'Hand-picked favorite tracks',
+            'tracks': defaultTracks.map((t) => t.toJson()).toList(),
+          }
+        ];
+        await _saveUserPlaylists();
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  Future<void> _saveUserPlaylists() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = _userPlaylists.map((p) => jsonEncode(p)).toList();
+      await prefs.setStringList('user_custom_playlists_v1', list);
+    } catch (_) {}
+  }
+
+  void _showCreatePlaylistDialog(BuildContext parentContext) {
+    final nameController = TextEditingController();
+    showDialog(
+      context: parentContext,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: const Color(0xFF18181B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.playlist_add_rounded, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Create New Playlist', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'e.g. Midnight Drive, Lo-Fi Chill',
+            hintStyle: const TextStyle(color: Colors.white38),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.06),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isNotEmpty) {
+                final newPl = {
+                  'id': 'pl_${DateTime.now().millisecondsSinceEpoch}',
+                  'name': name,
+                  'desc': 'User curated playlist',
+                  'tracks': <Map<String, dynamic>>[],
+                };
+                setState(() {
+                  _userPlaylists.add(newPl);
+                });
+                _saveUserPlaylists();
+                Navigator.pop(dialogCtx);
+                AppAlert.show(parentContext, 'Created playlist "$name"', icon: Icons.playlist_add_check_rounded, isSuccess: true);
+              }
+            },
+            child: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomPlaylistDetails(Map<String, dynamic> playlist) {
+    final rawTracks = (playlist['tracks'] as List<dynamic>? ?? []);
+    final tracks = rawTracks.map((m) => Track.fromJson(m as Map<String, dynamic>)).toList();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, scrollCtrl) => ListView(
+            controller: scrollCtrl,
+            padding: const EdgeInsets.all(20),
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.queue_music_rounded, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(playlist['name'] ?? 'Playlist', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('${tracks.length} tracks • Custom Playlist', style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.white38),
+                    tooltip: 'Delete Playlist',
+                    onPressed: () {
+                      setState(() {
+                        _userPlaylists.removeWhere((p) => p['id'] == playlist['id']);
+                      });
+                      _saveUserPlaylists();
+                      Navigator.pop(sheetCtx);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.play_arrow_rounded, color: Colors.black),
+                      label: const Text('Play All', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: tracks.isEmpty
+                          ? null
+                          : () {
+                              Navigator.pop(sheetCtx);
+                              widget.audioService?.setQueue(tracks);
+                            },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Add Track'),
+                    onPressed: () {
+                      final available = widget.localAudioService.localTracks;
+                      if (available.isNotEmpty) {
+                        final toAdd = available.firstWhere(
+                          (t) => !tracks.any((pt) => pt.id == t.id),
+                          orElse: () => available.first,
+                        );
+                        final trackJsonList = (playlist['tracks'] as List<dynamic>);
+                        trackJsonList.add(toAdd.toJson());
+                        _saveUserPlaylists();
+                        setSheetState(() {});
+                        setState(() {});
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (tracks.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  alignment: Alignment.center,
+                  child: const Text('No tracks in this playlist yet. Tap "+ Add Track" to add songs.', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                )
+              else
+                ...tracks.map((track) => ListTile(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 2),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(track.artworkUrl, width: 42, height: 42, fit: BoxFit.cover),
+                      ),
+                      title: Text(track.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: Text(track.artist, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 26),
+                        onPressed: () {
+                          Navigator.pop(sheetCtx);
+                          widget.onPlayTrack(track);
+                        },
+                      ),
+                      onTap: () {
+                        Navigator.pop(sheetCtx);
+                        widget.onPlayTrack(track);
+                      },
+                    )),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _onStateChange() {
@@ -284,16 +516,24 @@ class _LibraryViewState extends State<LibraryView> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       onPressed: () {
-                        widget.onPlayTrack(Track(
-                          id: 'local_track_1',
-                          title: 'ハイスペックニート - High Spec Neet',
-                          artist: '40mP',
-                          album: 'Einstein Problem',
-                          duration: const Duration(minutes: 3, seconds: 19),
-                          artworkUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400',
-                          streamUrl: '',
-                          codec: 'FLAC 24-bit',
-                        ));
+                        final local = widget.localAudioService.localTracks;
+                        final history = widget.audioService?.history ?? [];
+                        final liked = widget.audioService?.likedTracks ?? [];
+                        final available = [...local, ...history, ...liked];
+                        if (available.isNotEmpty) {
+                          widget.onPlayTrack(available.first);
+                        } else {
+                          widget.onPlayTrack(Track(
+                            id: '4NRXx6U8ABQ',
+                            title: 'Blinding Lights',
+                            artist: 'The Weeknd',
+                            album: 'After Hours',
+                            duration: const Duration(minutes: 3, seconds: 20),
+                            artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+                            streamUrl: '',
+                            codec: 'OPUS 160kbps',
+                          ));
+                        }
                       },
                       icon: const Icon(Icons.play_arrow_rounded, size: 20),
                       label: const Text('Play', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -306,16 +546,25 @@ class _LibraryViewState extends State<LibraryView> {
                         icon: const Icon(Icons.shuffle_rounded, color: Colors.white, size: 18),
                         tooltip: 'Shuffle',
                         onPressed: () {
-                          widget.onPlayTrack(Track(
-                            id: '4NRXx6U8ABQ',
-                            title: 'Blinding Lights',
-                            artist: 'The Weeknd',
-                            album: 'After Hours',
-                            duration: const Duration(minutes: 3, seconds: 20),
-                            artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
-                            streamUrl: '',
-                            codec: 'OPUS 160kbps',
-                          ));
+                          final local = widget.localAudioService.localTracks;
+                          final history = widget.audioService?.history ?? [];
+                          final liked = widget.audioService?.likedTracks ?? [];
+                          final available = [...local, ...history, ...liked];
+                          if (available.isNotEmpty) {
+                            available.shuffle();
+                            widget.onPlayTrack(available.first);
+                          } else {
+                            widget.onPlayTrack(Track(
+                              id: '4NRXx6U8ABQ',
+                              title: 'Blinding Lights',
+                              artist: 'The Weeknd',
+                              album: 'After Hours',
+                              duration: const Duration(minutes: 3, seconds: 20),
+                              artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+                              streamUrl: '',
+                              codec: 'OPUS 160kbps',
+                            ));
+                          }
                         },
                       ),
                     ),
@@ -411,19 +660,26 @@ class _LibraryViewState extends State<LibraryView> {
       {
         'title': 'Most Played Hits',
         'desc': 'Top played songs on OpenAamps',
-        'count': '11 songs',
+        'count': '${(widget.audioService?.history.length ?? 0) > 0 ? widget.audioService!.history.length : 12} songs',
         'icon': Icons.trending_up_rounded,
         'action': () {
-          widget.onPlayTrack(Track(
-            id: 'local_track_1',
-            title: 'ハイスペックニート - High Spec Neet',
-            artist: '40mP',
-            album: 'Einstein Problem',
-            duration: const Duration(minutes: 3, seconds: 19),
-            artworkUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400',
-            streamUrl: '',
-            codec: 'FLAC 24-bit',
-          ));
+          final history = widget.audioService?.history ?? [];
+          final local = widget.localAudioService.localTracks;
+          final available = [...history, ...local];
+          if (available.isNotEmpty) {
+            widget.onPlayTrack(available.first);
+          } else {
+            widget.onPlayTrack(Track(
+              id: '4NRXx6U8ABQ',
+              title: 'Blinding Lights',
+              artist: 'The Weeknd',
+              album: 'After Hours',
+              duration: const Duration(minutes: 3, seconds: 20),
+              artworkUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+              streamUrl: '',
+              codec: 'OPUS 160kbps',
+            ));
+          }
         },
       },
     ];
@@ -441,9 +697,7 @@ class _LibraryViewState extends State<LibraryView> {
                 side: const BorderSide(color: Colors.white24),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
-                AppAlert.show(context, 'Custom playlist created: "My Jam 2026"', icon: Icons.playlist_add_rounded, isSuccess: true);
-              },
+              onPressed: () => _showCreatePlaylistDialog(context),
               icon: const Icon(Icons.add_rounded, size: 16),
               label: const Text('New Playlist', style: TextStyle(fontSize: 12)),
             ),
@@ -467,6 +721,31 @@ class _LibraryViewState extends State<LibraryView> {
                 onTap: pl['action'] as VoidCallback,
               ),
             )),
+        if (_userPlaylists.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text('Your Custom Playlists', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          const SizedBox(height: 8),
+          ..._userPlaylists.map((pl) {
+            final rawTracks = (pl['tracks'] as List<dynamic>? ?? []);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tileColor: const Color(0xFF141414),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.playlist_play_rounded, color: Colors.white, size: 22),
+                ),
+                title: Text(pl['name'] as String? ?? 'Playlist', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: Text('${rawTracks.length} tracks • Custom Playlist', style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 14),
+                onTap: () => _showCustomPlaylistDetails(pl),
+              ),
+            );
+          }),
+        ],
       ],
     );
   }

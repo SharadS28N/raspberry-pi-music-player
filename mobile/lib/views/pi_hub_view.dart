@@ -654,32 +654,34 @@ class _PiHubViewState extends State<PiHubView> {
   }
 
   Widget _buildDacSelector(PiState state) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF121212),
+    return Material(
+      color: const Color(0xFF121212),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.cable_rounded, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'AUDIO DAC OUTPUT ROUTING',
-                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (state.audioDevices.isEmpty)
-            _buildDacItem(id: 'jack', name: '3.5mm Headphone Jack (Analog)', active: true)
-          else
-            ...state.audioDevices.map((dev) => _buildDacItem(id: dev.id, name: dev.name, active: dev.active)),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.cable_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'AUDIO DAC OUTPUT ROUTING',
+                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (state.audioDevices.isEmpty)
+              _buildDacItem(id: 'jack', name: '3.5mm Headphone Jack (Analog)', active: true)
+            else
+              ...state.audioDevices.map((dev) => _buildDacItem(id: dev.id, name: dev.name, active: dev.active)),
+          ],
+        ),
       ),
     );
   }

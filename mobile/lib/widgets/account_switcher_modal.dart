@@ -18,9 +18,11 @@ class AccountSwitcherModal extends StatefulWidget {
 
 class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
   void _showAddAccountDialog(BuildContext parentContext) {
-    final nameController = TextEditingController(text: 'YouTube Music User');
-    final emailController = TextEditingController(text: '@ytmusic_user');
+    final handleController = TextEditingController(text: '@Coldplay');
+    final nameController = TextEditingController();
     String selectedAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+    bool isSyncing = false;
+    String? statusMessage;
 
     final avatarPresets = [
       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
@@ -39,7 +41,7 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
             children: [
               Icon(Icons.add_circle_outline_rounded, color: Colors.white, size: 24),
               SizedBox(width: 10),
-              Text('Add YouTube Music Account', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+              Text('Link YouTube / Google Account', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           content: SingleChildScrollView(
@@ -47,13 +49,16 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Profile Name', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                const Text(
+                  'Enter YouTube Handle or Channel Name',
+                  style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                ),
                 const SizedBox(height: 6),
                 TextField(
-                  controller: nameController,
+                  controller: handleController,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'e.g. Sharad YTM',
+                    hintText: 'e.g. @Coldplay or @yourchannel',
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.06),
@@ -61,14 +66,24 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
                 ),
+                if (statusMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    statusMessage!,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
                 const SizedBox(height: 14),
-                const Text('YouTube Handle or Email', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                const Text(
+                  'Or Custom Display Name (Optional)',
+                  style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                ),
                 const SizedBox(height: 6),
                 TextField(
-                  controller: emailController,
+                  controller: nameController,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'e.g. @sharad_music or user@gmail.com',
+                    hintText: 'e.g. Sharad Personal',
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.06),
@@ -77,7 +92,7 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Select Profile Avatar', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                const Text('Profile Avatar Preset (Fallback)', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -95,7 +110,7 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
                           ),
                         ),
                         child: CircleAvatar(
-                          radius: 20,
+                          radius: 18,
                           backgroundImage: NetworkImage(url),
                         ),
                       ),
@@ -107,7 +122,7 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
+              onPressed: isSyncing ? null : () => Navigator.pop(dialogCtx),
               child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
             ),
             ElevatedButton(
@@ -116,32 +131,77 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
                 foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
-                final name = nameController.text.trim();
-                final email = emailController.text.trim();
-                if (name.isNotEmpty) {
-                  final newAcc = Account(
-                    id: 'acc_${DateTime.now().millisecondsSinceEpoch}',
-                    name: name,
-                    email: email.isNotEmpty ? email : '@user_ytm',
-                    avatarUrl: selectedAvatar,
-                    isPremium: true,
-                    playlistsCount: 8,
-                    likedSongsCount: 64,
-                    subscriptionsCount: 14,
-                  );
-                  widget.accountService.addAccount(newAcc);
-                  Navigator.pop(dialogCtx);
-                  setState(() {});
-                  AppAlert.show(
-                    parentContext,
-                    'Switched to "$name"',
-                    icon: Icons.check_circle_rounded,
-                    isSuccess: true,
-                  );
-                }
-              },
-              child: const Text('Connect & Save', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: isSyncing
+                  ? null
+                  : () async {
+                      final handleInput = handleController.text.trim();
+                      final customName = nameController.text.trim();
+                      if (handleInput.isEmpty && customName.isEmpty) return;
+
+                      setDialogState(() {
+                        isSyncing = true;
+                        statusMessage = 'Connecting with YouTube...';
+                      });
+
+                      Account? realAccount;
+                      if (handleInput.isNotEmpty) {
+                        try {
+                          realAccount = await widget.accountService.connectRealYouTubeAccount(handleInput);
+                        } catch (e) {
+                          debugPrint('Error syncing YouTube account: $e');
+                        }
+                      }
+
+                      if (realAccount != null) {
+                        if (dialogCtx.mounted) {
+                          Navigator.pop(dialogCtx);
+                        }
+                        if (mounted) setState(() {});
+                        if (parentContext.mounted) {
+                          AppAlert.show(
+                            parentContext,
+                            'Connected YouTube Account: ${realAccount.name}',
+                            icon: Icons.check_circle_rounded,
+                            isSuccess: true,
+                          );
+                        }
+                      } else {
+                        // Fallback to manual account creation
+                        final displayName = customName.isNotEmpty
+                            ? customName
+                            : (handleInput.isNotEmpty ? handleInput : 'YouTube User');
+                        final newAcc = Account(
+                          id: 'acc_${DateTime.now().millisecondsSinceEpoch}',
+                          name: displayName,
+                          email: handleInput.isNotEmpty ? handleInput : '@user',
+                          avatarUrl: selectedAvatar,
+                          isPremium: true,
+                          playlistsCount: 8,
+                          likedSongsCount: 42,
+                          subscriptionsCount: 12,
+                        );
+                        widget.accountService.addAccount(newAcc);
+                        if (dialogCtx.mounted) {
+                          Navigator.pop(dialogCtx);
+                        }
+                        if (mounted) setState(() {});
+                        if (parentContext.mounted) {
+                          AppAlert.show(
+                            parentContext,
+                            'Added Profile: $displayName',
+                            icon: Icons.check_circle_rounded,
+                            isSuccess: true,
+                          );
+                        }
+                      }
+                    },
+              child: isSyncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
+                    )
+                  : const Text('Sync & Connect', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('Check just_audio setUrl headers parameter', () {
     final player = AudioPlayer();
     // Verify that headers map can be passed

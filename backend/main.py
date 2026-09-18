@@ -26,6 +26,7 @@ from audio_service import audio_service
 from hifi_services import hifi_service_manager, get_system_metrics
 from websocket import manager, broadcast_state_update
 from party_service import party_manager
+from discord_rpc import discord_client
 
 app = FastAPI(title="pi-aamps", version="2.6.0")
 
@@ -125,6 +126,15 @@ class PlaylistSongRequest(BaseModel):
     duration: Optional[int] = None
 
 
+class DiscordPresenceRequest(BaseModel):
+    title: str
+    artist: Optional[str] = ""
+    album: Optional[str] = ""
+    artwork_url: Optional[str] = ""
+    duration_ms: Optional[int] = 0
+    is_playing: Optional[bool] = True
+
+
 # Current song, Autoplay & Sleep Timer state
 current_song: Optional[dict] = None
 sleep_timer_end_time: Optional[float] = None
@@ -132,6 +142,30 @@ sleep_timer_mode: str = "duration"
 sleep_timer_task = None
 autoplay_enabled: bool = True
 SOFTWARE_VERSION: str = "v2.5.0-production"
+
+
+@app.get("/api/discord/presence")
+async def get_discord_presence():
+    return discord_client.get_status()
+
+
+@app.post("/api/discord/presence")
+async def update_discord_presence(req: DiscordPresenceRequest):
+    success = discord_client.update_presence(
+        title=req.title,
+        artist=req.artist or "",
+        album=req.album or "",
+        artwork_url=req.artwork_url or "",
+        duration_ms=req.duration_ms or 0,
+        is_playing=req.is_playing if req.is_playing is not None else True,
+    )
+    return {"status": "ok", "synced": success, "data": discord_client.get_status()}
+
+
+@app.delete("/api/discord/presence")
+async def clear_discord_presence():
+    discord_client.clear_presence()
+    return {"status": "cleared"}
 
 
 
@@ -311,6 +345,17 @@ async def play(request: PlayRequest):
     except Exception as e:
         print(f"Error logging to database history: {e}")
 
+    try:
+        discord_client.update_presence(
+            title=current_song["title"],
+            artist=current_song["artist"],
+            artwork_url=current_song["thumbnail"] or "",
+            duration_ms=duration * 1000 if duration else 0,
+            is_playing=True,
+        )
+    except Exception:
+        pass
+
     await broadcast_state_update("song_changed", current_song)
     await broadcast_state_update("player_state_changed", player.get_status())
     return {"status": "ok", "current_song": current_song}
@@ -319,6 +364,16 @@ async def play(request: PlayRequest):
 @app.post("/api/pause")
 async def pause():
     res = player.pause()
+    try:
+        if current_song:
+            discord_client.update_presence(
+                title=current_song.get("title", ""),
+                artist=current_song.get("artist", ""),
+                artwork_url=current_song.get("thumbnail", ""),
+                is_playing=False,
+            )
+    except Exception:
+        pass
     await broadcast_state_update("player_state_changed", player.get_status())
     return res
 
@@ -326,6 +381,16 @@ async def pause():
 @app.post("/api/resume")
 async def resume():
     res = player.resume()
+    try:
+        if current_song:
+            discord_client.update_presence(
+                title=current_song.get("title", ""),
+                artist=current_song.get("artist", ""),
+                artwork_url=current_song.get("thumbnail", ""),
+                is_playing=True,
+            )
+    except Exception:
+        pass
     await broadcast_state_update("player_state_changed", player.get_status())
     return res
 
@@ -340,6 +405,10 @@ async def toggle():
 @app.post("/api/stop")
 async def stop():
     res = player.stop()
+    try:
+        discord_client.clear_presence()
+    except Exception:
+        pass
     await broadcast_state_update("player_state_changed", player.get_status())
     return res
 

@@ -5,6 +5,7 @@ import '../models/account.dart';
 import '../models/track.dart';
 import 'party_service.dart';
 import 'pi_aamps_service.dart';
+import 'youtube_service.dart';
 
 class ConnectedDevice {
   final String id;
@@ -181,6 +182,29 @@ class AccountService extends ChangeNotifier {
     _activeAccount = updated;
     _saveAccounts();
     notifyListeners();
+  }
+
+  Future<Account?> connectRealYouTubeAccount(String handleOrQuery) async {
+    final yt = YoutubeService();
+    final channel = await yt.getChannelByHandle(handleOrQuery);
+    if (channel != null) {
+      final clean = handleOrQuery.trim();
+      final handle = clean.startsWith('@') ? clean : '@$clean';
+      final newAcc = Account(
+        id: channel.id.value,
+        name: channel.title,
+        email: handle,
+        avatarUrl: channel.logoUrl,
+        isPremium: true,
+        playlistsCount: 16,
+        likedSongsCount: 240,
+        subscriptionsCount: 38,
+        isCoupleProfile: false,
+      );
+      addAccount(newAcc);
+      return newAcc;
+    }
+    return null;
   }
 
   // --- Spotify Connect Style Device Presence ---

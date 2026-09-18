@@ -497,6 +497,18 @@ class _SettingsViewState extends State<SettingsView> {
                     case BackgroundStyle.dynamicColor:
                       desc = 'Adaptive monochrome luminescence reacting to track';
                       break;
+                    case BackgroundStyle.deepNebula:
+                      desc = 'AMOLED deep cosmic nebula wallpaper preset';
+                      break;
+                    case BackgroundStyle.cyberNoir:
+                      desc = 'Dark cyber noir studio ambience preset';
+                      break;
+                    case BackgroundStyle.velvetNight:
+                      desc = 'Atmospheric velvet aurora midnight preset';
+                      break;
+                    case BackgroundStyle.customWallpaper:
+                      desc = 'User-defined custom image wallpaper';
+                      break;
                   }
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
