@@ -175,29 +175,29 @@ async def get_app_info():
     return {
         "app_name": "OpenAamps",
         "package_name": "com.openaamps.open_aamps",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "description": "Standalone Android Music Player & pi-aamps Remote Control Hub",
         "download_url": "/api/app/download",
-        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.0.0"
+        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.2.0"
     }
 
 
 @app.get("/api/app/download")
 async def download_app_apk():
     project_root = os.path.dirname(BASE_DIR)
-    # 1. Check root releases directory for OpenAamps-v1.0.0.apk
     candidate_paths = [
+        os.path.join(project_root, "releases", "OpenAamps-v1.2.0.apk"),
+        os.path.join(project_root, "releases", "OpenAamps-latest.apk"),
         os.path.join(project_root, "releases", "OpenAamps-v1.0.0.apk"),
-        os.path.join(project_root, "releases", "OpenAamps-v2.6.0.apk"),
+        os.path.join(BASE_DIR, "releases", "OpenAamps-v1.2.0.apk"),
         os.path.join(BASE_DIR, "releases", "OpenAamps-v1.0.0.apk"),
         os.path.join(project_root, "mobile", "build", "app", "outputs", "flutter-apk", "app-release.apk"),
     ]
-    # Check any apk in releases dir
     rel_dir = os.path.join(project_root, "releases")
     if os.path.exists(rel_dir):
         for f in os.listdir(rel_dir):
-            if f.endswith(".apk"):
-                candidate_paths.insert(0, os.path.join(rel_dir, f))
+            if f.endswith(".apk") and os.path.join(rel_dir, f) not in candidate_paths:
+                candidate_paths.append(os.path.join(rel_dir, f))
 
     for apk_path in candidate_paths:
         if os.path.exists(apk_path):
@@ -211,7 +211,7 @@ async def download_app_apk():
 
     from fastapi.responses import RedirectResponse
     return RedirectResponse(
-        "https://github.com/SharadS28N/raspberry-pi-music-player/releases/download/v1.0.0/OpenAamps-v1.0.0.apk",
+        "https://github.com/SharadS28N/raspberry-pi-music-player/releases/download/v1.2.0/OpenAamps-v1.2.0.apk",
         status_code=302
     )
 
