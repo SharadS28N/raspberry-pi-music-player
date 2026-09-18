@@ -25,6 +25,7 @@ from bluetooth_service import bluetooth_service
 from audio_service import audio_service
 from hifi_services import hifi_service_manager, get_system_metrics
 from websocket import manager, broadcast_state_update
+from party_service import party_manager
 
 app = FastAPI(title="pi-aamps", version="2.6.0")
 
@@ -917,6 +918,249 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 
+
+
+# ==========================================
+# Music Party & Group Listening Endpoints
+# ==========================================
+
+class CreatePartyRequest(BaseModel):
+    host_id: str
+    host_name: str
+    device_name: Optional[str] = "Android Device"
+    avatar_url: Optional[str] = ""
+    initial_track: Optional[dict] = None
+
+class JoinPartyRequest(BaseModel):
+    room_code: str
+    member_id: str
+    member_name: str
+    device_name: Optional[str] = "Android Device"
+    avatar_url: Optional[str] = ""
+
+class PartyPlaybackRequest(BaseModel):
+    room_code: str
+    sender_id: str
+    is_playing: bool
+    position_ms: int
+    track: Optional[dict] = None
+
+class PartyQueueRequest(BaseModel):
+    room_code: str
+    sender_id: str
+    track: dict
+
+class PartyVoteRequest(BaseModel):
+    room_code: str
+    sender_id: str
+    track_id: str
+
+class PartyDjModeRequest(BaseModel):
+    room_code: str
+    sender_id: str
+    allow_collaborative_dj: bool
+
+class PartyHostTransferRequest(BaseModel):
+    room_code: str
+    sender_id: str
+    new_host_id: str
+
+@app.post("/api/party/create")
+async def create_party(req: CreatePartyRequest):
+    room = party_manager.create_room(
+        host_id=req.host_id,
+        host_name=req.host_name,
+        device_name=req.device_name or "Android Device",
+        avatar_url=req.avatar_url or "",
+        initial_track=req.initial_track,
+    )
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/join")
+async def join_party(req: JoinPartyRequest):
+    room = party_manager.join_room(
+        room_code=req.room_code,
+        member_id=req.member_id,
+        member_name=req.member_name,
+        device_name=req.device_name or "Android Device",
+        avatar_url=req.avatar_url or "",
+    )
+    if not room:
+        raise HTTPException(status_code=404, detail="Party room not found")
+    await manager.broadcast_to_room(req.room_code, {
+        "type": "member_joined",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.get("/api/party/{room_code}")
+async def get_party(room_code: str):
+    room = party_manager.get_room(room_code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Party room not found")
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/{room_code}/leave")
+async def leave_party(room_code: str, member_id: str):
+    room = party_manager.leave_room(room_code, member_id)
+    if room:
+        await manager.broadcast_to_room(room_code, {
+            "type": "member_left",
+            "data": room.dict(),
+        })
+    return {"status": "ok"}
+
+@app.post("/api/party/playback")
+async def party_playback(req: PartyPlaybackRequest):
+    room = party_manager.update_playback(
+        room_code=req.room_code,
+        sender_id=req.sender_id,
+        is_playing=req.is_playing,
+        position_ms=req.position_ms,
+        track_dict=req.track,
+    )
+    if not room:
+        raise HTTPException(status_code=400, detail="Unable to update playback (unauthorized or room missing)")
+    await manager.broadcast_to_room(req.room_code, {
+        "type": "playback_updated",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/queue")
+async def party_queue_add(req: PartyQueueRequest):
+    room = party_manager.add_to_queue(
+        room_code=req.room_code,
+        sender_id=req.sender_id,
+        track_dict=req.track,
+    )
+    if not room:
+        raise HTTPException(status_code=404, detail="Party room not found")
+    await manager.broadcast_to_room(req.room_code, {
+        "type": "queue_updated",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/vote")
+async def party_queue_vote(req: PartyVoteRequest):
+    room = party_manager.vote_queue_track(
+        room_code=req.room_code,
+        sender_id=req.sender_id,
+        track_id=req.track_id,
+    )
+    if not room:
+        raise HTTPException(status_code=404, detail="Party room not found")
+    await manager.broadcast_to_room(req.room_code, {
+        "type": "queue_updated",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/{room_code}/skip")
+async def party_skip(room_code: str, sender_id: str):
+    room = party_manager.skip_to_next(room_code, sender_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Party room not found")
+    await manager.broadcast_to_room(room_code, {
+        "type": "playback_updated",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/dj_mode")
+async def party_dj_mode(req: PartyDjModeRequest):
+    room = party_manager.set_dj_mode(req.room_code, req.sender_id, req.allow_collaborative_dj)
+    if not room:
+        raise HTTPException(status_code=400, detail="Only host can change DJ mode")
+    await manager.broadcast_to_room(req.room_code, {
+        "type": "room_settings_updated",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.post("/api/party/transfer_host")
+async def party_transfer_host(req: PartyHostTransferRequest):
+    room = party_manager.transfer_host(req.room_code, req.sender_id, req.new_host_id)
+    if not room:
+        raise HTTPException(status_code=400, detail="Only current host can transfer host permissions")
+    await manager.broadcast_to_room(req.room_code, {
+        "type": "host_transferred",
+        "data": room.dict(),
+    })
+    return {"status": "ok", "room": room.dict()}
+
+@app.websocket("/api/party/ws/{room_code}")
+async def party_websocket(websocket: WebSocket, room_code: str):
+    code = room_code.upper()
+    await manager.connect_room(websocket, code)
+    room = party_manager.get_room(code)
+    try:
+        if room:
+            await websocket.send_json({
+                "type": "init_party",
+                "data": room.dict(),
+            })
+        while True:
+            msg = await websocket.receive_json()
+            msg_type = msg.get("type")
+            msg_data = msg.get("data", {})
+
+            if msg_type == "sync_playback":
+                updated_room = party_manager.update_playback(
+                    room_code=code,
+                    sender_id=msg_data.get("sender_id", ""),
+                    is_playing=msg_data.get("is_playing", False),
+                    position_ms=msg_data.get("position_ms", 0),
+                    track_dict=msg_data.get("track"),
+                )
+                if updated_room:
+                    await manager.broadcast_to_room(code, {
+                        "type": "playback_updated",
+                        "data": updated_room.dict(),
+                    })
+            elif msg_type == "add_queue":
+                updated_room = party_manager.add_to_queue(
+                    room_code=code,
+                    sender_id=msg_data.get("sender_id", ""),
+                    track_dict=msg_data.get("track", {}),
+                )
+                if updated_room:
+                    await manager.broadcast_to_room(code, {
+                        "type": "queue_updated",
+                        "data": updated_room.dict(),
+                    })
+            elif msg_type == "vote_track":
+                updated_room = party_manager.vote_queue_track(
+                    room_code=code,
+                    sender_id=msg_data.get("sender_id", ""),
+                    track_id=msg_data.get("track_id", ""),
+                )
+                if updated_room:
+                    await manager.broadcast_to_room(code, {
+                        "type": "queue_updated",
+                        "data": updated_room.dict(),
+                    })
+            elif msg_type == "skip_track":
+                updated_room = party_manager.skip_to_next(
+                    room_code=code,
+                    sender_id=msg_data.get("sender_id", ""),
+                )
+                if updated_room:
+                    await manager.broadcast_to_room(code, {
+                        "type": "playback_updated",
+                        "data": updated_room.dict(),
+                    })
+            elif msg_type == "heartbeat":
+                await websocket.send_json({
+                    "type": "pong",
+                    "server_timestamp_ms": int(time.time() * 1000),
+                })
+    except WebSocketDisconnect:
+        manager.disconnect_room(websocket, code)
+    except Exception as e:
+        logger.error(f"Party WebSocket error: {e}")
+        manager.disconnect_room(websocket, code)
 
 
 if __name__ == "__main__":

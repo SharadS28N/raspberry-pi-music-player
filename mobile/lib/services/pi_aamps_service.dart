@@ -142,6 +142,7 @@ class PiAampsService extends ChangeNotifier {
     _wsChannel?.sink.close();
     try {
       _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      _wsChannel?.ready.catchError((_) {});
       _wsChannel!.stream.listen(
         (message) {
           try {

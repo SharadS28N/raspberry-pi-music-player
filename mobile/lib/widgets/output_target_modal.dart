@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/audio_player_service.dart';
 import '../services/pi_aamps_service.dart';
+import '../services/party_service.dart';
+import '../services/account_service.dart';
+import '../views/party_view.dart';
 
 class OutputTargetModal extends StatefulWidget {
   final AudioTarget currentTarget;
@@ -256,6 +259,83 @@ class _OutputTargetModalState extends State<OutputTargetModal> {
               },
             ),
           ),
+          const SizedBox(height: 10),
+
+          // Option 3: Music Party / Group Listening (Jam Mode)
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            tileColor: PartyService.instance.isInParty ? Colors.white.withValues(alpha: 0.12) : const Color(0xFF18181B),
+            leading: Icon(
+              Icons.speaker_group_rounded,
+              color: PartyService.instance.isInParty ? const Color(0xFF10B981) : Colors.white,
+              size: 28,
+            ),
+            title: Row(
+              children: [
+                const Text('Music Party / Jam Session', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                if (PartyService.instance.isInParty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: Text(
+                      '${PartyService.instance.currentRoomCode} • ${PartyService.instance.members.length} listening',
+                      style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
+            ),
+            subtitle: Text(
+              PartyService.instance.isInParty
+                  ? 'Listening together • Drift sync active on local Bluetooth earbuds'
+                  : 'Listen with friends • Multi-phone sync with individual Bluetooth headphones',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PartyView()),
+              );
+            },
+          ),
+
+          // Option 4: Couple Mode (If couple profile is active)
+          if (AccountService.instance.activeAccount.isCoupleProfile) ...[
+            const SizedBox(height: 10),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              tileColor: const Color(0xFF1C1520),
+              leading: const Icon(Icons.favorite_rounded, color: Colors.pinkAccent, size: 28),
+              title: Row(
+                children: [
+                  Text('Couple Mode: ${AccountService.instance.activeAccount.partnerName}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.pinkAccent.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: const Text('SHARED', style: TextStyle(color: Colors.pinkAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              subtitle: const Text('Listen together synchronously on your own AirPods / earbuds', style: TextStyle(color: Colors.white54, fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PartyView()),
+                );
+              },
+            ),
+          ],
         ],
       ),
     );

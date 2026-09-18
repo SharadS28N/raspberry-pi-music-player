@@ -13,6 +13,8 @@ import 'settings_view.dart';
 import '../widgets/app_alert.dart';
 import '../widgets/equalizer_sheet.dart';
 import '../widgets/output_target_modal.dart';
+import '../services/party_service.dart';
+import 'party_view.dart';
 
 class PlayerView extends StatefulWidget {
   final Track track;
@@ -216,6 +218,40 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     audioService: widget.audioService,
                   ),
                 ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  Icons.speaker_group_rounded,
+                  color: PartyService.instance.isInParty ? const Color(0xFF10B981) : Colors.white70,
+                ),
+                if (PartyService.instance.isInParty)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${PartyService.instance.members.length}',
+                        style: const TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: PartyService.instance.isInParty ? 'Music Party Active' : 'Start Music Party / Jam',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PartyView(audioService: widget.audioService)),
               );
             },
           ),
@@ -430,7 +466,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 20),
 
-              // Playback Controls (Shuffle, Rewind 10s, Play/Pause, Fast-Forward 10s, Repeat)
+              // Playback Controls (Shuffle, 10s Rewind, Prev, Play/Pause, Next, 15s Forward, Repeat)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -438,7 +474,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     icon: Icon(
                       Icons.shuffle_rounded,
                       color: _isShuffle ? Colors.white : Colors.white38,
-                      size: 26,
+                      size: 24,
                     ),
                     tooltip: _isShuffle ? 'Shuffle On' : 'Shuffle Off',
                     onPressed: () {
@@ -453,7 +489,12 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.skip_previous_rounded, color: Colors.white, size: 38),
+                    icon: const Icon(Icons.replay_10_rounded, color: Colors.white70, size: 26),
+                    tooltip: 'Rewind 10s',
+                    onPressed: () => widget.audioService.seekBackward10(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.skip_previous_rounded, color: Colors.white, size: 34),
                     tooltip: 'Previous Track',
                     onPressed: () => widget.audioService.skipToPrevious(),
                   ),
@@ -470,8 +511,8 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                       }
                     },
                     child: Container(
-                      width: 68,
-                      height: 68,
+                      width: 64,
+                      height: 64,
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
@@ -494,9 +535,14 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.skip_next_rounded, color: Colors.white, size: 38),
+                    icon: const Icon(Icons.skip_next_rounded, color: Colors.white, size: 34),
                     tooltip: 'Next Track',
                     onPressed: () => widget.audioService.skipToNext(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.forward_10_rounded, color: Colors.white70, size: 26),
+                    tooltip: 'Forward 15s',
+                    onPressed: () => widget.audioService.seekForward15(),
                   ),
                   IconButton(
                     icon: Icon(

@@ -9,6 +9,8 @@ import '../widgets/spotify_import_modal.dart';
 import '../widgets/output_target_modal.dart';
 import 'stats_view.dart';
 import '../widgets/app_alert.dart';
+import '../services/party_service.dart';
+import 'party_view.dart';
 
 class HomeView extends StatefulWidget {
   final Function(Track) onPlayTrack;
@@ -179,6 +181,51 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   Row(
                     children: [
+                      ListenableBuilder(
+                        listenable: PartyService.instance,
+                        builder: (context, _) {
+                          final inParty = PartyService.instance.isInParty;
+                          final membersCount = PartyService.instance.members.length;
+                          return Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  inParty ? Icons.hub_rounded : Icons.groups_rounded,
+                                  color: inParty ? Colors.greenAccent : const Color(0xFFA1A1AA),
+                                ),
+                                tooltip: inParty ? 'Music Party ($membersCount)' : 'Start or Join Music Party',
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const PartyView()),
+                                  );
+                                },
+                              ),
+                              if (inParty)
+                                Positioned(
+                                  right: 6,
+                                  top: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: Colors.greenAccent,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '$membersCount',
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(Icons.download_for_offline_rounded, color: Colors.white),
                         tooltip: 'Import Spotify Playlist',
@@ -318,6 +365,106 @@ class _HomeViewState extends State<HomeView> {
                                 ),
                                 const SizedBox(width: 4),
                                 const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 10),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // Music Party / Jam Live Session Banner
+              ListenableBuilder(
+                listenable: PartyService.instance,
+                builder: (context, _) {
+                  final inParty = PartyService.instance.isInParty;
+                  final party = PartyService.instance;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PartyView()),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: inParty ? const Color(0xFF0F1B14) : const Color(0xFF141416),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: inParty ? Colors.greenAccent.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: inParty ? Colors.greenAccent.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              inParty ? Icons.hub_rounded : Icons.groups_rounded,
+                              color: inParty ? Colors.greenAccent : Colors.white70,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  inParty
+                                      ? 'Live Music Party • ${party.roomCode}'
+                                      : 'Music Party / Group Listening',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  inParty
+                                      ? '${party.members.length} members listening in sync (drift: ${party.driftMs.abs()}ms)'
+                                      : 'Listen together on individual earbuds with drift sync',
+                                  style: TextStyle(
+                                    color: inParty ? Colors.greenAccent : const Color(0xFFA1A1AA),
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: inParty ? Colors.greenAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  inParty ? 'LIVE SYNC' : 'JOIN / HOST',
+                                  style: TextStyle(
+                                    color: inParty ? Colors.greenAccent : Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: inParty ? Colors.greenAccent : Colors.white54,
+                                  size: 10,
+                                ),
                               ],
                             ),
                           ),

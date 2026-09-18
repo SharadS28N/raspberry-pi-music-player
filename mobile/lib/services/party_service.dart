@@ -1,0 +1,625 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import '../models/track.dart';
+import 'audio_player_service.dart';
+import 'pi_aamps_service.dart';
+import 'account_service.dart';
+
+class PartyMemberModel {
+  final String id;
+  final String name;
+  final String avatarUrl;
+  final String deviceName;
+  final String role; // "host", "dj", "listener"
+  final bool isOnline;
+
+  PartyMemberModel({
+    required this.id,
+    required this.name,
+    required this.avatarUrl,
+    required this.deviceName,
+    required this.role,
+    required this.isOnline,
+  });
+
+  factory PartyMemberModel.fromJson(Map<String, dynamic> json) {
+    return PartyMemberModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? 'Member',
+      avatarUrl: json['avatar_url'] ?? '',
+      deviceName: json['device_name'] ?? 'Phone',
+      role: json['role'] ?? 'listener',
+      isOnline: json['is_online'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'avatar_url': avatarUrl,
+      'device_name': deviceName,
+      'role': role,
+      'is_online': isOnline,
+    };
+  }
+}
+
+class PartyTrackModel {
+  final Track track;
+  final String addedBy;
+  final String addedByName;
+  final int votes;
+  final List<String> votedMembers;
+
+  PartyTrackModel({
+    required this.track,
+    required this.addedBy,
+    required this.addedByName,
+    required this.votes,
+    required this.votedMembers,
+  });
+
+  factory PartyTrackModel.fromJson(Map<String, dynamic> json) {
+    return PartyTrackModel(
+      track: Track(
+        id: json['id'] ?? '',
+        title: json['title'] ?? 'Unknown',
+        artist: json['artist'] ?? 'Unknown Artist',
+        album: '',
+        duration: Duration(seconds: json['duration'] ?? 0),
+        artworkUrl: json['thumbnail'] ?? '',
+        streamUrl: '',
+      ),
+      addedBy: json['added_by'] ?? '',
+      addedByName: json['added_by_name'] ?? '',
+      votes: json['votes'] ?? 0,
+      votedMembers: (json['voted_members'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+    );
+  }
+}
+
+class PartyService extends ChangeNotifier {
+  static final PartyService instance = PartyService._internal();
+  factory PartyService() => instance;
+
+  PartyService._internal() {
+    _initDeviceName();
+  }
+
+  String _deviceName = 'Android Phone';
+  String? _currentRoomCode;
+  String? _hostId;
+  String? _hostName;
+  bool _allowCollaborativeDj = true;
+  bool _isInParty = false;
+  bool _isConnecting = false;
+  int _driftMs = 0;
+
+  WebSocketChannel? _wsChannel;
+  Timer? _driftCheckTimer;
+  Timer? _reconnectTimer;
+
+  final List<PartyMemberModel> _members = [];
+  final List<PartyTrackModel> _partyQueue = [];
+  Track? _partyCurrentTrack;
+  bool _partyIsPlaying = false;
+  int _lastServerPositionMs = 0;
+  int _lastServerTimestampMs = 0;
+
+  // Stream controller for real-time room state
+  final StreamController<Map<String, dynamic>> _partyEventController = StreamController.broadcast();
+
+  String get deviceName => _deviceName;
+  String? get currentRoomCode => _currentRoomCode;
+  String get roomCode => _currentRoomCode ?? '';
+  String? get hostId => _hostId;
+  String? get hostName => _hostName;
+  bool get allowCollaborativeDj => _allowCollaborativeDj;
+  bool get isInParty => _isInParty;
+  bool get isConnecting => _isConnecting;
+  int get driftMs => _driftMs;
+
+  List<PartyMemberModel> get members => List.unmodifiable(_members);
+  List<PartyTrackModel> get partyQueue => List.unmodifiable(_partyQueue);
+  Track? get partyCurrentTrack => _partyCurrentTrack;
+  bool get partyIsPlaying => _partyIsPlaying;
+  Stream<Map<String, dynamic>> get partyEventStream => _partyEventController.stream;
+
+  bool get isHost {
+    final myId = AccountService.instance.activeAccount.id;
+    return _hostId == myId;
+  }
+
+  bool get canControlPlayback {
+    if (isHost) return true;
+    if (_allowCollaborativeDj) return true;
+    final myId = AccountService.instance.activeAccount.id;
+    final me = _members.firstWhere((m) => m.id == myId, orElse: () => PartyMemberModel(id: '', name: '', avatarUrl: '', deviceName: '', role: 'listener', isOnline: true));
+    return me.role == 'dj';
+  }
+
+  Future<void> _initDeviceName() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _deviceName = prefs.getString('custom_device_name') ?? 'Galaxy A16';
+    } catch (_) {}
+  }
+
+  Future<void> setCustomDeviceName(String name) async {
+    _deviceName = name;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('custom_device_name', name);
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  // --- Create Listening Party ---
+  Future<bool> createParty({Track? initialTrack}) async {
+    _isConnecting = true;
+    notifyListeners();
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    try {
+      final payload = {
+        'host_id': account.id,
+        'host_name': account.name,
+        'device_name': _deviceName,
+        'avatar_url': account.avatarUrl,
+        if (initialTrack != null)
+          'initial_track': {
+            'id': initialTrack.id,
+            'title': initialTrack.title,
+            'artist': initialTrack.artist,
+            'thumbnail': initialTrack.artworkUrl,
+            'duration': initialTrack.duration.inSeconds,
+          },
+      };
+
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/party/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body)['room'];
+        _applyRoomSnapshot(data);
+        _isInParty = true;
+        _isConnecting = false;
+        _connectWebSocket();
+        _startDriftCorrection();
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Fallback to local standalone party session: $e');
+      // If Pi backend unreachable, create standalone local room code
+      _currentRoomCode = 'JAM-${(1000 + DateTime.now().millisecond * 8).toString().padLeft(4, '0')}';
+      _hostId = account.id;
+      _hostName = account.name;
+      _members.clear();
+      _members.add(PartyMemberModel(
+        id: account.id,
+        name: account.name,
+        avatarUrl: account.avatarUrl,
+        deviceName: _deviceName,
+        role: 'host',
+        isOnline: true,
+      ));
+      if (initialTrack != null) {
+        _partyCurrentTrack = initialTrack;
+        _partyIsPlaying = true;
+      }
+      _isInParty = true;
+      _isConnecting = false;
+      notifyListeners();
+      return true;
+    }
+
+    _isConnecting = false;
+    notifyListeners();
+    return false;
+  }
+
+  // --- Join Listening Party by Room Code ---
+  Future<bool> joinParty(String roomCode) async {
+    final code = roomCode.trim().toUpperCase();
+    if (code.isEmpty) return false;
+
+    _isConnecting = true;
+    notifyListeners();
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    try {
+      final payload = {
+        'room_code': code,
+        'member_id': account.id,
+        'member_name': account.name,
+        'device_name': _deviceName,
+        'avatar_url': account.avatarUrl,
+      };
+
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/party/join'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body)['room'];
+        _applyRoomSnapshot(data);
+        _isInParty = true;
+        _isConnecting = false;
+        _connectWebSocket();
+        _startDriftCorrection();
+
+        // Immediately sync local audio player to currently playing song & timestamp
+        _syncLocalAudioPlayer();
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error joining party: $e');
+    }
+
+    _isConnecting = false;
+    notifyListeners();
+    return false;
+  }
+
+  // --- Leave Listening Party ---
+  Future<void> leaveParty() async {
+    if (!_isInParty) return;
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+    final code = _currentRoomCode;
+
+    _driftCheckTimer?.cancel();
+    _reconnectTimer?.cancel();
+    _wsChannel?.sink.close();
+    _wsChannel = null;
+
+    if (code != null) {
+      try {
+        await http.post(
+          Uri.parse('$baseUrl/api/party/$code/leave?member_id=${account.id}'),
+        ).timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    }
+
+    _isInParty = false;
+    _currentRoomCode = null;
+    _hostId = null;
+    _hostName = null;
+    _members.clear();
+    _partyQueue.clear();
+    _partyCurrentTrack = null;
+    _partyIsPlaying = false;
+    _driftMs = 0;
+    notifyListeners();
+  }
+
+  // --- WebSocket Connection ---
+  void _connectWebSocket() {
+    if (_currentRoomCode == null) return;
+    final pi = PiAampsService.instance;
+    final wsUrl = 'ws://${pi.ipAddress}:${pi.port}/api/party/ws/$_currentRoomCode';
+
+    try {
+      _wsChannel?.sink.close();
+      _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      _wsChannel?.ready.catchError((_) {});
+
+      _wsChannel!.stream.listen(
+        (message) {
+          try {
+            final json = jsonDecode(message);
+            final type = json['type'];
+            final data = json['data'];
+
+            if (type == 'init_party' ||
+                type == 'member_joined' ||
+                type == 'member_left' ||
+                type == 'room_settings_updated' ||
+                type == 'host_transferred') {
+              _applyRoomSnapshot(data);
+              notifyListeners();
+            } else if (type == 'playback_updated') {
+              _applyRoomSnapshot(data);
+              _syncLocalAudioPlayer();
+              notifyListeners();
+            } else if (type == 'queue_updated') {
+              _applyRoomSnapshot(data);
+              notifyListeners();
+            }
+          } catch (_) {}
+        },
+        onError: (_) => _scheduleReconnect(),
+        onDone: () => _scheduleReconnect(),
+      );
+    } catch (_) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleReconnect() {
+    if (!_isInParty || _currentRoomCode == null) return;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 4), () {
+      if (_isInParty) _connectWebSocket();
+    });
+  }
+
+  // --- Apply Room Snapshot from Server ---
+  void _applyRoomSnapshot(Map<String, dynamic> data) {
+    _currentRoomCode = data['room_code'];
+    _hostId = data['host_id'];
+    _hostName = data['host_name'];
+    _allowCollaborativeDj = data['allow_collaborative_dj'] ?? true;
+    _partyIsPlaying = data['is_playing'] ?? false;
+    _lastServerPositionMs = data['position_ms'] ?? 0;
+    _lastServerTimestampMs = data['server_timestamp_ms'] ?? 0;
+
+    // Members
+    _members.clear();
+    final membersMap = data['members'] as Map<String, dynamic>? ?? {};
+    for (var m in membersMap.values) {
+      _members.add(PartyMemberModel.fromJson(m));
+    }
+
+    // Current Track
+    if (data['current_track'] != null) {
+      final ct = data['current_track'];
+      _partyCurrentTrack = Track(
+        id: ct['id'] ?? '',
+        title: ct['title'] ?? 'Unknown',
+        artist: ct['artist'] ?? 'Unknown Artist',
+        album: '',
+        duration: Duration(seconds: ct['duration'] ?? 0),
+        artworkUrl: ct['thumbnail'] ?? '',
+        streamUrl: '',
+      );
+    } else {
+      _partyCurrentTrack = null;
+    }
+
+    // Queue
+    _partyQueue.clear();
+    final qList = data['queue'] as List<dynamic>? ?? [];
+    for (var item in qList) {
+      _partyQueue.add(PartyTrackModel.fromJson(item));
+    }
+  }
+
+  // --- Timestamp-Based Synchronization & Drift Corrector ---
+  void _startDriftCorrection() {
+    _driftCheckTimer?.cancel();
+    _driftCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!_isInParty) return;
+      _calculateAndCorrectDrift();
+    });
+  }
+
+  void _calculateAndCorrectDrift() {
+    final player = AudioPlayerService.instance.player;
+    if (_partyCurrentTrack == null || !player.playing) return;
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final elapsedSinceUpdate = _partyIsPlaying ? (nowMs - _lastServerTimestampMs) : 0;
+    final expectedPositionMs = _lastServerPositionMs + elapsedSinceUpdate;
+
+    final actualPositionMs = player.position.inMilliseconds;
+    _driftMs = (actualPositionMs - expectedPositionMs).abs();
+
+    // Deadband: if drift is less than 200ms, consider in-sync to avoid audio stutter
+    // If drift exceeds 450ms, gently seek to expected position
+    if (_driftMs > 450) {
+      player.seek(Duration(milliseconds: expectedPositionMs));
+    }
+    notifyListeners();
+  }
+
+  Future<void> _syncLocalAudioPlayer() async {
+    final audio = AudioPlayerService.instance;
+    if (_partyCurrentTrack == null) return;
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final elapsedSinceUpdate = _partyIsPlaying ? (nowMs - _lastServerTimestampMs) : 0;
+    final targetPosition = Duration(milliseconds: _lastServerPositionMs + elapsedSinceUpdate);
+
+    // If local player is playing a different song, load the party song
+    if (audio.currentTrack?.id != _partyCurrentTrack!.id) {
+      await audio.playTrack(_partyCurrentTrack!, playImmediately: _partyIsPlaying);
+      if (targetPosition > Duration.zero) {
+        audio.seek(targetPosition);
+      }
+    } else {
+      // Same song: synchronize play/pause state and position
+      if (_partyIsPlaying && !audio.player.playing) {
+        audio.player.play();
+      } else if (!_partyIsPlaying && audio.player.playing) {
+        audio.player.pause();
+      }
+
+      final drift = (audio.player.position - targetPosition).inMilliseconds.abs();
+      if (drift > 450) {
+        audio.seek(targetPosition);
+      }
+    }
+  }
+
+  // --- Collaborative Actions Dispatched by Client ---
+
+  Future<void> broadcastPlaybackChange({
+    required bool isPlaying,
+    required Duration position,
+    Track? track,
+  }) async {
+    if (!_isInParty || _currentRoomCode == null || !canControlPlayback) return;
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    final payload = {
+      'room_code': _currentRoomCode,
+      'sender_id': account.id,
+      'is_playing': isPlaying,
+      'position_ms': position.inMilliseconds,
+      if (track != null)
+        'track': {
+          'id': track.id,
+          'title': track.title,
+          'artist': track.artist,
+          'thumbnail': track.artworkUrl,
+          'duration': track.duration.inSeconds,
+        },
+    };
+
+    // 1. Send via WebSocket for minimal latency
+    if (_wsChannel != null) {
+      try {
+        _wsChannel!.sink.add(jsonEncode({
+          'type': 'sync_playback',
+          'data': payload,
+        }));
+      } catch (_) {}
+    }
+
+    // 2. Fallback REST
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/api/party/playback'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> addToPartyQueue(Track track) async {
+    if (!_isInParty || _currentRoomCode == null) return;
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    final payload = {
+      'room_code': _currentRoomCode,
+      'sender_id': account.id,
+      'track': {
+        'id': track.id,
+        'title': track.title,
+        'artist': track.artist,
+        'thumbnail': track.artworkUrl,
+        'duration': track.duration.inSeconds,
+      },
+    };
+
+    if (_wsChannel != null) {
+      try {
+        _wsChannel!.sink.add(jsonEncode({
+          'type': 'add_queue',
+          'data': payload,
+        }));
+      } catch (_) {}
+    }
+
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/api/party/queue'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> voteQueueTrack(String trackId) async {
+    if (!_isInParty || _currentRoomCode == null) return;
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    final payload = {
+      'room_code': _currentRoomCode,
+      'sender_id': account.id,
+      'track_id': trackId,
+    };
+
+    if (_wsChannel != null) {
+      try {
+        _wsChannel!.sink.add(jsonEncode({
+          'type': 'vote_track',
+          'data': payload,
+        }));
+      } catch (_) {}
+    }
+
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/api/party/vote'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> skipPartyTrack() async {
+    if (!_isInParty || _currentRoomCode == null || !canControlPlayback) return;
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    if (_wsChannel != null) {
+      try {
+        _wsChannel!.sink.add(jsonEncode({
+          'type': 'skip_track',
+          'data': {'sender_id': account.id},
+        }));
+      } catch (_) {}
+    }
+
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/api/party/$_currentRoomCode/skip?sender_id=${account.id}'),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> toggleCollaborativeDj(bool allow) async {
+    if (!_isInParty || _currentRoomCode == null || !isHost) return;
+
+    final account = AccountService.instance.activeAccount;
+    final pi = PiAampsService.instance;
+    final baseUrl = pi.baseUrl;
+
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/api/party/dj_mode'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'room_code': _currentRoomCode,
+          'sender_id': account.id,
+          'allow_collaborative_dj': allow,
+        }),
+      );
+      _allowCollaborativeDj = allow;
+      notifyListeners();
+    } catch (_) {}
+  }
+}

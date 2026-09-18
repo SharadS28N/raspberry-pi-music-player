@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../services/account_service.dart';
+import '../views/party_view.dart';
 import 'app_alert.dart';
 
 class AccountSwitcherModal extends StatefulWidget {
@@ -200,12 +201,32 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
                   radius: 22,
                   backgroundImage: NetworkImage(acc.avatarUrl),
                 ),
-                title: Text(
-                  acc.name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                title: Row(
+                  children: [
+                    Text(
+                      acc.name,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    if (acc.isCoupleProfile) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.pinkAccent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'COUPLE',
+                          style: TextStyle(color: Colors.pinkAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 subtitle: Text(
-                  '${acc.email} • ${acc.playlistsCount} Playlists',
+                  acc.isCoupleProfile && acc.partnerName.isNotEmpty
+                      ? 'Shared with ${acc.partnerName} • Synchronized'
+                      : '${acc.email} • ${acc.playlistsCount} Playlists',
                   style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
                 ),
                 trailing: Row(
@@ -232,7 +253,118 @@ class _AccountSwitcherModalState extends State<AccountSwitcherModal> {
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Couple Session Listen-Together Action Card (if active account is Couple Profile)
+          if (active.isCoupleProfile)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1318),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.pinkAccent.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.favorite_rounded, color: Colors.pinkAccent, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Couple Listen Together • ${active.partnerName.isNotEmpty ? active.partnerName : 'Partner'}',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Both phones listen simultaneously on independent earbuds with real-time drift sync.',
+                    style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 11),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pinkAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      icon: const Icon(Icons.hub_rounded, size: 18),
+                      label: const Text('Start Synchronized Couple Session', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.accountService.startCoupleListenTogether();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const PartyView()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Multi-Device Presence Section (Spotify Connect Style)
+          const Text(
+            'Connected Devices on this Account',
+            style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ...widget.accountService.connectedDevices.map((dev) => Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      dev.isPhone
+                          ? Icons.smartphone_rounded
+                          : dev.isPi
+                              ? Icons.memory_rounded
+                              : Icons.laptop_rounded,
+                      color: dev.isActive ? Colors.greenAccent : Colors.white54,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        dev.name,
+                        style: TextStyle(
+                          color: dev.isActive ? Colors.white : const Color(0xFFA1A1AA),
+                          fontSize: 12,
+                          fontWeight: dev.isActive ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: dev.isActive
+                            ? Colors.greenAccent.withValues(alpha: 0.15)
+                            : Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        dev.isActive ? 'ACTIVE' : 'READY',
+                        style: TextStyle(
+                          color: dev.isActive ? Colors.greenAccent : Colors.white38,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: 16),
 
           // Add New Account Action Button
           SizedBox(

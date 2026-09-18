@@ -10,10 +10,14 @@ import '../models/track.dart';
 import 'youtube_service.dart';
 import 'local_stream_proxy.dart';
 import 'pi_aamps_service.dart';
+import 'party_service.dart';
 
-enum AudioTarget { phoneLocal, piSpeaker }
+enum AudioTarget { phoneLocal, piSpeaker, partySession }
 
 class AudioPlayerService extends ChangeNotifier {
+  static final AudioPlayerService instance = AudioPlayerService._internal();
+  factory AudioPlayerService() => instance;
+
   final AudioPlayer _player = AudioPlayer();
   final YoutubeService _ytService = YoutubeService();
   final LocalStreamProxy _proxy = LocalStreamProxy();
@@ -84,7 +88,7 @@ class AudioPlayerService extends ChangeNotifier {
     return _player.duration ?? (_currentTrack?.duration ?? Duration.zero);
   }
 
-  AudioPlayerService() {
+  AudioPlayerService._internal() {
     _loadHistoryAndLikes();
 
     // Local player listeners
@@ -365,7 +369,7 @@ class AudioPlayerService extends ChangeNotifier {
     await _player.setAudioSource(audioSource);
   }
 
-  Future<void> playTrack(Track track) async {
+  Future<void> playTrack(Track track, {bool playImmediately = true, bool notifyParty = true}) async {
     // Proactively verify notification permissions for Android 13+ lockscreen / notification panel
     try {
       final status = await Permission.notification.status;
@@ -458,23 +462,31 @@ class AudioPlayerService extends ChangeNotifier {
       _isLoading = false;
       await _player.setSpeed(_playbackSpeed);
       await _player.setPitch(_pitch);
-      _player.play();
+      if (playImmediately) {
+        _player.play();
+      }
+      if (notifyParty) {
+        _notifyPartyPlaybackChange(isPlaying: playImmediately, track: track);
+      }
     } catch (e) {
       debugPrint('Error playing track "${track.title}": $e');
       _isLoading = false;
     }
   }
 
-  Future<void> pause() async {
+  Future<void> pause({bool notifyParty = true}) async {
     if (_target == AudioTarget.piSpeaker) {
       await _piService.pause();
     } else {
       await _player.pause();
     }
+    if (notifyParty) {
+      _notifyPartyPlaybackChange(isPlaying: false);
+    }
     notifyListeners();
   }
 
-  Future<void> resume({Track? fallbackTrack}) async {
+  Future<void> resume({Track? fallbackTrack, bool notifyParty = true}) async {
     if (_target == AudioTarget.piSpeaker) {
       final trackToPlay = _currentTrack ?? fallbackTrack;
       if (trackToPlay != null) {
@@ -488,20 +500,62 @@ class AudioPlayerService extends ChangeNotifier {
     if (_player.audioSource == null) {
       final trackToPlay = _currentTrack ?? fallbackTrack;
       if (trackToPlay != null) {
-        await playTrack(trackToPlay);
+        await playTrack(trackToPlay, notifyParty: notifyParty);
         return;
       }
     }
     _player.play();
+    if (notifyParty) {
+      _notifyPartyPlaybackChange(isPlaying: true);
+    }
+    notifyListeners();
   }
 
-  Future<void> seek(Duration position) async {
+  Future<void> seek(Duration position, {bool notifyParty = true}) async {
     if (_target == AudioTarget.piSpeaker) {
       await _piService.seek(position.inSeconds.toDouble());
     } else {
       await _player.seek(position);
     }
+    if (notifyParty) {
+      _notifyPartyPlaybackChange(isPlaying: _player.playing, position: position);
+    }
     notifyListeners();
+  }
+
+  Future<void> seekBackward10() async {
+    final pos = currentPosition - const Duration(seconds: 10);
+    await seek(pos < Duration.zero ? Duration.zero : pos);
+  }
+
+  Future<void> seekForward15() async {
+    final dur = currentDuration;
+    final pos = currentPosition + const Duration(seconds: 15);
+    await seek(pos > dur ? dur : pos);
+  }
+
+  Future<LoopMode> cycleLoopMode() async {
+    final next = switch (_player.loopMode) {
+      LoopMode.off => LoopMode.all,
+      LoopMode.all => LoopMode.one,
+      LoopMode.one => LoopMode.off,
+    };
+    await setLoopMode(next);
+    notifyListeners();
+    return next;
+  }
+
+  void _notifyPartyPlaybackChange({required bool isPlaying, Duration? position, Track? track}) {
+    try {
+      final party = PartyService.instance;
+      if (party.isInParty && party.canControlPlayback) {
+        party.broadcastPlaybackChange(
+          isPlaying: isPlaying,
+          position: position ?? currentPosition,
+          track: track ?? _currentTrack,
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> setVolume(double volume) async {
