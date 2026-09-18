@@ -18,35 +18,30 @@ def main():
         sys.exit(1)
 
     repo = 'SharadS28N/raspberry-pi-music-player'
-    tag = 'v1.2.0'
-    release_name = 'OpenAamps v1.2.0 - Android Music Player'
-    body = """## OpenAamps v1.2.0 Release Notes
+    tag = 'v1.2.1'
+    release_name = 'OpenAamps v1.2.1 - Peer-to-Peer Music Party and Jam Session'
+    body = """## OpenAamps v1.2.1 Release Notes
 
-Standalone Android companion music player and Raspberry Pi Hi-Fi streaming controller.
+Peer-to-Peer Wi-Fi Music Party and Jam Session networking update for seamless multi-device listening.
 
 ### Highlights & New Features
 
-- **Genuine Spotify & YouTube / Google Account Sync**:
-  - Direct public playlist and track scraping via Spotify Embed API.
-  - Authentic Google / YouTube account lookup via channel @handle with synchronized channel avatar and metadata.
-- **Dynamic Mood & Genre Switching**:
-  - Live dynamic track loading when toggling between Energize, Relax, Focus, Party, Workout, and Chill moods.
-  - Expanded Quick Picks list with full catalogue browsing toggle.
-- **Custom Player Wallpapers & Canvas Styles**:
-  - 6 AMOLED presets: Deep Nebula, Cyber Noir, Velvet Night, Pure Black, Album Art Blur, and Dark Gradient.
-  - Custom user wallpaper URL input with seamless modern player layout.
-- **Live Music Recognition with Humming / Lyrics Fallback**:
-  - Reactive state binding for audio recognition with instant single-tap playback.
-- **Discord Rich Presence (RPC)**:
-  - Integrated native Discord IPC over named pipes to display real-time song title, artist, duration, elapsed timestamps, and album art on active Discord desktop clients.
-- **Library Overhaul & Custom Playlists**:
-  - Removed placeholder files, connected smart playlists (Liked Tracks, Recently Played, Downloads) to persistent storage, and added custom playlist creation.
-- **Audio Engine Stability**:
-  - YouTube 403 Forbidden rate-bypass streaming with multi-layer fallback.
-  - Full Android 13+ background audio service and media notification session support.
+- **Peer-to-Peer Wi-Fi Music Party**:
+  - Direct phone-to-phone listening party hosting via embedded HTTP and WebSocket server on port 8765.
+  - Eliminated dependency on fixed external server; devices (e.g. Samsung Galaxy A16 and Vivo Y16) can connect to each other directly on any shared Wi-Fi network or mobile hotspot.
+- **Automatic UDP Beacon Discovery**:
+  - Host phones broadcast discovery beacons on port 8766 every second.
+  - Guest phones automatically detect active nearby parties and display them in the lobby for 1-tap connection.
+- **Resilient Room Code and Subnet Resolution**:
+  - Supports simplified room codes based on device IP octets (e.g. JAM-251 or 251) with automatic subnet probing fallback when multicast packets are restricted by router AP isolation.
+- **Full State Synchronization**:
+  - Synchronized real-time playback position, pause/resume state, collaborative queue voting, and skip controls.
+- **Network Permissions**:
+  - Added Wi-Fi state and multicast lock permissions for uninterrupted discovery on Samsung OneUI and Vivo FuntouchOS.
 
 ### Assets Included
-- `OpenAamps-v1.2.0.apk`: Official production release build for Android 8.0+.
+- `OpenAamps-v1.2.1.apk`: Official production release build for Android 8.0+.
+- `OpenAamps.apk`: Latest release binary.
 """
 
     headers = {
@@ -91,7 +86,7 @@ Standalone Android companion music player and Raspberry Pi Hi-Fi streaming contr
             sys.exit(1)
 
     release_id = release_data.get('id')
-    apk_path = os.path.join('releases', 'OpenAamps-v1.2.0.apk')
+    apk_path = os.path.join('releases', 'OpenAamps-v1.2.1.apk')
     if not os.path.exists(apk_path):
         apk_path = os.path.join('mobile', 'build', 'app', 'outputs', 'flutter-apk', 'app-release.apk')
 
@@ -102,8 +97,8 @@ Standalone Android companion music player and Raspberry Pi Hi-Fi streaming contr
     apk_size = os.path.getsize(apk_path)
     print(f'Uploading {apk_path} ({apk_size} bytes)...')
 
-    # Upload files: OpenAamps-v1.2.0.apk and OpenAamps.apk
-    asset_names = ['OpenAamps-v1.2.0.apk', 'OpenAamps.apk']
+    # Upload files: OpenAamps-v1.2.1.apk and OpenAamps.apk
+    asset_names = ['OpenAamps-v1.2.1.apk', 'OpenAamps.apk']
     for asset_name in asset_names:
         # Delete existing asset with same name if any
         for a in release_data.get('assets', []):

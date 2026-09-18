@@ -67,5 +67,16 @@ void main() {
 
       expect(targetPositionMs, equals(30000));
     });
+
+    test('IP and Octet room code resolution regex matches correctly', () {
+      final ipRegex = RegExp(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d+))?$');
+      expect(ipRegex.hasMatch('192.168.18.251'), isTrue);
+      expect(ipRegex.hasMatch('192.168.18.251:8765'), isTrue);
+
+      final octetRegex = RegExp(r'^(?:JAM-)?(\d{1,3})$', caseSensitive: false);
+      expect(octetRegex.firstMatch('JAM-251')?.group(1), equals('251'));
+      expect(octetRegex.firstMatch('251')?.group(1), equals('251'));
+      expect(octetRegex.firstMatch('jam-16')?.group(1), equals('16'));
+    });
   });
 }

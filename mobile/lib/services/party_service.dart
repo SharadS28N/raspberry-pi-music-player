@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,8 @@ import '../models/track.dart';
 import 'audio_player_service.dart';
 import 'pi_aamps_service.dart';
 import 'account_service.dart';
+import 'party_host_server.dart';
+import 'party_discovery_service.dart';
 
 class PartyMemberModel {
   final String id;
@@ -95,6 +98,7 @@ class PartyService extends ChangeNotifier {
   String? _currentRoomCode;
   String? _hostId;
   String? _hostName;
+  String? _activePartyBaseUrl;
   bool _allowCollaborativeDj = true;
   bool _isInParty = false;
   bool _isConnecting = false;
@@ -119,6 +123,7 @@ class PartyService extends ChangeNotifier {
   String get roomCode => _currentRoomCode ?? '';
   String? get hostId => _hostId;
   String? get hostName => _hostName;
+  String? get activePartyBaseUrl => _activePartyBaseUrl;
   bool get allowCollaborativeDj => _allowCollaborativeDj;
   bool get isInParty => _isInParty;
   bool get isConnecting => _isConnecting;
@@ -165,34 +170,92 @@ class PartyService extends ChangeNotifier {
     notifyListeners();
 
     final account = AccountService.instance.activeAccount;
+
+    // 1. Check if external Pi server is running and reachable
     final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
-
+    bool piReachable = false;
     try {
-      final payload = {
-        'host_id': account.id,
-        'host_name': account.name,
-        'device_name': _deviceName,
-        'avatar_url': account.avatarUrl,
-        if (initialTrack != null)
-          'initial_track': {
-            'id': initialTrack.id,
-            'title': initialTrack.title,
-            'artist': initialTrack.artist,
-            'thumbnail': initialTrack.artworkUrl,
-            'duration': initialTrack.duration.inSeconds,
-          },
-      };
+      final piCheck = await http.get(Uri.parse('${pi.baseUrl}/api/status')).timeout(const Duration(milliseconds: 600));
+      piReachable = piCheck.statusCode == 200;
+    } catch (_) {
+      piReachable = false;
+    }
 
-      final res = await http.post(
-        Uri.parse('$baseUrl/api/party/create'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 4));
+    if (piReachable) {
+      try {
+        final payload = {
+          'host_id': account.id,
+          'host_name': account.name,
+          'device_name': _deviceName,
+          'avatar_url': account.avatarUrl,
+          if (initialTrack != null)
+            'initial_track': {
+              'id': initialTrack.id,
+              'title': initialTrack.title,
+              'artist': initialTrack.artist,
+              'thumbnail': initialTrack.artworkUrl,
+              'duration': initialTrack.duration.inSeconds,
+            },
+        };
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body)['room'];
-        _applyRoomSnapshot(data);
+        final res = await http.post(
+          Uri.parse('${pi.baseUrl}/api/party/create'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        ).timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body)['room'];
+          _activePartyBaseUrl = pi.baseUrl;
+          _applyRoomSnapshot(data);
+          _isInParty = true;
+          _isConnecting = false;
+          _connectWebSocket();
+          _startDriftCorrection();
+          notifyListeners();
+          return true;
+        }
+      } catch (e) {
+        debugPrint('Pi party creation failed: $e');
+      }
+    }
+
+    // 2. Direct Mobile-to-Mobile Hosting:
+    // Start embedded PartyHostServer on this phone so other phones can join directly over Wi-Fi
+    try {
+      String localIp = '127.0.0.1';
+      try {
+        final interfaces = await NetworkInterface.list(includeLoopback: false, type: InternetAddressType.IPv4);
+        for (var iface in interfaces) {
+          for (var addr in iface.addresses) {
+            if (!addr.isLoopback && addr.address.contains('.')) {
+              if (iface.name.toLowerCase().contains('wlan') ||
+                  iface.name.toLowerCase().contains('wifi') ||
+                  addr.address.startsWith('192.168.') ||
+                  addr.address.startsWith('10.') ||
+                  addr.address.startsWith('172.')) {
+                localIp = addr.address;
+                break;
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      final lastOctet = localIp.split('.').last;
+      final roomCode = 'JAM-$lastOctet';
+
+      final success = await PartyHostServer.instance.start(
+        hostId: account.id,
+        hostName: account.name,
+        deviceName: _deviceName,
+        roomCode: roomCode,
+        initialTrack: initialTrack,
+      );
+
+      if (success) {
+        _activePartyBaseUrl = PartyHostServer.instance.hostBaseUrl;
+        _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
         _isInParty = true;
         _isConnecting = false;
         _connectWebSocket();
@@ -201,28 +264,7 @@ class PartyService extends ChangeNotifier {
         return true;
       }
     } catch (e) {
-      debugPrint('Fallback to local standalone party session: $e');
-      // If Pi backend unreachable, create standalone local room code
-      _currentRoomCode = 'JAM-${(1000 + DateTime.now().millisecond * 8).toString().padLeft(4, '0')}';
-      _hostId = account.id;
-      _hostName = account.name;
-      _members.clear();
-      _members.add(PartyMemberModel(
-        id: account.id,
-        name: account.name,
-        avatarUrl: account.avatarUrl,
-        deviceName: _deviceName,
-        role: 'host',
-        isOnline: true,
-      ));
-      if (initialTrack != null) {
-        _partyCurrentTrack = initialTrack;
-        _partyIsPlaying = true;
-      }
-      _isInParty = true;
-      _isConnecting = false;
-      notifyListeners();
-      return true;
+      debugPrint('Error starting embedded party host server: $e');
     }
 
     _isConnecting = false;
@@ -239,39 +281,52 @@ class PartyService extends ChangeNotifier {
     notifyListeners();
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
 
-    try {
-      final payload = {
-        'room_code': code,
-        'member_id': account.id,
-        'member_name': account.name,
-        'device_name': _deviceName,
-        'avatar_url': account.avatarUrl,
-      };
+    // 1. Resolve host base URL via UDP discovery & local network probing
+    String? hostBaseUrl = await PartyDiscoveryService.instance.resolveHostBaseUrl(code);
 
-      final res = await http.post(
-        Uri.parse('$baseUrl/api/party/join'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 4));
+    // 2. If not found via discovery, check configured Pi server
+    if (hostBaseUrl == null) {
+      final pi = PiAampsService.instance;
+      try {
+        final res = await http.get(Uri.parse('${pi.baseUrl}/api/party/$code/state')).timeout(const Duration(milliseconds: 600));
+        if (res.statusCode == 200) {
+          hostBaseUrl = pi.baseUrl;
+        }
+      } catch (_) {}
+    }
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body)['room'];
-        _applyRoomSnapshot(data);
-        _isInParty = true;
-        _isConnecting = false;
-        _connectWebSocket();
-        _startDriftCorrection();
+    if (hostBaseUrl != null) {
+      try {
+        final payload = {
+          'room_code': code,
+          'member_id': account.id,
+          'member_name': account.name,
+          'device_name': _deviceName,
+          'avatar_url': account.avatarUrl,
+        };
 
-        // Immediately sync local audio player to currently playing song & timestamp
-        _syncLocalAudioPlayer();
-        notifyListeners();
-        return true;
+        final res = await http.post(
+          Uri.parse('$hostBaseUrl/api/party/join'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        ).timeout(const Duration(seconds: 4));
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body)['room'];
+          _activePartyBaseUrl = hostBaseUrl;
+          _applyRoomSnapshot(data);
+          _isInParty = true;
+          _isConnecting = false;
+          _connectWebSocket();
+          _startDriftCorrection();
+          _syncLocalAudioPlayer();
+          notifyListeners();
+          return true;
+        }
+      } catch (e) {
+        debugPrint('Error joining party at $hostBaseUrl: $e');
       }
-    } catch (e) {
-      debugPrint('Error joining party: $e');
     }
 
     _isConnecting = false;
@@ -284,8 +339,7 @@ class PartyService extends ChangeNotifier {
     if (!_isInParty) return;
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
+    final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
     final code = _currentRoomCode;
 
     _driftCheckTimer?.cancel();
@@ -301,10 +355,15 @@ class PartyService extends ChangeNotifier {
       } catch (_) {}
     }
 
+    if (PartyHostServer.instance.isRunning) {
+      await PartyHostServer.instance.stop();
+    }
+
     _isInParty = false;
     _currentRoomCode = null;
     _hostId = null;
     _hostName = null;
+    _activePartyBaseUrl = null;
     _members.clear();
     _partyQueue.clear();
     _partyCurrentTrack = null;
@@ -316,8 +375,13 @@ class PartyService extends ChangeNotifier {
   // --- WebSocket Connection ---
   void _connectWebSocket() {
     if (_currentRoomCode == null) return;
-    final pi = PiAampsService.instance;
-    final wsUrl = 'ws://${pi.ipAddress}:${pi.port}/api/party/ws/$_currentRoomCode';
+    
+    // Connect to active party host base URL (embedded host phone or Pi server)
+    final targetUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
+    final uri = Uri.parse(targetUrl);
+    final wsScheme = uri.scheme == 'https' ? 'wss' : 'ws';
+    final portPart = uri.hasPort ? ':${uri.port}' : '';
+    final wsUrl = '$wsScheme://${uri.host}$portPart/api/party/ws/$_currentRoomCode';
 
     try {
       _wsChannel?.sink.close();
@@ -472,8 +536,19 @@ class PartyService extends ChangeNotifier {
     if (!_isInParty || _currentRoomCode == null || !canControlPlayback) return;
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
+    final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
+
+    // If this device is the local embedded server host, update directly
+    if (PartyHostServer.instance.isRunning) {
+      PartyHostServer.instance.updatePlaybackState(
+        track: track ?? _partyCurrentTrack,
+        positionMs: position.inMilliseconds,
+        isPlaying: isPlaying,
+      );
+      _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
+      notifyListeners();
+      return;
+    }
 
     final payload = {
       'room_code': _currentRoomCode,
@@ -503,7 +578,7 @@ class PartyService extends ChangeNotifier {
     // 2. Fallback REST
     try {
       await http.post(
-        Uri.parse('$baseUrl/api/party/playback'),
+        Uri.parse('$baseUrl/api/party/$_currentRoomCode/playback'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
@@ -514,12 +589,19 @@ class PartyService extends ChangeNotifier {
     if (!_isInParty || _currentRoomCode == null) return;
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
+    final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
+
+    if (PartyHostServer.instance.isRunning) {
+      PartyHostServer.instance.addQueueItem(track, account.id, account.name);
+      _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
+      notifyListeners();
+      return;
+    }
 
     final payload = {
       'room_code': _currentRoomCode,
       'sender_id': account.id,
+      'sender_name': account.name,
       'track': {
         'id': track.id,
         'title': track.title,
@@ -540,7 +622,7 @@ class PartyService extends ChangeNotifier {
 
     try {
       await http.post(
-        Uri.parse('$baseUrl/api/party/queue'),
+        Uri.parse('$baseUrl/api/party/$_currentRoomCode/queue'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
@@ -551,8 +633,14 @@ class PartyService extends ChangeNotifier {
     if (!_isInParty || _currentRoomCode == null) return;
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
+    final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
+
+    if (PartyHostServer.instance.isRunning) {
+      PartyHostServer.instance.voteTrackItem(trackId, account.id);
+      _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
+      notifyListeners();
+      return;
+    }
 
     final payload = {
       'room_code': _currentRoomCode,
@@ -571,7 +659,7 @@ class PartyService extends ChangeNotifier {
 
     try {
       await http.post(
-        Uri.parse('$baseUrl/api/party/vote'),
+        Uri.parse('$baseUrl/api/party/$_currentRoomCode/vote'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
@@ -582,8 +670,15 @@ class PartyService extends ChangeNotifier {
     if (!_isInParty || _currentRoomCode == null || !canControlPlayback) return;
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
+    final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
+
+    if (PartyHostServer.instance.isRunning) {
+      PartyHostServer.instance.skipToNextTrack();
+      _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
+      _syncLocalAudioPlayer();
+      notifyListeners();
+      return;
+    }
 
     if (_wsChannel != null) {
       try {
@@ -605,12 +700,18 @@ class PartyService extends ChangeNotifier {
     if (!_isInParty || _currentRoomCode == null || !isHost) return;
 
     final account = AccountService.instance.activeAccount;
-    final pi = PiAampsService.instance;
-    final baseUrl = pi.baseUrl;
+    final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
+
+    if (PartyHostServer.instance.isRunning) {
+      PartyHostServer.instance.setCollaborativeDj(allow);
+      _allowCollaborativeDj = allow;
+      notifyListeners();
+      return;
+    }
 
     try {
       await http.post(
-        Uri.parse('$baseUrl/api/party/dj_mode'),
+        Uri.parse('$baseUrl/api/party/$_currentRoomCode/dj-mode'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'room_code': _currentRoomCode,

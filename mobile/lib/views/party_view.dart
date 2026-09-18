@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/track.dart';
 import '../services/party_service.dart';
+import '../services/party_discovery_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/account_service.dart';
 import '../services/youtube_service.dart';
@@ -35,6 +36,8 @@ class _PartyViewState extends State<PartyView> {
     super.initState();
     _audio = widget.audioService ?? AudioPlayerService.instance;
     _party.addListener(_onPartyUpdate);
+    PartyDiscoveryService.instance.addListener(_onPartyUpdate);
+    PartyDiscoveryService.instance.startDiscovery();
   }
 
   void _onPartyUpdate() {
@@ -44,6 +47,7 @@ class _PartyViewState extends State<PartyView> {
   @override
   void dispose() {
     _party.removeListener(_onPartyUpdate);
+    PartyDiscoveryService.instance.removeListener(_onPartyUpdate);
     _codeController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -260,13 +264,153 @@ class _PartyViewState extends State<PartyView> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Everyone uses their own phone and independent Bluetooth earbuds or AirPods. OpenAamps intelligently synchronizes playback position and collaborative queues.',
+                'Everyone uses their own phone and independent Bluetooth earbuds or AirPods. OpenAamps intelligently synchronizes playback position and collaborative queues over Wi-Fi.',
                 style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13, height: 1.5),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+
+        // Nearby Parties on Local Wi-Fi (Auto-Detected)
+        if (PartyDiscoveryService.instance.hasNearbyParties) ...[
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF141414),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.35)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'NEARBY PARTIES ON WI-FI',
+                      style: TextStyle(
+                        color: Color(0xFF22C55E),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF22C55E).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(9999),
+                      ),
+                      child: Text(
+                        '${PartyDiscoveryService.instance.nearbyParties.length} ACTIVE',
+                        style: const TextStyle(color: Color(0xFF22C55E), fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...PartyDiscoveryService.instance.nearbyParties.map((party) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E24),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: party.trackThumbnail.isNotEmpty
+                              ? Image.network(
+                                  party.trackThumbnail,
+                                  width: 46,
+                                  height: 46,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stack) => const Icon(Icons.music_note, color: Colors.white54),
+                                )
+                              : const Icon(Icons.speaker_group_rounded, color: Colors.white70, size: 30),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      party.hostName,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      party.roomCode,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                party.trackTitle.isNotEmpty
+                                    ? '${party.trackTitle} • ${party.trackArtist}'
+                                    : '${party.deviceName} • Tap to join',
+                                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF22C55E),
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: _party.isConnecting
+                              ? null
+                              : () async {
+                                  final success = await _party.joinParty(party.roomCode);
+                                  if (success && mounted) {
+                                    AppAlert.show(context, 'Joined ${party.hostName}\'s party!', icon: Icons.check_circle_rounded, isSuccess: true);
+                                  } else if (mounted) {
+                                    AppAlert.show(context, 'Could not join party. Retrying...', icon: Icons.error_outline_rounded, isSuccess: false);
+                                  }
+                                },
+                          child: const Text('Join', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
 
         // Action 1: Host a New Party
         Container(
@@ -363,7 +507,7 @@ class _PartyViewState extends State<PartyView> {
                       textCapitalization: TextCapitalization.characters,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 2.0),
                       decoration: InputDecoration(
-                        hintText: 'e.g. JAM-8842',
+                        hintText: 'e.g. JAM-251 or 251',
                         hintStyle: const TextStyle(color: Colors.white30, letterSpacing: 1.0),
                         filled: true,
                         fillColor: const Color(0xFF27272A),
@@ -390,13 +534,18 @@ class _PartyViewState extends State<PartyView> {
                               if (success && mounted) {
                                 AppAlert.show(context, 'Joined party $code!', icon: Icons.check_circle_rounded, isSuccess: true);
                               } else if (mounted) {
-                                AppAlert.show(context, 'Could not join party. Check room code.', icon: Icons.error_outline_rounded, isSuccess: false);
+                                AppAlert.show(context, 'Could not join party. Check room code or Wi-Fi.', icon: Icons.error_outline_rounded, isSuccess: false);
                               }
                             },
                       child: const Text('Join', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tip: You can enter the full code (JAM-251), the last digits (251), or host IP directly.',
+                style: TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
           ),
@@ -420,27 +569,47 @@ class _PartyViewState extends State<PartyView> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  const Text('ROOM CODE', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                  const SizedBox(height: 2),
-                  Text(_party.currentRoomCode ?? 'JAM-0000', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('ROOM CODE', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                      const SizedBox(height: 2),
+                      Text(_party.currentRoomCode ?? 'JAM-0000', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
+                    ],
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, color: Colors.white),
+                    tooltip: 'Copy Code',
+                    onPressed: () {
+                      if (_party.currentRoomCode != null) {
+                        Clipboard.setData(ClipboardData(text: _party.currentRoomCode!));
+                        AppAlert.show(context, 'Room code copied to clipboard', icon: Icons.copy_rounded, isSuccess: true);
+                      }
+                    },
+                  ),
                 ],
               ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.copy_rounded, color: Colors.white),
-                tooltip: 'Copy Code',
-                onPressed: () {
-                  if (_party.currentRoomCode != null) {
-                    Clipboard.setData(ClipboardData(text: _party.currentRoomCode!));
-                    AppAlert.show(context, 'Room code copied to clipboard', icon: Icons.copy_rounded, isSuccess: true);
-                  }
-                },
-              ),
+              if (_party.activePartyBaseUrl != null) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.wifi_rounded, color: Color(0xFF22C55E), size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      _party.isHost
+                          ? 'Hosting on Wi-Fi (${_party.activePartyBaseUrl!.replaceAll('http://', '')})'
+                          : 'Host IP: ${_party.activePartyBaseUrl!.replaceAll('http://', '')}',
+                      style: const TextStyle(color: Color(0xFF22C55E), fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
