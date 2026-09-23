@@ -23,13 +23,16 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
   late AnimationController _waveAnimCtrl;
   bool _isListeningVoice = false;
 
+  int _voiceSimIndex = 0;
   final List<String> _quickCommands = [
-    'Play something energetic',
-    'Boost the bass',
+    'Recommend tracks > 150 BPM',
+    'Who wrote Bohemian Rhapsody?',
+    'What is the BPM of Blinding Lights?',
+    'Compare FLAC 24-bit vs AAC',
+    'How do acoustic vectors learn?',
+    'Boost bass +6dB',
     'Why did you recommend this?',
-    'Make a study playlist',
-    'Start a music party',
-    'Play chill lofi beats',
+    'Make a cyberpunk synthwave mix',
   ];
 
   @override
@@ -81,11 +84,20 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
     });
 
     if (_isListeningVoice) {
-      // Simulate speech recognition trigger
-      Future.delayed(const Duration(seconds: 2), () {
+      final sampleQuestions = [
+        'Recommend workout tracks with BPM > 150',
+        'Who composed Bohemian Rhapsody and what is its musical structure?',
+        'Compare FLAC 24-bit vs AAC 320kbps for Raspberry Pi',
+        'How does acoustic taste vector preference learning work?',
+        'Activate hardware bass boost with +6dB filter',
+      ];
+      final prompt = sampleQuestions[_voiceSimIndex % sampleQuestions.length];
+      _voiceSimIndex++;
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted && _isListeningVoice) {
           setState(() => _isListeningVoice = false);
-          _handleSend('Play high energy rock music with deep bass');
+          _handleSend(prompt);
         }
       });
     }
@@ -339,6 +351,38 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
                     ),
                   ),
                 ),
+
+                // Parameter Badges
+                if (msg.parameters != null && msg.parameters!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: msg.parameters!.entries.map((entry) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF202020),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${entry.key}: ',
+                              style: const TextStyle(color: Color(0xFFB3B3B3), fontSize: 10, fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              entry.value,
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
 
                 // Attached Track Action Card
                 if (msg.relatedTrack != null) ...[

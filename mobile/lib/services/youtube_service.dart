@@ -116,9 +116,12 @@ class YoutubeService {
     if (queryFallback != null && queryFallback.isNotEmpty) {
       try {
         final searchResults = await _yt.search.search(queryFallback);
-        if (searchResults.isNotEmpty) {
-          final firstVideoId = searchResults.first.id.value;
-          return await getBestAudioStream(firstVideoId);
+        for (var video in searchResults.take(4)) {
+          if (video.id.value == videoId) continue;
+          final fallbackStream = await getBestAudioStream(video.id.value);
+          if (fallbackStream != null) {
+            return fallbackStream;
+          }
         }
       } catch (_) {}
     }

@@ -50,6 +50,7 @@ class SettingsService extends ChangeNotifier {
   EqualizerPreset _equalizerPreset = EqualizerPreset.flat;
   AccentVibe _accentVibe = AccentVibe.monochromeWhite;
   bool _showWallpaperOnHome = true;
+  String _geminiApiKey = '';
 
   double _playbackSpeed = 1.0;
   double _pitch = 1.0;
@@ -62,6 +63,7 @@ class SettingsService extends ChangeNotifier {
   EqualizerPreset get equalizerPreset => _equalizerPreset;
   AccentVibe get accentVibe => _accentVibe;
   bool get showWallpaperOnHome => _showWallpaperOnHome;
+  String get geminiApiKey => _geminiApiKey;
 
   Color get accentColor {
     switch (_accentVibe) {
@@ -147,9 +149,17 @@ class SettingsService extends ChangeNotifier {
       _pitch = prefs.getDouble('pref_pitch') ?? 1.0;
       _crossfadeDuration = prefs.getDouble('pref_crossfade') ?? 3.0;
       _loudnessNormalization = prefs.getBool('pref_loudness_norm') ?? true;
+      _geminiApiKey = prefs.getString('pref_gemini_api_key') ?? '';
 
       notifyListeners();
     } catch (_) {}
+  }
+
+  Future<void> setGeminiApiKey(String key) async {
+    _geminiApiKey = key.trim();
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pref_gemini_api_key', _geminiApiKey);
   }
 
   Future<void> setAccentVibe(AccentVibe vibe) async {

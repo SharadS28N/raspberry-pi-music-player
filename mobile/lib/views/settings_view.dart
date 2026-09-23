@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/account_service.dart';
 import '../services/audio_player_service.dart';
+import '../services/firebase_service.dart';
 import '../services/integration_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/account_switcher_modal.dart';
@@ -24,21 +25,46 @@ class _SettingsViewState extends State<SettingsView> {
   final AccountService _account = AccountService.instance;
   final IntegrationService _integration = IntegrationService.instance;
   final SettingsService _settings = SettingsService.instance;
+  final FirebaseService _firebase = FirebaseService.instance;
   late AudioPlayerService _audio;
   late TextEditingController _customWallpaperInputCtrl;
+  late TextEditingController _firebaseProjectCtrl;
+  late TextEditingController _firebaseApiKeyCtrl;
+  late TextEditingController _geminiApiKeyCtrl;
+  bool _isTestingFirebase = false;
+  bool _obscureApiKey = true;
 
   @override
   void initState() {
     super.initState();
     _audio = widget.audioService ?? AudioPlayerService();
     _customWallpaperInputCtrl = TextEditingController(text: _settings.customWallpaperUrl);
+    _firebaseProjectCtrl = TextEditingController(text: _firebase.projectId);
+    _firebaseApiKeyCtrl = TextEditingController(text: _firebase.apiKey);
+    _geminiApiKeyCtrl = TextEditingController(text: _settings.geminiApiKey);
     _settings.addListener(_onSettingsChange);
+    _firebase.addListener(_onFirebaseChange);
   }
 
   void _onSettingsChange() {
     if (mounted) {
       if (_customWallpaperInputCtrl.text != _settings.customWallpaperUrl) {
         _customWallpaperInputCtrl.text = _settings.customWallpaperUrl;
+      }
+      if (_geminiApiKeyCtrl.text != _settings.geminiApiKey) {
+        _geminiApiKeyCtrl.text = _settings.geminiApiKey;
+      }
+      setState(() {});
+    }
+  }
+
+  void _onFirebaseChange() {
+    if (mounted) {
+      if (_firebaseProjectCtrl.text != _firebase.projectId) {
+        _firebaseProjectCtrl.text = _firebase.projectId;
+      }
+      if (_firebaseApiKeyCtrl.text != _firebase.apiKey) {
+        _firebaseApiKeyCtrl.text = _firebase.apiKey;
       }
       setState(() {});
     }
@@ -47,7 +73,11 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   void dispose() {
     _settings.removeListener(_onSettingsChange);
+    _firebase.removeListener(_onFirebaseChange);
     _customWallpaperInputCtrl.dispose();
+    _firebaseProjectCtrl.dispose();
+    _firebaseApiKeyCtrl.dispose();
+    _geminiApiKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -605,9 +635,322 @@ class _SettingsViewState extends State<SettingsView> {
             activeThumbColor: Colors.white,
             onChanged: (val) => _integration.toggleDiscordRpc(val),
           ),
+          const SizedBox(height: 28),
+
+          // Section 5: Firebase Cloud Integration & Data Sync
+          _buildFirebaseSection(context),
+          const SizedBox(height: 32),
         ],
       ),
     );
+  }
+
+  Widget _buildFirebaseSection(BuildContext context) {
+    final isConfigured = _firebase.isConfigured;
+    final isConnected = _firebase.isConnected;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'FIREBASE CLOUD INTEGRATION & DATA SYNC',
+          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        const SizedBox(height: 12),
+
+        // Live Cloud Connection Status Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isConnected
+                  ? const Color(0xFF22C55E).withValues(alpha: 0.4)
+                  : (isConfigured ? const Color(0xFFEAB308).withValues(alpha: 0.3) : Colors.white12),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isConnected
+                          ? const Color(0xFF22C55E)
+                          : (isConfigured ? const Color(0xFFEAB308) : const Color(0xFF71717A)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    isConnected
+                        ? 'FIREBASE CLOUD CONNECTED'
+                        : (isConfigured ? 'FIREBASE CONFIGURED' : 'LOCAL CACHE MODE'),
+                    style: TextStyle(
+                      color: isConnected ? const Color(0xFF4ADE80) : Colors.white70,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_firebase.lastSyncTime != null)
+                    Text(
+                      'Synced ${_firebase.lastSyncTime!.hour.toString().padLeft(2, '0')}:${_firebase.lastSyncTime!.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 11),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _firebase.statusMessage,
+                style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Configuration Form Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Cloud Credentials & API Keys',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Enables cross-device Firestore playlist sync, taste vector telemetry, and Gemini AI voice music synthesis.',
+                style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 11, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+
+              // Project ID field
+              const Text('Firebase Project ID', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: TextField(
+                  controller: _firebaseProjectCtrl,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. open-aamps-player',
+                    hintStyle: TextStyle(color: Color(0xFF71717A), fontSize: 12),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Web API Key field
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Firebase Web API Key', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                  GestureDetector(
+                    onTap: () => setState(() => _obscureApiKey = !_obscureApiKey),
+                    child: Text(
+                      _obscureApiKey ? 'Show' : 'Hide',
+                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: TextField(
+                  controller: _firebaseApiKeyCtrl,
+                  obscureText: _obscureApiKey,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'AIzaSy...',
+                    hintStyle: TextStyle(color: Color(0xFF71717A), fontSize: 12),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Google Gemini API Key field
+              const Text('Google Gemini API Key (Optional for Live AI)', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: TextField(
+                  controller: _geminiApiKeyCtrl,
+                  obscureText: _obscureApiKey,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'AIzaSy... (Gemini 1.5 Flash API Key)',
+                    hintStyle: TextStyle(color: Color(0xFF71717A), fontSize: 12),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Action buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: _saveCredentials,
+                      child: const Text('Save Keys', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: _isTestingFirebase ? null : _testFirebaseConnection,
+                      child: _isTestingFirebase
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            )
+                          : const Text('Test & Sync', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Setup Guide Card
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F0F10),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'FIREBASE SETUP INSTRUCTIONS',
+                style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+              ),
+              SizedBox(height: 8),
+              Text(
+                '1. Go to console.firebase.google.com and open your project.\n'
+                '2. In Project Settings -> General, copy the Project ID and Web API Key.\n'
+                '3. Enter them above and tap "Save Keys" or "Test & Sync".\n'
+                '4. Alternatively, place google-services.json in mobile/android/app/.\n'
+                '5. When keys are blank, the player operates safely in local cache mode with zero crashes.',
+                style: TextStyle(color: Color(0xFF8E8E93), fontSize: 11, height: 1.5),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveCredentials() async {
+    final projectId = _firebaseProjectCtrl.text.trim();
+    final apiKey = _firebaseApiKeyCtrl.text.trim();
+    final geminiKey = _geminiApiKeyCtrl.text.trim();
+
+    await _firebase.updateCredentials(projectId: projectId, apiKey: apiKey);
+    await _settings.setGeminiApiKey(geminiKey);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            projectId.isNotEmpty && apiKey.isNotEmpty
+                ? 'Firebase credentials saved! Testing connection...'
+                : 'Keys saved in local cache mode.',
+          ),
+          backgroundColor: const Color(0xFF1F1F1F),
+        ),
+      );
+    }
+  }
+
+  Future<void> _testFirebaseConnection() async {
+    setState(() => _isTestingFirebase = true);
+    final projectId = _firebaseProjectCtrl.text.trim();
+    final apiKey = _firebaseApiKeyCtrl.text.trim();
+    final geminiKey = _geminiApiKeyCtrl.text.trim();
+
+    await _firebase.updateCredentials(projectId: projectId, apiKey: apiKey);
+    await _settings.setGeminiApiKey(geminiKey);
+
+    final success = await _firebase.testConnection();
+
+    if (success) {
+      await _firebase.syncAcousticPreferences({
+        'accent_vibe': _settings.accentVibe.name,
+        'equalizer_preset': _settings.equalizerPreset.name,
+        'playback_speed': _settings.playbackSpeed,
+        'crossfade_seconds': _settings.crossfadeDuration,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    }
+
+    if (mounted) {
+      setState(() => _isTestingFirebase = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Firebase Cloud connection verified! Firestore sync active.'
+                : 'Connection failed: ${_firebase.statusMessage}',
+          ),
+          backgroundColor: success ? const Color(0xFF166534) : const Color(0xFF991B1B),
+        ),
+      );
+    }
   }
 
   void _showPlayerStylePicker(BuildContext context) {
