@@ -12,6 +12,12 @@ import 'stats_view.dart';
 import '../widgets/app_alert.dart';
 import '../services/party_service.dart';
 import 'party_view.dart';
+import '../models/ai_recommendation.dart';
+import '../services/ai_music_service.dart';
+import 'ai/ai_assistant_view.dart';
+import 'ai/ai_playlist_maker.dart';
+import 'ai/why_recommended_modal.dart';
+import 'auth/profile_view.dart';
 
 class HomeView extends StatefulWidget {
   final Function(Track) onPlayTrack;
@@ -492,6 +498,21 @@ class _HomeViewState extends State<HomeView> {
                           );
                         },
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.auto_awesome, color: Color(0xFFA78BFA)),
+                        tooltip: 'AI Music Assistant',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AiAssistantView(
+                                audioService: widget.audioService ?? AudioPlayerService(),
+                                onPlayTrack: widget.onPlayTrack,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       GestureDetector(
                         onTap: () {
                           showModalBottomSheet(
@@ -501,6 +522,12 @@ class _HomeViewState extends State<HomeView> {
                             builder: (context) => AccountSwitcherModal(
                               accountService: AccountService.instance,
                             ),
+                          );
+                        },
+                        onLongPress: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ProfileView()),
                           );
                         },
                         child: Padding(
@@ -711,6 +738,11 @@ class _HomeViewState extends State<HomeView> {
                   );
                 },
               ),
+
+              // AI Music Intelligence Hub & Recommendations
+              _buildAiIntelligenceHub(),
+              _buildAiRecommendationsSection(),
+              _buildAiMoodStationsSection(),
 
               // Category / Mood Filter Chips (Monochrome)
               SizedBox(
@@ -980,6 +1012,359 @@ class _HomeViewState extends State<HomeView> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAiIntelligenceHub() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome, color: Colors.white, size: 12),
+                    SizedBox(width: 4),
+                    Text(
+                      'AI MUSIC INTELLIGENCE',
+                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfileView()),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.insights_rounded, color: Colors.white70, size: 13),
+                      SizedBox(width: 4),
+                      Text('Acoustic DNA', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Personalized Acoustic Intelligence',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Dynamic preference learning adapts to your listening completions, skips, and volume dynamics in real time.',
+            style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.35),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    backgroundColor: Colors.white.withValues(alpha: 0.06),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.mic_none_rounded, color: Color(0xFFA78BFA), size: 16),
+                  label: const Text('Voice / AI Assistant', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AiAssistantView(
+                          audioService: widget.audioService ?? AudioPlayerService(),
+                          onPlayTrack: widget.onPlayTrack,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.playlist_add_rounded, color: Colors.white, size: 18),
+                  label: const Text('Prompt Playlist', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => AiPlaylistMakerModal(
+                        onPlayTrack: widget.onPlayTrack,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAiRecommendationsSection() {
+    final recommendations = AiMusicService.instance.getPersonalizedRecommendations(limit: 6);
+    if (recommendations.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Color(0xFFA78BFA), size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Made For You • AI Match',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => AiPlaylistMakerModal(onPlayTrack: widget.onPlayTrack),
+                );
+              },
+              child: const Text('Make Mix', style: TextStyle(color: Color(0xFFA78BFA), fontSize: 12)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 195,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: recommendations.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final track = recommendations[i];
+              final matchPct = (track.aiRecommendationScore * 100).toInt();
+              return GestureDetector(
+                onTap: () => widget.onPlayTrack(track),
+                child: Container(
+                  width: 135,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF141416),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              track.artworkUrl,
+                              width: 119,
+                              height: 105,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: 119,
+                                height: 105,
+                                color: Colors.white10,
+                                child: const Icon(Icons.music_note, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4)),
+                              ),
+                              child: Text(
+                                '$matchPct% AI',
+                                style: const TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 6,
+                            right: 6,
+                            child: GestureDetector(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (ctx) => WhyRecommendedModal(
+                                    track: track,
+                                    onPlay: () => widget.onPlayTrack(track),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.8),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.help_outline_rounded, color: Colors.white70, size: 14),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        track.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        track.artist,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 22),
+      ],
+    );
+  }
+
+  Widget _buildAiMoodStationsSection() {
+    final moods = MoodCategory.defaultMoods;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'AI Mood Stations',
+          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 85,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: moods.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, i) {
+              final mood = moods[i];
+              return GestureDetector(
+                onTap: () {
+                  final tracks = AiMusicService.instance.getMoodRecommendations(mood);
+                  if (tracks.isNotEmpty) {
+                    AppAlert.show(
+                      context,
+                      'Tuning to ${mood.title} Station...',
+                      icon: mood.icon,
+                    );
+                    widget.onPlayTrack(tracks.first);
+                  }
+                },
+                child: Container(
+                  width: 140,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: mood.gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: mood.gradientColors.first.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(mood.icon, color: Colors.white, size: 20),
+                          const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 18),
+                        ],
+                      ),
+                      Text(
+                        mood.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 22),
+      ],
     );
   }
 }

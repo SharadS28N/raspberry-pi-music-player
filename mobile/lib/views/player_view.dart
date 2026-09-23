@@ -14,7 +14,9 @@ import '../widgets/app_alert.dart';
 import '../widgets/equalizer_sheet.dart';
 import '../widgets/output_target_modal.dart';
 import '../services/party_service.dart';
+import '../services/ai_music_service.dart';
 import 'party_view.dart';
+import 'ai/why_recommended_modal.dart';
 
 class PlayerView extends StatefulWidget {
   final Track track;
@@ -311,6 +313,24 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                         ),
                       ),
                       IconButton(
+                        icon: const Icon(
+                          Icons.auto_awesome,
+                          color: Color(0xFFA78BFA),
+                          size: 22,
+                        ),
+                        tooltip: 'Why Recommended & Acoustic DNA',
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => WhyRecommendedModal(
+                              track: track,
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
                         icon: Icon(
                           _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                           color: _isLiked ? Colors.white : Colors.white60,
@@ -321,6 +341,9 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                           setState(() {
                             _isLiked = widget.audioService.isLiked(track.id);
                           });
+                          if (_isLiked) {
+                            AiMusicService.instance.onTrackLiked(track);
+                          }
                           AppAlert.show(
                             context,
                             _isLiked ? 'Added to Liked Songs' : 'Removed from Liked Songs',
@@ -788,11 +811,26 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
               Image.network(
                 customUrl,
                 fit: BoxFit.cover,
+                headers: const {
+                  'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Mobile Safari/537.36',
+                  'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                },
                 errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF000000)),
               )
             else
               const ColoredBox(color: Color(0xFF000000)),
-            Container(color: Colors.black.withValues(alpha: 0.78)),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.65),
+                    Colors.black.withValues(alpha: 0.82),
+                  ],
+                ),
+              ),
+            ),
           ],
         );
     }

@@ -8,11 +8,14 @@ import 'models/track.dart';
 import 'services/audio_player_service.dart';
 import 'services/account_service.dart';
 import 'services/local_audio_service.dart';
+import 'services/firebase_service.dart';
+import 'services/ai_music_service.dart';
 import 'views/home_view.dart';
 import 'views/search_view.dart';
 import 'views/player_view.dart';
 import 'views/pi_hub_view.dart';
 import 'views/library_view.dart';
+import 'views/ai/ai_assistant_view.dart';
 import 'widgets/now_playing_bar.dart';
 
 Future<void> main() async {
@@ -24,6 +27,7 @@ Future<void> main() async {
     androidStopForegroundOnPause: true,
     androidNotificationIcon: 'drawable/ic_bg_service_small',
   );
+  await FirebaseService.instance.initialize();
   runApp(const OpenAampsApp());
 }
 
@@ -85,6 +89,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           _isPlaying = state.playing;
         });
       }
+      if (state.processingState == ProcessingState.completed) {
+        AiMusicService.instance.onTrackCompleted(
+          _activeTrack,
+          _activeTrack.duration.inSeconds > 0
+              ? _activeTrack.duration.inSeconds.toDouble()
+              : 180.0,
+        );
+      }
     });
   }
 
@@ -124,6 +136,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         audioService: _audioService,
       ),
       SearchView(onPlayTrack: _onPlayTrack),
+      AiAssistantView(
+        audioService: _audioService,
+        onPlayTrack: _onPlayTrack,
+      ),
       LibraryView(
         accountService: AccountService.instance,
         localAudioService: LocalAudioService(),
@@ -199,6 +215,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               icon: Icon(Icons.search_outlined, color: Colors.white60),
               selectedIcon: Icon(Icons.search_rounded, color: Colors.white),
               label: 'Search',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.auto_awesome_outlined, color: Color(0xFFA78BFA)),
+              selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFFA78BFA)),
+              label: 'AI Studio',
             ),
             NavigationDestination(
               icon: Icon(Icons.library_music_outlined, color: Colors.white60),

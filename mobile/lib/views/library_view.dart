@@ -12,6 +12,7 @@ import 'settings_view.dart';
 import '../widgets/app_alert.dart';
 import '../widgets/equalizer_sheet.dart';
 import '../widgets/tag_editor_modal.dart';
+import 'ai/ai_playlist_maker.dart';
 
 class LibraryView extends StatefulWidget {
   final AccountService accountService;
@@ -110,6 +111,24 @@ class _LibraryViewState extends State<LibraryView> {
           ),
         ),
         actions: [
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFA78BFA),
+              side: BorderSide(color: const Color(0xFFA78BFA).withValues(alpha: 0.4)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: const Icon(Icons.auto_awesome, size: 14),
+            label: const Text('Use AI Generator', style: TextStyle(fontSize: 12)),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              showModalBottomSheet(
+                context: parentContext,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => AiPlaylistMakerModal(onPlayTrack: widget.onPlayTrack),
+              );
+            },
+          ),
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel', style: TextStyle(color: Colors.white70)),

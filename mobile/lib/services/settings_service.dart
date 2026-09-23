@@ -8,7 +8,14 @@ enum EqualizerPreset { flat, bassBoost, vocalBoost, trebleBoost, hifi }
 class SettingsService extends ChangeNotifier {
   static final SettingsService instance = SettingsService();
 
+  static const String defaultCustomWallpaper = 'https://i.redd.it/5xx3q4lfjqb71.jpg';
+
   static const List<Map<String, String>> defaultWallpapers = [
+    {
+      'id': 'redditAnime',
+      'name': 'Anime Cyber Aesthetic (Reddit)',
+      'url': defaultCustomWallpaper,
+    },
     {
       'id': 'deepNebula',
       'name': 'Deep Cosmic Nebula',
@@ -37,8 +44,8 @@ class SettingsService extends ChangeNotifier {
   ];
 
   PlayerStyle _playerStyle = PlayerStyle.modern;
-  BackgroundStyle _backgroundStyle = BackgroundStyle.pureBlack;
-  String _customWallpaperUrl = '';
+  BackgroundStyle _backgroundStyle = BackgroundStyle.customWallpaper;
+  String _customWallpaperUrl = defaultCustomWallpaper;
   EqualizerPreset _equalizerPreset = EqualizerPreset.flat;
 
   double _playbackSpeed = 1.0;
@@ -59,17 +66,49 @@ class SettingsService extends ChangeNotifier {
     _loadSettings();
   }
 
+  static String sanitizeWallpaperUrl(String rawUrl) {
+    var url = rawUrl.trim();
+    if (url.isEmpty) return '';
+
+    if (url.contains('reddit.com/media')) {
+      try {
+        final uri = Uri.parse(url);
+        final inner = uri.queryParameters['url'];
+        if (inner != null && inner.isNotEmpty) {
+          url = inner;
+        }
+      } catch (_) {}
+    }
+
+    final regExp = RegExp(
+      r'(?:-v0-|\/)([a-zA-Z0-9]{8,32})\.(?:jpg|png|webp|jpeg)',
+      caseSensitive: false,
+    );
+    final match = regExp.firstMatch(url);
+    if (match != null && (url.contains('redd.it') || url.contains('reddit'))) {
+      final imgId = match.group(1);
+      return 'https://i.redd.it/$imgId.jpg';
+    }
+
+    return url;
+  }
+
   Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       _playerStyle = PlayerStyle.modern;
 
-      final bIndex = prefs.getInt('pref_bg_style') ?? 0;
+      final bIndex = prefs.getInt('pref_bg_style') ?? BackgroundStyle.customWallpaper.index;
       if (bIndex >= 0 && bIndex < BackgroundStyle.values.length) {
         _backgroundStyle = BackgroundStyle.values[bIndex];
       }
 
-      _customWallpaperUrl = prefs.getString('pref_custom_wallpaper') ?? '';
+      final savedUrl = prefs.getString('pref_custom_wallpaper');
+      if (savedUrl != null && savedUrl.isNotEmpty) {
+        _customWallpaperUrl = sanitizeWallpaperUrl(savedUrl);
+      } else {
+        _customWallpaperUrl = defaultCustomWallpaper;
+      }
 
       final eIndex = prefs.getInt('pref_eq_preset') ?? 0;
       if (eIndex >= 0 && eIndex < EqualizerPreset.values.length) {
@@ -97,12 +136,13 @@ class SettingsService extends ChangeNotifier {
     await prefs.setInt('pref_bg_style', style.index);
   }
 
-  Future<void> setCustomWallpaperUrl(String url) async {
-    _customWallpaperUrl = url;
+  Future<void> setCustomWallpaperUrl(String rawUrl) async {
+    final cleanUrl = sanitizeWallpaperUrl(rawUrl);
+    _customWallpaperUrl = cleanUrl.isNotEmpty ? cleanUrl : defaultCustomWallpaper;
     _backgroundStyle = BackgroundStyle.customWallpaper;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('pref_custom_wallpaper', url);
+    await prefs.setString('pref_custom_wallpaper', _customWallpaperUrl);
     await prefs.setInt('pref_bg_style', BackgroundStyle.customWallpaper.index);
   }
 
