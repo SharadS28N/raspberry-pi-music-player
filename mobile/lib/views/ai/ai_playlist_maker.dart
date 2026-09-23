@@ -75,10 +75,9 @@ class _AiPlaylistMakerModalState extends State<AiPlaylistMakerModal> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
-                    ),
+                    color: const Color(0xFF242424),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                   ),
                   child: const Center(
                     child: Icon(Icons.auto_awesome, color: Colors.white, size: 20),
@@ -128,7 +127,7 @@ class _AiPlaylistMakerModalState extends State<AiPlaylistMakerModal> {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     child: Row(
                       children: [
-                        const Icon(Icons.psychology_rounded, color: Color(0xFF8B5CF6), size: 22),
+                        const Icon(Icons.psychology_rounded, color: Colors.white70, size: 22),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -194,10 +193,9 @@ class _AiPlaylistMakerModalState extends State<AiPlaylistMakerModal> {
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
-                              ),
-                              borderRadius: BorderRadius.circular(32),
+                              color: const Color(0xFF242424),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white24, width: 1.5),
                             ),
                             child: const Center(
                               child: Icon(Icons.auto_awesome, color: Colors.white, size: 32),
@@ -222,14 +220,7 @@ class _AiPlaylistMakerModalState extends State<AiPlaylistMakerModal> {
                   if (_generatedPlaylist != null && !_isGenerating) ...[
                     Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            const Color(0xFF26183B),
-                            const Color(0xFF121214),
-                          ],
-                        ),
+                        color: const Color(0xFF181818),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                       ),
@@ -262,13 +253,14 @@ class _AiPlaylistMakerModalState extends State<AiPlaylistMakerModal> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: Colors.indigoAccent.withValues(alpha: 0.3),
+                                        color: const Color(0xFF242424),
                                         borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.white12),
                                       ),
                                       child: Text(
                                         _generatedPlaylist!.mood.toUpperCase(),
                                         style: const TextStyle(
-                                          color: Colors.indigoAccent,
+                                          color: Colors.white70,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                         ),

@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum PlayerStyle { modern, classic, vinyl, minimal, glassmorphism }
 enum BackgroundStyle { pureBlack, darkGradient, albumArtBlur, dynamicColor, deepNebula, cyberNoir, velvetNight, customWallpaper }
 enum EqualizerPreset { flat, bassBoost, vocalBoost, trebleBoost, hifi }
+enum AccentVibe { monochromeWhite, spotifyGreen, deepPurple, electricRed, neonBlue }
 
 class SettingsService extends ChangeNotifier {
   static final SettingsService instance = SettingsService();
@@ -47,6 +48,8 @@ class SettingsService extends ChangeNotifier {
   BackgroundStyle _backgroundStyle = BackgroundStyle.customWallpaper;
   String _customWallpaperUrl = defaultCustomWallpaper;
   EqualizerPreset _equalizerPreset = EqualizerPreset.flat;
+  AccentVibe _accentVibe = AccentVibe.monochromeWhite;
+  bool _showWallpaperOnHome = true;
 
   double _playbackSpeed = 1.0;
   double _pitch = 1.0;
@@ -57,6 +60,24 @@ class SettingsService extends ChangeNotifier {
   BackgroundStyle get backgroundStyle => _backgroundStyle;
   String get customWallpaperUrl => _customWallpaperUrl;
   EqualizerPreset get equalizerPreset => _equalizerPreset;
+  AccentVibe get accentVibe => _accentVibe;
+  bool get showWallpaperOnHome => _showWallpaperOnHome;
+
+  Color get accentColor {
+    switch (_accentVibe) {
+      case AccentVibe.spotifyGreen:
+        return const Color(0xFF1DB954);
+      case AccentVibe.deepPurple:
+        return const Color(0xFF8B5CF6);
+      case AccentVibe.electricRed:
+        return const Color(0xFFEF4444);
+      case AccentVibe.neonBlue:
+        return const Color(0xFF06B6D4);
+      case AccentVibe.monochromeWhite:
+        return Colors.white;
+    }
+  }
+
   double get playbackSpeed => _playbackSpeed;
   double get pitch => _pitch;
   double get crossfadeDuration => _crossfadeDuration;
@@ -110,6 +131,13 @@ class SettingsService extends ChangeNotifier {
         _customWallpaperUrl = defaultCustomWallpaper;
       }
 
+      final vIndex = prefs.getInt('pref_accent_vibe') ?? AccentVibe.monochromeWhite.index;
+      if (vIndex >= 0 && vIndex < AccentVibe.values.length) {
+        _accentVibe = AccentVibe.values[vIndex];
+      }
+
+      _showWallpaperOnHome = prefs.getBool('pref_show_wallpaper_home') ?? true;
+
       final eIndex = prefs.getInt('pref_eq_preset') ?? 0;
       if (eIndex >= 0 && eIndex < EqualizerPreset.values.length) {
         _equalizerPreset = EqualizerPreset.values[eIndex];
@@ -122,6 +150,20 @@ class SettingsService extends ChangeNotifier {
 
       notifyListeners();
     } catch (_) {}
+  }
+
+  Future<void> setAccentVibe(AccentVibe vibe) async {
+    _accentVibe = vibe;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('pref_accent_vibe', vibe.index);
+  }
+
+  Future<void> setShowWallpaperOnHome(bool value) async {
+    _showWallpaperOnHome = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('pref_show_wallpaper_home', value);
   }
 
   Future<void> setPlayerStyle(PlayerStyle style) async {

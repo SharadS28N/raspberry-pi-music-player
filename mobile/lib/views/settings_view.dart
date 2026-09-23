@@ -25,21 +25,29 @@ class _SettingsViewState extends State<SettingsView> {
   final IntegrationService _integration = IntegrationService.instance;
   final SettingsService _settings = SettingsService.instance;
   late AudioPlayerService _audio;
+  late TextEditingController _customWallpaperInputCtrl;
 
   @override
   void initState() {
     super.initState();
     _audio = widget.audioService ?? AudioPlayerService();
+    _customWallpaperInputCtrl = TextEditingController(text: _settings.customWallpaperUrl);
     _settings.addListener(_onSettingsChange);
   }
 
   void _onSettingsChange() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      if (_customWallpaperInputCtrl.text != _settings.customWallpaperUrl) {
+        _customWallpaperInputCtrl.text = _settings.customWallpaperUrl;
+      }
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _settings.removeListener(_onSettingsChange);
+    _customWallpaperInputCtrl.dispose();
     super.dispose();
   }
 
@@ -124,6 +132,220 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             trailing: const Icon(Icons.arrow_drop_down_rounded, color: Colors.white, size: 28),
             onTap: () => _showBackgroundStylePicker(context),
+          ),
+          const SizedBox(height: 10),
+
+          // Accent Color Vibe Picker
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF141414),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Accent Color Vibe',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: _settings.accentColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Default is authentic monochrome Spotify black & white. Any color vibe is optional.',
+                  style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildAccentVibeChip(AccentVibe.monochromeWhite, 'Classic White', Colors.white),
+                    _buildAccentVibeChip(AccentVibe.spotifyGreen, 'Spotify Green', const Color(0xFF1DB954)),
+                    _buildAccentVibeChip(AccentVibe.deepPurple, 'Deep Purple', const Color(0xFF8B5CF6)),
+                    _buildAccentVibeChip(AccentVibe.electricRed, 'Electric Red', const Color(0xFFEF4444)),
+                    _buildAccentVibeChip(AccentVibe.neonBlue, 'Neon Blue', const Color(0xFF06B6D4)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Active Wallpaper Canvas Preview Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF141414),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.photo_size_select_actual_rounded, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Active Custom Wallpaper Canvas',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Renders live on the music player canvas and ambient home backdrop.',
+                  style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        _settings.customWallpaperUrl,
+                        height: 110,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        headers: const {
+                          'User-Agent':
+                              'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Mobile Safari/537.36',
+                        },
+                        errorBuilder: (_, _, _) => Container(
+                          height: 110,
+                          color: const Color(0xFF222222),
+                          child: const Center(
+                            child: Icon(Icons.broken_image_rounded, color: Colors.white38),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Text(
+                            'LIVE PREVIEW',
+                            style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _settings.customWallpaperUrl,
+                  style: const TextStyle(color: Color(0xFF727272), fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: SettingsService.defaultWallpapers.map((wp) {
+                    final isSel = _settings.customWallpaperUrl == wp['url'];
+                    return ChoiceChip(
+                      label: Text(wp['name'] ?? ''),
+                      selected: isSel,
+                      selectedColor: Colors.white,
+                      backgroundColor: const Color(0xFF242424),
+                      labelStyle: TextStyle(
+                        color: isSel ? Colors.black : Colors.white,
+                        fontSize: 11,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      onSelected: (_) {
+                        _settings.setCustomWallpaperUrl(wp['url'] ?? '');
+                        setState(() {});
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                // Custom URL input
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF242424),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: TextField(
+                          controller: _customWallpaperInputCtrl,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          decoration: const InputDecoration(
+                            hintText: 'Paste custom image / Reddit URL',
+                            hintStyle: TextStyle(color: Color(0xFF727272), fontSize: 11),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        final text = _customWallpaperInputCtrl.text.trim();
+                        if (text.isNotEmpty) {
+                          _settings.setCustomWallpaperUrl(text);
+                          setState(() {});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Custom wallpaper applied!')),
+                          );
+                        }
+                      },
+                      child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Show Ambient Wallpaper on Home Switch
+          SwitchListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            tileColor: const Color(0xFF141414),
+            secondary: const Icon(Icons.home_rounded, color: Colors.white),
+            title: const Text('Show Wallpaper on Home Screen', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Displays a subtle ambient backdrop behind top header', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+            value: _settings.showWallpaperOnHome,
+            activeTrackColor: Colors.white38,
+            activeThumbColor: Colors.white,
+            onChanged: (val) {
+              _settings.setShowWallpaperOnHome(val);
+              setState(() {});
+            },
           ),
           const SizedBox(height: 28),
 
@@ -543,6 +765,38 @@ class _SettingsViewState extends State<SettingsView> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) => const EqualizerSheet(),
+    );
+  }
+
+  Widget _buildAccentVibeChip(AccentVibe vibe, String label, Color color) {
+    final isSelected = _settings.accentVibe == vibe;
+    return ChoiceChip(
+      avatar: Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24),
+        ),
+      ),
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: Colors.white,
+      backgroundColor: const Color(0xFF242424),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : Colors.white,
+        fontSize: 12,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: isSelected ? Colors.white : Colors.white12),
+      ),
+      onSelected: (_) {
+        _settings.setAccentVibe(vibe);
+        setState(() {});
+      },
     );
   }
 }

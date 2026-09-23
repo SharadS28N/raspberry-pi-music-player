@@ -5,6 +5,7 @@ import '../services/pi_aamps_service.dart';
 import '../services/account_service.dart';
 import '../services/integration_service.dart';
 import '../services/youtube_service.dart';
+import '../services/settings_service.dart';
 import '../widgets/account_switcher_modal.dart';
 import '../widgets/spotify_import_modal.dart';
 import '../widgets/output_target_modal.dart';
@@ -320,6 +321,7 @@ class _HomeViewState extends State<HomeView> {
   void initState() {
     super.initState();
     AccountService.instance.addListener(_refresh);
+    SettingsService.instance.addListener(_refresh);
     _quickPicks = List.from(_seedCategories['Feel good']!);
     _fetchCategoryFromYoutube('Feel good');
   }
@@ -331,6 +333,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   void dispose() {
     AccountService.instance.removeListener(_refresh);
+    SettingsService.instance.removeListener(_refresh);
     super.dispose();
   }
 
@@ -384,135 +387,180 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = SettingsService.instance;
+    final showAmbientWallpaper = settings.showWallpaperOnHome && settings.customWallpaperUrl.isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Header with Monochrome Branding & Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF141414),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.graphic_eq_rounded, color: Colors.white, size: 20),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'OpenAamps',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
+      body: Stack(
+        children: [
+          // Ambient Wallpaper Header Backdrop (Spotify Style)
+          if (showAmbientWallpaper)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 260,
+              child: ShaderMask(
+                shaderCallback: (rect) {
+                  return const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black87,
+                      Colors.transparent,
                     ],
+                    stops: [0.0, 1.0],
+                  ).createShader(rect);
+                },
+                blendMode: BlendMode.dstIn,
+                child: Opacity(
+                  opacity: 0.28,
+                  child: Image.network(
+                    settings.customWallpaperUrl,
+                    fit: BoxFit.cover,
+                    headers: const {
+                      'User-Agent':
+                          'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Mobile Safari/537.36',
+                    },
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
                   ),
+                ),
+              ),
+            ),
+
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Header with Monochrome Branding & Action Buttons
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      ListenableBuilder(
-                        listenable: PartyService.instance,
-                        builder: (context, _) {
-                          final inParty = PartyService.instance.isInParty;
-                          final membersCount = PartyService.instance.members.length;
-                          return Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  inParty ? Icons.hub_rounded : Icons.groups_rounded,
-                                  color: inParty ? Colors.greenAccent : const Color(0xFFA1A1AA),
-                                ),
-                                tooltip: inParty ? 'Music Party ($membersCount)' : 'Start or Join Music Party',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const PartyView()),
-                                  );
-                                },
-                              ),
-                              if (inParty)
-                                Positioned(
-                                  right: 6,
-                                  top: 6,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: Colors.greenAccent,
-                                      borderRadius: BorderRadius.circular(8),
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF141414),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                            ),
+                            child: Center(
+                              child: Icon(Icons.graphic_eq_rounded, color: settings.accentColor, size: 20),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'OpenAamps',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.wallpaper_rounded, color: Colors.white),
+                            tooltip: 'Wallpaper & Canvas',
+                            onPressed: () => _showWallpaperSwitcher(context),
+                          ),
+                          ListenableBuilder(
+                            listenable: PartyService.instance,
+                            builder: (context, _) {
+                              final inParty = PartyService.instance.isInParty;
+                              final membersCount = PartyService.instance.members.length;
+                              return Stack(
+                                alignment: Alignment.topRight,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      inParty ? Icons.hub_rounded : Icons.groups_rounded,
+                                      color: inParty ? Colors.greenAccent : const Color(0xFFA1A1AA),
                                     ),
-                                    child: Text(
-                                      '$membersCount',
-                                      style: const TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
+                                    tooltip: inParty ? 'Music Party ($membersCount)' : 'Start or Join Music Party',
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const PartyView()),
+                                      );
+                                    },
+                                  ),
+                                  if (inParty)
+                                    Positioned(
+                                      right: 6,
+                                      top: 6,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: Colors.greenAccent,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '$membersCount',
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
+                                ],
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.download_for_offline_rounded, color: Colors.white),
+                            tooltip: 'Import Spotify Playlist',
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => SpotifyImportModal(
+                                  integrationService: IntegrationService.instance,
+                                  onImportSuccess: (importedTracks) {
+                                    if (importedTracks.isNotEmpty) {
+                                      widget.onPlayTrack(importedTracks.first);
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.access_time_rounded, color: Color(0xFFA1A1AA)),
+                            tooltip: 'Stats',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const StatsView()),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.auto_awesome, color: Colors.white),
+                            tooltip: 'AI Music Assistant',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AiAssistantView(
+                                    audioService: widget.audioService ?? AudioPlayerService(),
+                                    onPlayTrack: widget.onPlayTrack,
                                   ),
                                 ),
-                            ],
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.download_for_offline_rounded, color: Colors.white),
-                        tooltip: 'Import Spotify Playlist',
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => SpotifyImportModal(
-                              integrationService: IntegrationService.instance,
-                              onImportSuccess: (importedTracks) {
-                                if (importedTracks.isNotEmpty) {
-                                  widget.onPlayTrack(importedTracks.first);
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.access_time_rounded, color: Color(0xFFA1A1AA)),
-                        tooltip: 'Stats',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const StatsView()),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.auto_awesome, color: Color(0xFFA78BFA)),
-                        tooltip: 'AI Music Assistant',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AiAssistantView(
-                                audioService: widget.audioService ?? AudioPlayerService(),
-                                onPlayTrack: widget.onPlayTrack,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
                       GestureDetector(
                         onTap: () {
                           showModalBottomSheet(
@@ -954,7 +1002,9 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   void _showTrackOptions(BuildContext context, Track track) {
@@ -1016,17 +1066,14 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildAiIntelligenceHub() {
+    final accent = SettingsService.instance.accentColor;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.35)),
+        color: const Color(0xFF181818),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1034,21 +1081,25 @@ class _HomeViewState extends State<HomeView> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFF242424),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome, color: Colors.white, size: 12),
-                    SizedBox(width: 4),
-                    Text(
+                    Icon(Icons.auto_awesome, color: accent, size: 13),
+                    const SizedBox(width: 6),
+                    const Text(
                       'AI MUSIC INTELLIGENCE',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),
@@ -1062,44 +1113,46 @@ class _HomeViewState extends State<HomeView> {
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFF242424),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   ),
                   child: const Row(
                     children: [
                       Icon(Icons.insights_rounded, color: Colors.white70, size: 13),
                       SizedBox(width: 4),
-                      Text('Acoustic DNA', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text('Acoustic DNA', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
           const Text(
             'Personalized Acoustic Intelligence',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: -0.3),
           ),
           const SizedBox(height: 4),
           const Text(
             'Dynamic preference learning adapts to your listening completions, skips, and volume dynamics in real time.',
-            style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.35),
+            style: TextStyle(color: Color(0xFFB3B3B3), fontSize: 12, height: 1.35),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-                    backgroundColor: Colors.white.withValues(alpha: 0.06),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                    backgroundColor: const Color(0xFF242424),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  icon: const Icon(Icons.mic_none_rounded, color: Color(0xFFA78BFA), size: 16),
+                  icon: const Icon(Icons.mic_none_rounded, color: Colors.white, size: 16),
                   label: const Text('Voice / AI Assistant', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () {
                     Navigator.push(
@@ -1118,11 +1171,17 @@ class _HomeViewState extends State<HomeView> {
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: accent == Colors.white ? Colors.white : accent,
+                    foregroundColor: accent == Colors.white ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  icon: const Icon(Icons.playlist_add_rounded, color: Colors.white, size: 18),
+                  icon: Icon(
+                    Icons.playlist_add_rounded,
+                    color: accent == Colors.white ? Colors.black : Colors.white,
+                    size: 18,
+                  ),
                   label: const Text('Prompt Playlist', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () {
                     showModalBottomSheet(
@@ -1155,7 +1214,7 @@ class _HomeViewState extends State<HomeView> {
           children: [
             const Row(
               children: [
-                Icon(Icons.auto_awesome, color: Color(0xFFA78BFA), size: 18),
+                Icon(Icons.auto_awesome, color: Colors.white, size: 18),
                 SizedBox(width: 8),
                 Text(
                   'Made For You • AI Match',
@@ -1172,7 +1231,7 @@ class _HomeViewState extends State<HomeView> {
                   builder: (context) => AiPlaylistMakerModal(onPlayTrack: widget.onPlayTrack),
                 );
               },
-              child: const Text('Make Mix', style: TextStyle(color: Color(0xFFA78BFA), fontSize: 12)),
+              child: const Text('Make Mix', style: TextStyle(color: Colors.white70, fontSize: 12)),
             ),
           ],
         ),
@@ -1365,6 +1424,234 @@ class _HomeViewState extends State<HomeView> {
         ),
         const SizedBox(height: 22),
       ],
+    );
+  }
+
+  void _showWallpaperSwitcher(BuildContext context) {
+    final settings = SettingsService.instance;
+    final urlCtrl = TextEditingController(text: settings.customWallpaperUrl);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141416),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20.0,
+                  right: 20.0,
+                  top: 16.0,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20.0,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Wallpaper & Visual Canvas',
+                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Select or customize your player and home wallpaper',
+                              style: TextStyle(color: Color(0xFFB3B3B3), fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Active Wallpaper Preview Thumbnail Card
+                    Container(
+                      width: double.infinity,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        image: DecorationImage(
+                          image: NetworkImage(settings.customWallpaperUrl),
+                          fit: BoxFit.cover,
+                          onError: (_, _) {},
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.75),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 12),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'ACTIVE CANVAS',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            left: 10,
+                            right: 10,
+                            child: Text(
+                              settings.customWallpaperUrl,
+                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Presets Horizontal List
+                    const Text(
+                      'PRESETS (1-TAP SWITCH)',
+                      style: TextStyle(color: Color(0xFFB3B3B3), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 40,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: SettingsService.defaultWallpapers.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          final wp = SettingsService.defaultWallpapers[i];
+                          final isSelected = settings.customWallpaperUrl == wp['url'];
+                          return ActionChip(
+                            label: Text(wp['name'] ?? ''),
+                            backgroundColor: isSelected ? Colors.white : const Color(0xFF242424),
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.black : Colors.white,
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              side: BorderSide(
+                                color: isSelected ? Colors.white : Colors.white12,
+                              ),
+                            ),
+                            onPressed: () {
+                              final url = wp['url'] ?? '';
+                              settings.setCustomWallpaperUrl(url);
+                              urlCtrl.text = url;
+                              setModalState(() {});
+                              setState(() {});
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Custom URL Input
+                    const Text(
+                      'CUSTOM WALLPAPER IMAGE / REDDIT URL',
+                      style: TextStyle(color: Color(0xFFB3B3B3), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF242424),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: TextField(
+                        controller: urlCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        decoration: const InputDecoration(
+                          hintText: 'https://i.redd.it/... or direct image link',
+                          hintStyle: TextStyle(color: Color(0xFF727272), fontSize: 12),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Apply Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          if (urlCtrl.text.trim().isNotEmpty) {
+                            settings.setCustomWallpaperUrl(urlCtrl.text);
+                            Navigator.pop(ctx);
+                            setState(() {});
+                            AppAlert.show(context, 'Wallpaper updated and applied!', icon: Icons.wallpaper_rounded);
+                          }
+                        },
+                        child: const Text('Apply Wallpaper', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

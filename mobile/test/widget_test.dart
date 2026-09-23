@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:open_aamps/main.dart';
+import 'package:open_aamps/repositories/auth_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final _transparentImage = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49,
@@ -66,9 +68,12 @@ class _FakeHttpClientResponse extends Fake implements HttpClientResponse {
 
 void main() {
   testWidgets('OpenAampsApp smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await AppAuthRepository.instance.initialize();
     await HttpOverrides.runZoned(() async {
       await tester.pumpWidget(const OpenAampsApp());
-      expect(find.text('OpenAamps'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Log in to OpenAamps'), findsOneWidget);
     }, createHttpClient: (ctx) => _FakeHttpClient());
   });
 }

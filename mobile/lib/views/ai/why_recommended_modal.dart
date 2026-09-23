@@ -45,10 +45,9 @@ class WhyRecommendedModal extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                  ),
+                  color: const Color(0xFF242424),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -208,7 +207,7 @@ class WhyRecommendedModal extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.check_circle_outline, color: Color(0xFF8B5CF6), size: 16),
+                    const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

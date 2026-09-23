@@ -258,6 +258,11 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
             },
           ),
           IconButton(
+            icon: const Icon(Icons.wallpaper_rounded, color: Colors.white),
+            tooltip: 'Wallpaper & Canvas',
+            onPressed: () => _showWallpaperPickerModal(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
             tooltip: 'Track Options',
             onPressed: () => _showTrackOptionsModal(context, track),
@@ -315,7 +320,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                       IconButton(
                         icon: const Icon(
                           Icons.auto_awesome,
-                          color: Color(0xFFA78BFA),
+                          color: Colors.white,
                           size: 22,
                         ),
                         tooltip: 'Why Recommended & Acoustic DNA',
@@ -825,9 +830,11 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.65),
-                    Colors.black.withValues(alpha: 0.82),
+                    Colors.black.withValues(alpha: 0.25),
+                    Colors.black.withValues(alpha: 0.45),
+                    Colors.black.withValues(alpha: 0.70),
                   ],
+                  stops: const [0.0, 0.5, 1.0],
                 ),
               ),
             ),

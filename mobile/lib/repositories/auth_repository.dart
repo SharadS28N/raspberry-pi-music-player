@@ -26,11 +26,18 @@ class AppAuthRepository implements AuthRepository {
   }
 
   static const String _prefUserKey = 'auth_cached_user_profile';
+  static const String _prefRegisteredDbKey = 'auth_registered_accounts_db';
+
   final _authStateController = StreamController<UserProfile?>.broadcast();
   UserProfile? _currentUser;
+  bool _isInitialized = false;
 
   @override
   UserProfile? get currentUser => _currentUser;
+
+  bool get isInitialized => _isInitialized;
+
+  Future<void> initialize() => _init();
 
   @override
   Stream<UserProfile?> get authStateChanges => _authStateController.stream;
@@ -42,30 +49,74 @@ class AppAuthRepository implements AuthRepository {
       if (cached != null && cached.isNotEmpty) {
         _currentUser = UserProfile.fromJson(jsonDecode(cached));
       } else {
-        // Default to a guest evaluator session so the app is always immediately usable
-        _currentUser = UserProfile.defaultProfile();
-        await _saveCurrentUser(_currentUser!);
+        // Unauthenticated state: show login screen
+        _currentUser = null;
       }
+      _isInitialized = true;
       _authStateController.add(_currentUser);
     } catch (e) {
-      _currentUser = UserProfile.defaultProfile();
-      _authStateController.add(_currentUser);
+      _currentUser = null;
+      _isInitialized = true;
+      _authStateController.add(null);
     }
   }
 
-  Future<void> _saveCurrentUser(UserProfile profile) async {
+  Future<Map<String, dynamic>> _getAccountsDb() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefRegisteredDbKey);
+      if (raw != null && raw.isNotEmpty) {
+        return Map<String, dynamic>.from(jsonDecode(raw));
+      }
+    } catch (_) {}
+    return {
+      'evaluator@openaamps.ai': {
+        'password': 'password123',
+        'profile': UserProfile(
+          uid: 'evaluator_demo',
+          email: 'evaluator@openaamps.ai',
+          displayName: 'Music Evaluator',
+          photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          preferredGenres: const ['Rock', 'Synthwave', 'Indie', 'Lo-Fi'],
+          topArtists: const ['Coldplay', 'Queen', 'The Weeknd'],
+          totalListeningTimeSeconds: 4320,
+          totalTracksPlayed: 18,
+          tasteVector: const AcousticTasteVector(
+            energy: 0.65,
+            valence: 0.60,
+            danceability: 0.62,
+            acousticness: 0.35,
+            tempo: 118.0,
+          ),
+          isGuest: false,
+        ).toJson(),
+      },
+    };
+  }
+
+  Future<void> _saveAccountsDb(Map<String, dynamic> db) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefRegisteredDbKey, jsonEncode(db));
+    } catch (_) {}
+  }
+
+  Future<void> _saveCurrentUser(UserProfile? profile) async {
     _currentUser = profile;
     _authStateController.add(profile);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefUserKey, jsonEncode(profile.toJson()));
+      if (profile != null) {
+        await prefs.setString(_prefUserKey, jsonEncode(profile.toJson()));
+      } else {
+        await prefs.remove(_prefUserKey);
+      }
     } catch (_) {}
   }
 
   @override
   Future<UserProfile> signInWithEmail(String email, String password) async {
-    // Clean input validation
-    final cleanEmail = email.trim();
+    final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
       throw Exception('Please enter a valid email address');
     }
@@ -73,28 +124,18 @@ class AppAuthRepository implements AuthRepository {
       throw Exception('Password must be at least 6 characters');
     }
 
-    // Synthesize/fetch user profile
-    final name = cleanEmail.split('@').first;
-    final displayName = name[0].toUpperCase() + name.substring(1);
-    final profile = UserProfile(
-      uid: 'user_${cleanEmail.hashCode.abs()}',
-      email: cleanEmail,
-      displayName: displayName,
-      photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      preferredGenres: const ['Rock', 'Synthwave', 'Indie', 'Lo-Fi'],
-      topArtists: const ['Coldplay', 'Queen', 'The Weeknd'],
-      totalListeningTimeSeconds: 5200,
-      totalTracksPlayed: 24,
-      tasteVector: const AcousticTasteVector(
-        energy: 0.72,
-        valence: 0.65,
-        danceability: 0.68,
-        acousticness: 0.30,
-        tempo: 120.0,
-      ),
-      isGuest: false,
-    );
+    final db = await _getAccountsDb();
+    if (!db.containsKey(cleanEmail)) {
+      throw Exception('No account found for $cleanEmail. Please sign up first.');
+    }
 
+    final record = Map<String, dynamic>.from(db[cleanEmail] as Map);
+    final expectedPass = record['password'] as String?;
+    if (expectedPass != password) {
+      throw Exception('Incorrect password. Please verify and try again.');
+    }
+
+    final profile = UserProfile.fromJson(Map<String, dynamic>.from(record['profile'] as Map));
     await _saveCurrentUser(profile);
     return profile;
   }
@@ -106,7 +147,7 @@ class AppAuthRepository implements AuthRepository {
     required String displayName,
     List<String> preferredGenres = const [],
   }) async {
-    final cleanEmail = email.trim();
+    final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
       throw Exception('Please provide a valid email');
     }
@@ -115,6 +156,11 @@ class AppAuthRepository implements AuthRepository {
     }
     if (displayName.trim().isEmpty) {
       throw Exception('Please provide your name');
+    }
+
+    final db = await _getAccountsDb();
+    if (db.containsKey(cleanEmail)) {
+      throw Exception('An account with $cleanEmail already exists. Please log in.');
     }
 
     // Map initial taste vector based on user selected genres
@@ -148,6 +194,13 @@ class AppAuthRepository implements AuthRepository {
       isGuest: false,
     );
 
+    // Save to registered accounts database
+    db[cleanEmail] = {
+      'password': password,
+      'profile': profile.toJson(),
+    };
+    await _saveAccountsDb(db);
+
     await _saveCurrentUser(profile);
     return profile;
   }
@@ -164,13 +217,16 @@ class AppAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() async {
-    // Reset back to guest demo mode
-    final guest = UserProfile.defaultProfile();
-    await _saveCurrentUser(guest);
+    await _saveCurrentUser(null);
   }
 
   @override
   Future<void> updateProfile(UserProfile profile) async {
     await _saveCurrentUser(profile);
+    final db = await _getAccountsDb();
+    if (db.containsKey(profile.email.toLowerCase())) {
+      db[profile.email.toLowerCase()]['profile'] = profile.toJson();
+      await _saveAccountsDb(db);
+    }
   }
 }

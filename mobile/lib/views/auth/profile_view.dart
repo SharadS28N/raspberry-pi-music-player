@@ -61,7 +61,7 @@ class ProfileView extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 32,
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF282828),
                         backgroundImage: profile.photoUrl.isNotEmpty
                             ? NetworkImage(profile.photoUrl)
                             : null,
@@ -154,7 +154,7 @@ class ProfileView extends StatelessWidget {
                         title: 'Tracks Played',
                         value: '${profile.totalTracksPlayed}',
                         icon: Icons.music_note_rounded,
-                        color: Colors.purpleAccent,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -167,10 +167,9 @@ class ProfileView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-                        ),
+                        color: const Color(0xFF242424),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white12),
                       ),
                       child: const Icon(Icons.auto_awesome, color: Colors.white, size: 14),
                     ),

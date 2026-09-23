@@ -10,6 +10,8 @@ import 'services/account_service.dart';
 import 'services/local_audio_service.dart';
 import 'services/firebase_service.dart';
 import 'services/ai_music_service.dart';
+import 'services/settings_service.dart';
+import 'views/auth/auth_gate.dart';
 import 'views/home_view.dart';
 import 'views/search_view.dart';
 import 'views/player_view.dart';
@@ -36,21 +38,27 @@ class OpenAampsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OpenAamps',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF000000),
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-        colorScheme: const ColorScheme.dark(
-          primary: Colors.white,
-          secondary: Colors.white70,
-          surface: Color(0xFF121212),
-        ),
-      ),
-      home: const MainNavigationScreen(),
+    return ListenableBuilder(
+      listenable: SettingsService.instance,
+      builder: (context, _) {
+        final accent = SettingsService.instance.accentColor;
+        return MaterialApp(
+          title: 'OpenAamps',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            useMaterial3: true,
+            scaffoldBackgroundColor: const Color(0xFF000000),
+            textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+            colorScheme: ColorScheme.dark(
+              primary: accent,
+              secondary: Colors.white70,
+              surface: const Color(0xFF121212),
+            ),
+          ),
+          home: const AuthGate(),
+        );
+      },
     );
   }
 }
@@ -217,8 +225,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               label: 'Search',
             ),
             NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined, color: Color(0xFFA78BFA)),
-              selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFFA78BFA)),
+              icon: Icon(Icons.auto_awesome_outlined, color: Colors.white60),
+              selectedIcon: Icon(Icons.auto_awesome, color: Colors.white),
               label: 'AI Studio',
             ),
             NavigationDestination(

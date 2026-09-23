@@ -108,10 +108,9 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-                ),
+                color: const Color(0xFF242424),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white12),
               ),
               child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
             ),
@@ -148,14 +147,9 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF6366F1).withValues(alpha: 0.25),
-                      const Color(0xFFA855F7).withValues(alpha: 0.25),
-                    ],
-                  ),
+                  color: const Color(0xFF181818),
                   border: Border.symmetric(
-                    horizontal: BorderSide(color: Colors.indigoAccent.withValues(alpha: 0.3)),
+                    horizontal: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                 ),
                 child: Row(
@@ -172,7 +166,7 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
                               width: 4,
                               height: 12 + (val * 24),
                               decoration: BoxDecoration(
-                                color: Colors.indigoAccent,
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             );
@@ -250,10 +244,9 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        gradient: _isListeningVoice
-                            ? const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFF97316)])
-                            : const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFFA855F7)]),
+                        color: _isListeningVoice ? const Color(0xFFEF4444) : const Color(0xFF242424),
                         shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
                       ),
                       child: Icon(
                         _isListeningVoice ? Icons.mic : Icons.mic_none_rounded,
@@ -314,8 +307,9 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
               height: 30,
               margin: const EdgeInsets.only(right: 8, top: 2),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFFA855F7)]),
+                color: const Color(0xFF242424),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white12),
               ),
               child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
             ),
@@ -327,7 +321,7 @@ class _AiAssistantViewState extends State<AiAssistantView> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isUser ? const Color(0xFF6366F1) : const Color(0xFF1E1E24),
+                    color: isUser ? const Color(0xFF282828) : const Color(0xFF181818),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
