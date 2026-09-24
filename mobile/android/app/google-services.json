@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "777154173201",
+    "project_id": "openaamps",
+    "storage_bucket": "openaamps.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:777154173201:android:58b490b8b3b569510e94b0",
+        "android_client_info": {
+          "package_name": "com.aamps.openaamps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEky_XxWxdJ26FHZAUzScaPMGuD4bs3U0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:777154173201:android:fc3b6f2f65b9468f0e94b0",
+        "android_client_info": {
+          "package_name": "com.openaamps.open_aamps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEky_XxWxdJ26FHZAUzScaPMGuD4bs3U0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

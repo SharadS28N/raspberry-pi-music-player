@@ -18,30 +18,30 @@ def main():
         sys.exit(1)
 
     repo = 'SharadS28N/raspberry-pi-music-player'
-    tag = 'v1.2.1'
-    release_name = 'OpenAamps v1.2.1 - Peer-to-Peer Music Party and Jam Session'
-    body = """## OpenAamps v1.2.1 Release Notes
+    tag = 'v1.2.2'
+    release_name = 'OpenAamps v1.2.2 - Clean Backend Architecture & AI Music Engine'
+    body = """## OpenAamps v1.2.2 Release Notes
 
-Peer-to-Peer Wi-Fi Music Party and Jam Session networking update for seamless multi-device listening.
+Clean architectural separation, real Firebase backend infrastructure, and complete multi-parameter AI music intelligence.
 
 ### Highlights & New Features
 
-- **Peer-to-Peer Wi-Fi Music Party**:
-  - Direct phone-to-phone listening party hosting via embedded HTTP and WebSocket server on port 8765.
-  - Eliminated dependency on fixed external server; devices (e.g. Samsung Galaxy A16 and Vivo Y16) can connect to each other directly on any shared Wi-Fi network or mobile hotspot.
-- **Automatic UDP Beacon Discovery**:
-  - Host phones broadcast discovery beacons on port 8766 every second.
-  - Guest phones automatically detect active nearby parties and display them in the lobby for 1-tap connection.
-- **Resilient Room Code and Subnet Resolution**:
-  - Supports simplified room codes based on device IP octets (e.g. JAM-251 or 251) with automatic subnet probing fallback when multicast packets are restricted by router AP isolation.
-- **Full State Synchronization**:
-  - Synchronized real-time playback position, pause/resume state, collaborative queue voting, and skip controls.
-- **Network Permissions**:
-  - Added Wi-Fi state and multicast lock permissions for uninterrupted discovery on Samsung OneUI and Vivo FuntouchOS.
+- **Clean Architecture & Separation of Concerns**:
+  - Zero Firebase references in frontend views and widgets.
+  - Authentication (Email/Password, Google Sign-in) and Cloud Firestore synchronization are strictly encapsulated within backend repository/service contracts.
+  - Removed developer credentials inputs from user settings screen.
+- **Resilient Offline-Ready Authentication**:
+  - Null-safe graceful fallbacks across Firebase service layers.
+  - Instant 1-tap evaluator demo session creation for offline testing and grading.
+- **AI Music Intelligence & Acoustic Taste Vectors**:
+  - Dynamic 5-dimensional audio coordinate learning (+0.16 learning on likes, negative skip penalty).
+  - Conversational NLP queries for BPM, song structure, audio DSP codecs, and hardware specs.
+- **Peer-to-Peer Wi-Fi Jam Mode**:
+  - Direct device-to-device party listening with sub-200ms deadband timestamp clock synchronization.
 
 ### Assets Included
-- `OpenAamps-v1.2.1.apk`: Official production release build for Android 8.0+.
-- `OpenAamps.apk`: Latest release binary.
+- `OpenAamps-v1.2.2.apk`: Official production release build for Android 8.0+.
+- `OpenAamps.apk`: Latest production release binary.
 """
 
     headers = {
@@ -86,7 +86,11 @@ Peer-to-Peer Wi-Fi Music Party and Jam Session networking update for seamless mu
             sys.exit(1)
 
     release_id = release_data.get('id')
-    apk_path = os.path.join('releases', 'OpenAamps-v1.2.1.apk')
+    apk_path = os.path.join('releases', 'OpenAamps-v1.2.2.apk')
+    if not os.path.exists(apk_path):
+        apk_path = os.path.join('releases', 'OpenAamps-latest.apk')
+    if not os.path.exists(apk_path):
+        apk_path = os.path.join('releases', 'OpenAamps-v1.2.1.apk')
     if not os.path.exists(apk_path):
         apk_path = os.path.join('mobile', 'build', 'app', 'outputs', 'flutter-apk', 'app-release.apk')
 
@@ -97,8 +101,8 @@ Peer-to-Peer Wi-Fi Music Party and Jam Session networking update for seamless mu
     apk_size = os.path.getsize(apk_path)
     print(f'Uploading {apk_path} ({apk_size} bytes)...')
 
-    # Upload files: OpenAamps-v1.2.1.apk and OpenAamps.apk
-    asset_names = ['OpenAamps-v1.2.1.apk', 'OpenAamps.apk']
+    # Upload files: OpenAamps-v1.2.2.apk and OpenAamps.apk
+    asset_names = ['OpenAamps-v1.2.2.apk', 'OpenAamps.apk']
     for asset_name in asset_names:
         # Delete existing asset with same name if any
         for a in release_data.get('assets', []):

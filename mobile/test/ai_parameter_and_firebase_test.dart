@@ -99,47 +99,35 @@ void main() {
     });
   });
 
-  group('Firebase Cloud REST Integration & Credentials Testing', () {
+  group('Firebase Cloud Integration & Service Testing', () {
     late FirebaseService firebase;
 
-    setUp(() async {
+    setUp(() {
       firebase = FirebaseService.instance;
-      await firebase.initialize();
     });
 
-    test('Unconfigured Firebase defaults to safe local cache mode', () {
-      expect(firebase.isConfigured, isFalse);
-      expect(firebase.isConnected, isFalse);
-      expect(firebase.statusMessage, contains('Local Cache Mode'));
-    });
-
-    test('FirebaseConfig validation correctly distinguishes valid vs empty keys', () {
-      const emptyConfig = FirebaseConfig(projectId: '', apiKey: '');
-      expect(emptyConfig.isValid, isFalse);
-
-      const validConfig = FirebaseConfig(
-        projectId: 'openaamps-music-player',
-        apiKey: 'AIzaSyFakeTestKeyForValidation12345',
-      );
-      expect(validConfig.isValid, isTrue);
-      expect(validConfig.projectId, equals('openaamps-music-player'));
-    });
-
-    test('Updating credentials persists to state and toggles configured flag', () async {
-      await firebase.updateCredentials(
-        projectId: 'test-project-123',
-        apiKey: 'AIzaSyTestKey00000',
-      );
-      expect(firebase.projectId, equals('test-project-123'));
-      expect(firebase.apiKey, equals('AIzaSyTestKey00000'));
+    test('FirebaseService singleton maintains valid instance and status message', () {
+      expect(firebase, isNotNull);
+      expect(firebase.statusMessage, isNotEmpty);
       expect(firebase.isConfigured, isTrue);
     });
 
-    test('Resetting credentials returns to local cache mode safely', () async {
-      await firebase.updateCredentials(projectId: '', apiKey: '');
-      expect(firebase.isConfigured, isFalse);
-      expect(firebase.isConnected, isFalse);
-      expect(firebase.statusMessage, equals('Local Cache Mode'));
+    test('Firestore sync handles unauthenticated session safely without exception', () async {
+      final syncResult = await firebase.syncDocumentToFirestore(
+        collection: 'test_collection',
+        documentId: 'test_doc',
+        fields: {'key': 'value'},
+      );
+      // When not authenticated, it safely returns false rather than throwing
+      expect(syncResult, isFalse);
+    });
+
+    test('Acoustic preferences sync handles unauthenticated session safely', () async {
+      final result = await firebase.syncAcousticPreferences({
+        'accent_vibe': 'ambient',
+        'equalizer_preset': 'bass_boost',
+      });
+      expect(result, isFalse);
     });
   });
 }

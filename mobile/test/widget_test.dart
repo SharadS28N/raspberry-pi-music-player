@@ -69,8 +69,10 @@ class _FakeHttpClientResponse extends Fake implements HttpClientResponse {
 void main() {
   testWidgets('OpenAampsApp smoke test', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
-    await AppAuthRepository.instance.initialize();
+    // Note: Firebase is initialized in main() via Firebase.initializeApp().
+    // Widget tests that require Firebase should use firebase_app_testing or mock Firebase.
     await HttpOverrides.runZoned(() async {
+
       await tester.pumpWidget(const OpenAampsApp());
       await tester.pumpAndSettle();
       expect(find.text('Log in to OpenAamps'), findsOneWidget);

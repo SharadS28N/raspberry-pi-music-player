@@ -175,10 +175,10 @@ async def get_app_info():
     return {
         "app_name": "OpenAamps",
         "package_name": "com.openaamps.open_aamps",
-        "version": "1.2.0",
+        "version": "1.2.2",
         "description": "Standalone Android Music Player & pi-aamps Remote Control Hub",
         "download_url": "/api/app/download",
-        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.2.1"
+        "github_release_url": "https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.2.2"
     }
 
 
@@ -186,10 +186,12 @@ async def get_app_info():
 async def download_app_apk():
     project_root = os.path.dirname(BASE_DIR)
     candidate_paths = [
-        os.path.join(project_root, "releases", "OpenAamps-v1.2.1.apk"),
+        os.path.join(project_root, "releases", "OpenAamps-v1.2.2.apk"),
         os.path.join(project_root, "releases", "OpenAamps-latest.apk"),
+        os.path.join(project_root, "releases", "OpenAamps-v1.2.1.apk"),
         os.path.join(project_root, "releases", "OpenAamps-v1.2.0.apk"),
         os.path.join(project_root, "releases", "OpenAamps-v1.0.0.apk"),
+        os.path.join(BASE_DIR, "releases", "OpenAamps-v1.2.2.apk"),
         os.path.join(BASE_DIR, "releases", "OpenAamps-v1.2.1.apk"),
         os.path.join(BASE_DIR, "releases", "OpenAamps-v1.2.0.apk"),
         os.path.join(BASE_DIR, "releases", "OpenAamps-v1.0.0.apk"),
@@ -213,7 +215,7 @@ async def download_app_apk():
 
     from fastapi.responses import RedirectResponse
     return RedirectResponse(
-        "https://github.com/SharadS28N/raspberry-pi-music-player/releases/download/v1.2.1/OpenAamps-v1.2.1.apk",
+        "https://github.com/SharadS28N/raspberry-pi-music-player/releases/download/v1.2.2/OpenAamps-v1.2.2.apk",
         status_code=302
     )
 

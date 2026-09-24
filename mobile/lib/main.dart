@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,6 +24,17 @@ import 'widgets/now_playing_bar.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase with generated options
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await FirebaseService.instance.initialize();
+  } catch (e) {
+    debugPrint('[Firebase] Initialization skipped or error: $e');
+  }
+
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.openaamps.open_aamps.channel.audio',
     androidNotificationChannelName: 'OpenAamps Playback',
@@ -29,7 +42,6 @@ Future<void> main() async {
     androidStopForegroundOnPause: true,
     androidNotificationIcon: 'drawable/ic_bg_service_small',
   );
-  await FirebaseService.instance.initialize();
   runApp(const OpenAampsApp());
 }
 
