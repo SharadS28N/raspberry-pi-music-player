@@ -48,7 +48,13 @@ class AppAuthRepository implements AuthRepository {
     }
   }
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '777154173201-e6d9jpage9t5hqeq6udtp7qf0h5m56dm.apps.googleusercontent.com',
+    scopes: [
+      'email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ],
+  );
 
   FirebaseFirestore? get _firestore {
     try {

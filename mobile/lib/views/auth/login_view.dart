@@ -18,8 +18,8 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final _emailCtrl = TextEditingController(text: 'evaluator@openaamps.ai');
-  final _passCtrl = TextEditingController(text: 'password123');
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
   bool _obscurePassword = true;
@@ -78,30 +78,6 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  Future<void> _handleEvaluatorLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await AppAuthRepository.instance.signInAsEvaluator(name: 'Professor / Project Evaluator');
-      if (mounted) {
-        if (widget.onLoginSuccess != null) {
-          widget.onLoginSuccess!();
-        } else if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _handleGoogleSignIn() async {
     setState(() {
       _isLoading = true;
@@ -118,84 +94,12 @@ class _LoginViewState extends State<LoginView> {
         }
       }
     } catch (e) {
-      final msg = e.toString().replaceAll('Exception: ', '');
       if (mounted) {
-        if (msg.contains('SHA-1')) {
-          _showGoogleSha1Dialog(msg);
-        } else {
-          setState(() => _errorMessage = msg);
-        }
+        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showGoogleSha1Dialog(String message) {
-    final accent = SettingsService.instance.accentColor;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.info_outline_rounded, color: accent, size: 24),
-            const SizedBox(width: 10),
-            const Text(
-              'Google Sign-In Setup',
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'To enable direct Google OAuth on Android, Google Play Services requires registering your debug/release SHA-1 fingerprint in Firebase Console:',
-              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF121214),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: const SelectableText(
-                'SHA-1: 92:86:86:5C:7F:76:06:2A:4C:E2:36:2A:80:99:C9:45:8A:55:02:98\n'
-                'Package: com.openaamps.open_aamps',
-                style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontFamily: 'monospace'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'In the meantime, you can sign in with the full-access Developer Account to test all player features, sync, and DSP!',
-              style: TextStyle(color: Colors.white60, fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Dismiss', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accent == Colors.white ? Colors.white : accent,
-              foregroundColor: accent == Colors.white ? Colors.black : Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _handleDeveloperLogin();
-            },
-            child: const Text('Sign in as Developer', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -401,26 +305,7 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Evaluator 1-Tap Access Button (Subtle Spotify Card)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
-                        backgroundColor: const Color(0xFF181818),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
-                      icon: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 18),
-                      label: const Text(
-                        '1-Tap Demo / Professor Login',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      onPressed: _isLoading ? null : _handleEvaluatorLogin,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+
 
                   // Developer Test Account Button
                   SizedBox(
