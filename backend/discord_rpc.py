@@ -9,8 +9,9 @@ from typing import Optional, Dict, Any
 
 logger = logging.getLogger("discord_rpc")
 
-# Default OpenAamps application client ID
-DEFAULT_CLIENT_ID = "1215682887654326272"
+# Default OpenAamps application client ID and Public Key
+DEFAULT_CLIENT_ID = "1552567371615440896"
+PUBLIC_KEY = "82d9fd585caa22bef8d40fdbf6ad6b70d60c58fae786beb623ab04d408d87438"
 
 class DiscordRPC:
     def __init__(self, client_id: str = DEFAULT_CLIENT_ID):
@@ -132,14 +133,24 @@ class DiscordRPC:
 
         try:
             now = int(time.time())
+            state_text = f"{artist}" if artist else "Playing Music"
+            details_text = f"{title}" if title else "Its not just Music"
+
             activity = {
-                "details": f"{title}",
-                "state": f"by {artist}" if artist else "OpenAamps Music",
+                "details": details_text,
+                "state": state_text,
                 "assets": {
-                    "large_image": artwork_url if artwork_url else "openaamps_logo",
-                    "large_text": album if album else "OpenAamps Hifi Player",
+                    "large_image": artwork_url if artwork_url else "openaamps",
+                    "large_text": album if album else "OpenAamps",
                     "small_image": "play" if is_playing else "pause",
-                    "small_text": "Playing" if is_playing else "Paused",
+                    "small_text": "Rogue - Level 100",
+                },
+                "party": {
+                    "id": "ae488379-351d-4a4f-ad32-2b9b01c91657",
+                    "size": [1, 5],
+                },
+                "secrets": {
+                    "join": "MTI4NzM0OjFpMmhuZToxMjMxMjM= ",
                 },
                 "timestamps": {
                     "start": now,

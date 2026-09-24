@@ -178,10 +178,12 @@ class _PartyViewState extends State<PartyView> {
           appBar: AppBar(
             backgroundColor: const Color(0xFF000000),
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
+            leading: Navigator.canPop(context)
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                : null,
             title: Row(
               children: [
                 Icon(Icons.speaker_group_rounded, color: accent, size: 22),

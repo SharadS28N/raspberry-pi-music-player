@@ -11,6 +11,7 @@ import 'pi_aamps_service.dart';
 import 'account_service.dart';
 import 'party_host_server.dart';
 import 'party_discovery_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PartyMemberModel {
   final String id;
@@ -107,6 +108,7 @@ class PartyService extends ChangeNotifier {
   WebSocketChannel? _wsChannel;
   Timer? _driftCheckTimer;
   Timer? _reconnectTimer;
+  StreamSubscription<DocumentSnapshot>? _firestoreSub;
 
   final List<PartyMemberModel> _members = [];
   final List<PartyTrackModel> _partyQueue = [];
@@ -255,11 +257,14 @@ class PartyService extends ChangeNotifier {
 
       if (success) {
         _activePartyBaseUrl = PartyHostServer.instance.hostBaseUrl;
-        _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
+        final snap = PartyHostServer.instance.toSnapshot();
+        _applyRoomSnapshot(snap);
         _isInParty = true;
         _isConnecting = false;
         _connectWebSocket();
         _startDriftCorrection();
+        _saveRoomToFirestore(roomCode, snap);
+        _listenFirestoreRoom(roomCode);
         notifyListeners();
         return true;
       }
@@ -321,12 +326,42 @@ class PartyService extends ChangeNotifier {
           _connectWebSocket();
           _startDriftCorrection();
           _syncLocalAudioPlayer();
+          _listenFirestoreRoom(code);
           notifyListeners();
           return true;
         }
       } catch (e) {
         debugPrint('Error joining party at $hostBaseUrl: $e');
       }
+    }
+
+    // 3. Cloud Firestore Fallback: enables cross-network / 5G Jam Sessions
+    try {
+      final doc = await FirebaseFirestore.instance.collection('jam_rooms').doc(code).get().timeout(const Duration(seconds: 4));
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final myMember = {
+          'id': account.id,
+          'name': account.name,
+          'avatar_url': account.avatarUrl,
+          'device_name': _deviceName,
+          'role': 'listener',
+          'is_online': true,
+        };
+        await FirebaseFirestore.instance.collection('jam_rooms').doc(code).update({
+          'members.${account.id}': myMember,
+        });
+        _applyRoomSnapshot(data);
+        _isInParty = true;
+        _isConnecting = false;
+        _listenFirestoreRoom(code);
+        _startDriftCorrection();
+        _syncLocalAudioPlayer();
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[PartyService] Firestore join jam room error: $e');
     }
 
     _isConnecting = false;
@@ -346,12 +381,19 @@ class PartyService extends ChangeNotifier {
     _reconnectTimer?.cancel();
     _wsChannel?.sink.close();
     _wsChannel = null;
+    _firestoreSub?.cancel();
+    _firestoreSub = null;
 
     if (code != null) {
       try {
         await http.post(
           Uri.parse('$baseUrl/api/party/$code/leave?member_id=${account.id}'),
         ).timeout(const Duration(seconds: 2));
+      } catch (_) {}
+      try {
+        await FirebaseFirestore.instance.collection('jam_rooms').doc(code).update({
+          'members.${account.id}.is_online': false,
+        });
       } catch (_) {}
     }
 
@@ -426,6 +468,32 @@ class PartyService extends ChangeNotifier {
     _reconnectTimer = Timer(const Duration(seconds: 4), () {
       if (_isInParty) _connectWebSocket();
     });
+  }
+
+  void _listenFirestoreRoom(String roomCode) {
+    _firestoreSub?.cancel();
+    _firestoreSub = FirebaseFirestore.instance
+        .collection('jam_rooms')
+        .doc(roomCode)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data()!;
+        _applyRoomSnapshot(data);
+        _syncLocalAudioPlayer();
+        notifyListeners();
+      }
+    }, onError: (e) {
+      debugPrint('[PartyService] Firestore jam room listener error: $e');
+    });
+  }
+
+  Future<void> _saveRoomToFirestore(String roomCode, Map<String, dynamic> snapshot) async {
+    try {
+      await FirebaseFirestore.instance.collection('jam_rooms').doc(roomCode).set(snapshot, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('[PartyService] Firestore save room error: $e');
+    }
   }
 
   // --- Apply Room Snapshot from Server ---
@@ -583,6 +651,25 @@ class PartyService extends ChangeNotifier {
         body: jsonEncode(payload),
       );
     } catch (_) {}
+
+    // 3. Cloud Firestore real-time sync for cross-network devices
+    try {
+      final updateData = <String, dynamic>{
+        'is_playing': isPlaying,
+        'position_ms': position.inMilliseconds,
+        'server_timestamp_ms': DateTime.now().millisecondsSinceEpoch,
+      };
+      if (track != null) {
+        updateData['current_track'] = {
+          'id': track.id,
+          'title': track.title,
+          'artist': track.artist,
+          'thumbnail': track.artworkUrl,
+          'duration': track.duration.inSeconds,
+        };
+      }
+      FirebaseFirestore.instance.collection('jam_rooms').doc(_currentRoomCode!).update(updateData);
+    } catch (_) {}
   }
 
   Future<void> addToPartyQueue(Track track) async {
@@ -626,6 +713,24 @@ class PartyService extends ChangeNotifier {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
+    } catch (_) {}
+
+    // Cloud Firestore queue append
+    try {
+      final item = {
+        'id': track.id,
+        'title': track.title,
+        'artist': track.artist,
+        'thumbnail': track.artworkUrl,
+        'duration': track.duration.inSeconds,
+        'added_by': account.id,
+        'added_by_name': account.name,
+        'votes': 1,
+        'voted_members': [account.id],
+      };
+      FirebaseFirestore.instance.collection('jam_rooms').doc(_currentRoomCode!).update({
+        'queue': FieldValue.arrayUnion([item]),
+      });
     } catch (_) {}
   }
 
@@ -693,6 +798,36 @@ class PartyService extends ChangeNotifier {
       await http.post(
         Uri.parse('$baseUrl/api/party/$_currentRoomCode/skip?sender_id=${account.id}'),
       );
+    } catch (_) {}
+
+    // Cloud Firestore skip
+    try {
+      if (_partyQueue.isNotEmpty) {
+        final next = _partyQueue.first;
+        FirebaseFirestore.instance.collection('jam_rooms').doc(_currentRoomCode!).update({
+          'current_track': {
+            'id': next.track.id,
+            'title': next.track.title,
+            'artist': next.track.artist,
+            'thumbnail': next.track.artworkUrl,
+            'duration': next.track.duration.inSeconds,
+          },
+          'position_ms': 0,
+          'is_playing': true,
+          'server_timestamp_ms': DateTime.now().millisecondsSinceEpoch,
+          'queue': _partyQueue.sublist(1).map((q) => {
+            'id': q.track.id,
+            'title': q.track.title,
+            'artist': q.track.artist,
+            'thumbnail': q.track.artworkUrl,
+            'duration': q.track.duration.inSeconds,
+            'added_by': q.addedBy,
+            'added_by_name': q.addedByName,
+            'votes': q.votes,
+            'voted_members': q.votedMembers,
+          }).toList(),
+        });
+      }
     } catch (_) {}
   }
 

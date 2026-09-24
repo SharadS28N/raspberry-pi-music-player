@@ -257,15 +257,15 @@ class _LyricsViewState extends State<LyricsView> {
                                   children: [
                                     const Icon(Icons.lyrics_outlined, color: Colors.white38, size: 48),
                                     const SizedBox(height: 16),
-                                    Text(
-                                      'No lyrics found for "${track.title}"',
-                                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                    const Text(
+                                      'Can\'t find lyrics',
+                                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                                       textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 8),
-                                    const Text(
-                                      'Lyrics will update automatically as community databases synchronize.',
-                                      style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                                    Text(
+                                      'No verified lyrics available for "${track.title}" by ${track.artist}',
+                                      style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
                                       textAlign: TextAlign.center,
                                     ),
                                   ],

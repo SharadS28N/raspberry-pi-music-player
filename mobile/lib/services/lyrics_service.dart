@@ -58,7 +58,42 @@ class LyricsService {
         .replaceAll(RegExp(r'video.*', caseSensitive: false), '')
         .replaceAll(RegExp(r'audio.*', caseSensitive: false), '')
         .replaceAll(RegExp(r'remaster(ed)?.*', caseSensitive: false), '')
+        .replaceAll(RegExp(r'4k|hd|music video|lyric video', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+  }
+
+  bool _isCandidateMatch(String queriedTitle, String queriedArtist, String? candidateTitle, String? candidateArtist) {
+    if (candidateTitle == null || candidateTitle.isEmpty) return false;
+    final cTitle = _cleanQuery(candidateTitle).toLowerCase();
+    final qTitle = _cleanQuery(queriedTitle).toLowerCase();
+    if (cTitle.isEmpty || qTitle.isEmpty) return false;
+
+    // Check if title has significant overlap
+    final qWords = qTitle.split(' ').where((w) => w.length > 2).toList();
+    final cWords = cTitle.split(' ').where((w) => w.length > 2).toList();
+    bool titleMatch = cTitle.contains(qTitle) || qTitle.contains(cTitle);
+    if (!titleMatch && qWords.isNotEmpty && cWords.isNotEmpty) {
+      final matches = qWords.where((w) => cWords.contains(w)).length;
+      if (matches >= (qWords.length / 2).ceil()) {
+        titleMatch = true;
+      }
+    }
+    if (!titleMatch) return false;
+
+    // Check artist if provided
+    if (queriedArtist.isNotEmpty && candidateArtist != null && candidateArtist.isNotEmpty) {
+      final cArtist = _cleanQuery(candidateArtist).toLowerCase();
+      final qArtist = _cleanQuery(queriedArtist).toLowerCase();
+      if (!cArtist.contains(qArtist) && !qArtist.contains(cArtist)) {
+        final qFirst = qArtist.split(RegExp(r'[,&/\s]+')).firstOrNull ?? '';
+        final cFirst = cArtist.split(RegExp(r'[,&/\s]+')).firstOrNull ?? '';
+        if (qFirst.length > 3 && cFirst.length > 3 && qFirst != cFirst) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   List<SyncedLine> _parseLrc(String lrcContent) {
@@ -142,7 +177,7 @@ class LyricsService {
     final cleanTitle = _cleanQuery(title);
     final cleanArtist = _cleanQuery(artist);
 
-    // 1. Query LRCLIB API
+    // 1. Query LRCLIB API direct get
     try {
       final uri = Uri.parse(
         'https://lrclib.net/api/get?track_name=${Uri.encodeComponent(cleanTitle)}&artist_name=${Uri.encodeComponent(cleanArtist)}',
@@ -151,52 +186,57 @@ class LyricsService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final syncedStr = data['syncedLyrics'] as String?;
-        final plainStr = data['plainLyrics'] as String?;
+        final trackName = data['trackName'] as String?;
+        final artistName = data['artistName'] as String?;
 
-        if (syncedStr != null && syncedStr.isNotEmpty) {
-          final parsed = _parseLrc(syncedStr);
-          if (parsed.isNotEmpty) {
+        if (_isCandidateMatch(title, artist, trackName, artistName)) {
+          final syncedStr = data['syncedLyrics'] as String?;
+          final plainStr = data['plainLyrics'] as String?;
+
+          if (syncedStr != null && syncedStr.isNotEmpty) {
+            final parsed = _parseLrc(syncedStr);
+            if (parsed.isNotEmpty) {
+              final res = LyricsData(
+                trackName: trackName,
+                artistName: artistName,
+                lines: parsed,
+                plainLyrics: plainStr,
+                isSynced: true,
+                hasTranslations: parsed.any((l) => l.translation != null),
+              );
+              _cache[cacheKey] = res;
+              return res;
+            }
+          }
+
+          if (plainStr != null && plainStr.isNotEmpty) {
+            final plainLines = plainStr
+                .split('\n')
+                .map((l) => l.trim())
+                .where((l) => l.isNotEmpty)
+                .toList();
+            final lines = <SyncedLine>[];
+            for (int i = 0; i < plainLines.length; i++) {
+              lines.add(SyncedLine(
+                timestamp: Duration(seconds: i * 5),
+                text: plainLines[i],
+              ));
+            }
             final res = LyricsData(
-              trackName: data['trackName'] as String?,
-              artistName: data['artistName'] as String?,
-              lines: parsed,
+              trackName: trackName,
+              artistName: artistName,
+              lines: lines,
               plainLyrics: plainStr,
-              isSynced: true,
-              hasTranslations: parsed.any((l) => l.translation != null),
+              isSynced: false,
             );
             _cache[cacheKey] = res;
             return res;
           }
         }
-
-        if (plainStr != null && plainStr.isNotEmpty) {
-          final plainLines = plainStr
-              .split('\n')
-              .map((l) => l.trim())
-              .where((l) => l.isNotEmpty)
-              .toList();
-          final lines = <SyncedLine>[];
-          for (int i = 0; i < plainLines.length; i++) {
-            lines.add(SyncedLine(
-              timestamp: Duration(seconds: i * 5),
-              text: plainLines[i],
-            ));
-          }
-          final res = LyricsData(
-            trackName: data['trackName'] as String?,
-            artistName: data['artistName'] as String?,
-            lines: lines,
-            plainLyrics: plainStr,
-            isSynced: false,
-          );
-          _cache[cacheKey] = res;
-          return res;
-        }
       }
     } catch (_) {}
 
-    // Fallback: Search endpoint
+    // 2. Fallback: Search endpoint with candidate validation
     try {
       final searchUri = Uri.parse(
         'https://lrclib.net/api/search?q=${Uri.encodeComponent('$cleanTitle $cleanArtist')}',
@@ -204,21 +244,48 @@ class LyricsService {
       final response = await _client.get(searchUri).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final list = jsonDecode(response.body) as List<dynamic>;
-        if (list.isNotEmpty) {
-          final first = list.first as Map<String, dynamic>;
-          final syncedStr = first['syncedLyrics'] as String?;
-          final plainStr = first['plainLyrics'] as String?;
+        for (var item in list) {
+          final candidate = item as Map<String, dynamic>;
+          final cTrackName = candidate['trackName'] as String?;
+          final cArtistName = candidate['artistName'] as String?;
 
-          if (syncedStr != null && syncedStr.isNotEmpty) {
-            final parsed = _parseLrc(syncedStr);
-            if (parsed.isNotEmpty) {
+          if (_isCandidateMatch(title, artist, cTrackName, cArtistName)) {
+            final syncedStr = candidate['syncedLyrics'] as String?;
+            final plainStr = candidate['plainLyrics'] as String?;
+
+            if (syncedStr != null && syncedStr.isNotEmpty) {
+              final parsed = _parseLrc(syncedStr);
+              if (parsed.isNotEmpty) {
+                final res = LyricsData(
+                  trackName: cTrackName,
+                  artistName: cArtistName,
+                  lines: parsed,
+                  plainLyrics: plainStr,
+                  isSynced: true,
+                  hasTranslations: parsed.any((l) => l.translation != null),
+                );
+                _cache[cacheKey] = res;
+                return res;
+              }
+            } else if (plainStr != null && plainStr.isNotEmpty) {
+              final plainLines = plainStr
+                  .split('\n')
+                  .map((l) => l.trim())
+                  .where((l) => l.isNotEmpty)
+                  .toList();
+              final lines = <SyncedLine>[];
+              for (int i = 0; i < plainLines.length; i++) {
+                lines.add(SyncedLine(
+                  timestamp: Duration(seconds: i * 5),
+                  text: plainLines[i],
+                ));
+              }
               final res = LyricsData(
-                trackName: first['trackName'] as String?,
-                artistName: first['artistName'] as String?,
-                lines: parsed,
+                trackName: cTrackName,
+                artistName: cArtistName,
+                lines: lines,
                 plainLyrics: plainStr,
-                isSynced: true,
-                hasTranslations: parsed.any((l) => l.translation != null),
+                isSynced: false,
               );
               _cache[cacheKey] = res;
               return res;

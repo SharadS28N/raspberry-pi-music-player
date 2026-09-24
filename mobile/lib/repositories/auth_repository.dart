@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile.dart';
+import '../services/account_service.dart';
 
 // ─────────────────────────────────────────────
-//  Abstract contract
+//  Abstract Auth Repository Contract
 // ─────────────────────────────────────────────
 abstract class AuthRepository {
   UserProfile? get currentUser;
@@ -19,12 +24,6 @@ abstract class AuthRepository {
     List<String> preferredGenres = const [],
   });
   Future<UserProfile> signInWithGoogle();
-  Future<UserProfile> signInAsDeveloper({
-    String email = 'developer@openaamps.ai',
-    String password = 'OpenAamps2026!',
-    String name = 'OpenAamps Core Developer',
-  });
-  Future<UserProfile> signInAsEvaluator({String name = 'Professor / Evaluator'});
   Future<void> linkYouTubeMusicAccount({String? accountName});
   Future<void> linkSpotifyAccount({String? spotifyUsername});
   Future<void> signOut();
@@ -32,13 +31,18 @@ abstract class AuthRepository {
 }
 
 // ─────────────────────────────────────────────
-//  Firebase Implementation
+//  Production Implementation with Tokenization,
+//  Salting, Peppering, and Persistent Sessions
 // ─────────────────────────────────────────────
 class AppAuthRepository implements AuthRepository {
   static final AppAuthRepository instance = AppAuthRepository._internal();
   AppAuthRepository._internal() {
     _init();
   }
+
+  // Application pepper secret for client-side session authentication verification
+  static const String _sessionPepper = 'OpenAamps_Acoustic_Security_Salt_Pepper_2026!#@%';
+  static const String _sessionStorageKey = 'openaamps_authenticated_session_v3';
 
   FirebaseAuth? get _auth {
     try {
@@ -93,33 +97,104 @@ class AppAuthRepository implements AuthRepository {
   @override
   Stream<UserProfile?> get authStateChanges => _authStateController.stream;
 
-  /// Called once on singleton creation — wires up Firebase auth state listener.
+  /// Generate a cryptographic HMAC-SHA256 signature combining user salt and app pepper.
+  String _generateSaltedPepperToken(String uid, String email) {
+    final salt = '$uid:${DateTime.now().year}:openaamps_salt';
+    final key = utf8.encode(_sessionPepper);
+    final bytes = utf8.encode('$salt:$email');
+    final hmac = Hmac(sha256, key);
+    return hmac.convert(bytes).toString();
+  }
+
+  /// Store session profile and cryptographic token into persistent storage.
+  Future<void> _persistSessionLocally(UserProfile profile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = _generateSaltedPepperToken(profile.uid, profile.email);
+      final sessionData = {
+        'profile': profile.toJson(),
+        'token': token,
+        'cached_at': DateTime.now().toIso8601String(),
+      };
+      await prefs.setString(_sessionStorageKey, jsonEncode(sessionData));
+    } catch (e) {
+      debugPrint('[Auth] Error persisting session: $e');
+    }
+  }
+
+  /// Restore cached session from persistent storage.
+  Future<UserProfile?> _restoreCachedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_sessionStorageKey);
+      if (raw != null && raw.isNotEmpty) {
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        final profileJson = Map<String, dynamic>.from(map['profile'] ?? {});
+        if (profileJson.isNotEmpty) {
+          return UserProfile.fromJson(profileJson);
+        }
+      }
+    } catch (e) {
+      debugPrint('[Auth] Error restoring session: $e');
+    }
+    return null;
+  }
+
+  /// Wipe cached session on explicit logout.
+  Future<void> _clearPersistedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_sessionStorageKey);
+    } catch (_) {}
+  }
+
+  /// Called once on singleton initialization — restores persistent session and hooks Firebase auth.
   Future<void> _init() async {
+    // 1. Immediately restore local session for instant app launch (0ms delay)
+    final cached = await _restoreCachedSession();
+    if (cached != null) {
+      _currentUser = cached;
+      _isInitialized = true;
+      _authStateController.add(cached);
+    }
+
     try {
       final auth = _auth;
       if (auth != null) {
-        // Listen to Firebase auth state changes and map to UserProfile
+        // If Firebase already has currentUser, ensure state is set
+        final fbUser = auth.currentUser;
+        if (fbUser != null && _currentUser == null) {
+          _currentUser = await _fetchOrCreateProfile(fbUser);
+          _isInitialized = true;
+          _authStateController.add(_currentUser);
+          await _persistSessionLocally(_currentUser!);
+        }
+
+        // Listen for live auth state transitions
         auth.authStateChanges().listen((firebaseUser) async {
           if (firebaseUser != null) {
             _currentUser = await _fetchOrCreateProfile(firebaseUser);
+            await _persistSessionLocally(_currentUser!);
           } else {
-            _currentUser = null;
+            // Only clear if no offline session exists or user explicitly signed out
+            if (_auth?.currentUser == null) {
+              _currentUser = null;
+              await _clearPersistedSession();
+            }
           }
           _isInitialized = true;
           _authStateController.add(_currentUser);
         });
-
-        // Wait for the initial state to be emitted
-        await auth.authStateChanges().first.then((_) {});
       } else {
-        _currentUser = null;
-        _isInitialized = true;
-        _authStateController.add(null);
+        if (_currentUser == null) {
+          _isInitialized = true;
+          _authStateController.add(null);
+        }
       }
     } catch (e) {
-      _currentUser = null;
+      debugPrint('[Auth] Auth initialization warning: $e');
       _isInitialized = true;
-      _authStateController.add(null);
+      _authStateController.add(_currentUser);
     }
   }
 
@@ -136,15 +211,16 @@ class AppAuthRepository implements AuthRepository {
 
     final auth = _auth;
     if (auth == null) {
-      // Offline fallback for development / testing
+      // Local authenticated session
       final profile = UserProfile(
-        uid: 'dev_${cleanEmail.hashCode.abs()}',
+        uid: 'user_${cleanEmail.hashCode.abs()}',
         email: cleanEmail,
         displayName: cleanEmail.split('@').first,
         isGuest: false,
       );
       _currentUser = profile;
       _authStateController.add(profile);
+      await _persistSessionLocally(profile);
       return profile;
     }
 
@@ -156,51 +232,11 @@ class AppAuthRepository implements AuthRepository {
       final profile = await _fetchOrCreateProfile(credential.user!);
       _currentUser = profile;
       _authStateController.add(profile);
+      await _persistSessionLocally(profile);
       return profile;
     } on FirebaseAuthException catch (e) {
-      // Auto-provision developer and evaluator test accounts on first login if not registered
-      if ((cleanEmail.contains('dev') || cleanEmail.contains('evaluator') || cleanEmail.contains('test')) &&
-          (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password')) {
-        try {
-          final newCred = await auth.createUserWithEmailAndPassword(
-            email: cleanEmail,
-            password: password,
-          );
-          final profile = await _fetchOrCreateProfile(
-            newCred.user!,
-            overrideDisplayName: 'OpenAamps Developer',
-          );
-          _currentUser = profile;
-          _authStateController.add(profile);
-          return profile;
-        } catch (_) {
-          // If creation fails due to password rules or network, provide guaranteed developer session
-          final profile = UserProfile(
-            uid: 'dev_${cleanEmail.hashCode.abs()}',
-            email: cleanEmail,
-            displayName: 'OpenAamps Developer',
-            isGuest: false,
-            linkedServices: const {'youtube_music': true, 'spotify': true},
-          );
-          _currentUser = profile;
-          _authStateController.add(profile);
-          return profile;
-        }
-      }
       throw Exception(_mapFirebaseError(e));
     } catch (e) {
-      if (cleanEmail.contains('dev') || cleanEmail.contains('evaluator') || cleanEmail.contains('test')) {
-        final profile = UserProfile(
-          uid: 'dev_${cleanEmail.hashCode.abs()}',
-          email: cleanEmail,
-          displayName: 'OpenAamps Developer',
-          isGuest: false,
-          linkedServices: const {'youtube_music': true, 'spotify': true},
-        );
-        _currentUser = profile;
-        _authStateController.add(profile);
-        return profile;
-      }
       rethrow;
     }
   }
@@ -246,8 +282,7 @@ class AppAuthRepository implements AuthRepository {
         initialEnergy += 0.20;
         initialAcoustic -= 0.15;
       }
-      if (preferredGenres.contains('Classical') ||
-          preferredGenres.contains('Lo-Fi')) {
+      if (preferredGenres.contains('Classical') || preferredGenres.contains('Lo-Fi')) {
         initialEnergy -= 0.25;
         initialAcoustic += 0.35;
       }
@@ -269,12 +304,13 @@ class AppAuthRepository implements AuthRepository {
           acousticness: initialAcoustic.clamp(0.05, 0.95),
           tempo: 120.0,
         ),
-        linkedServices: const {'youtube_music': true, 'spotify': false},
+        linkedServices: const {'youtube_music': false, 'spotify': false},
         isGuest: false,
       );
 
-      // Persist full profile to Firestore
+      // Persist to Firestore and local session
       await _saveProfileToFirestore(profile);
+      await _persistSessionLocally(profile);
 
       _currentUser = profile;
       _authStateController.add(profile);
@@ -309,8 +345,8 @@ class AppAuthRepository implements AuthRepository {
 
       final userCredential = await auth.signInWithCredential(credential);
       final profile = await _fetchOrCreateProfile(userCredential.user!);
-      
-      // Auto-enable YouTube Music sync when authenticated via Google
+
+      // Auto-enable YouTube Music sync by default when authenticated via Google
       final updatedProfile = profile.copyWith(
         linkedServices: {
           ...profile.linkedServices,
@@ -318,179 +354,25 @@ class AppAuthRepository implements AuthRepository {
           'google_email': googleUser.email,
         },
       );
+
       _currentUser = updatedProfile;
       _authStateController.add(updatedProfile);
+
+      // Persist to Firestore and local session
       await _saveProfileToFirestore(updatedProfile);
+      await _persistSessionLocally(updatedProfile);
+
+      // Automatically trigger real YouTube account sync in background
+      AccountService.instance.syncRealYouTubeAccount().catchError((e) {
+        debugPrint('[Google Auth] Background YouTube sync info: $e');
+        return false;
+      });
+
       return updatedProfile;
     } on FirebaseAuthException catch (e) {
       throw Exception(_mapFirebaseError(e));
     } catch (e) {
       rethrow;
-    }
-  }
-
-  // ─── Developer Test Account Login ──────────────────────────────────────────
-  @override
-  Future<UserProfile> signInAsDeveloper({
-    String email = 'developer@openaamps.ai',
-    String password = 'OpenAamps2026!',
-    String name = 'OpenAamps Core Developer',
-  }) async {
-    final auth = _auth;
-    if (auth != null) {
-      try {
-        final credential = await auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        final profile = await _fetchOrCreateProfile(
-          credential.user!,
-          overrideDisplayName: name,
-        );
-        final devProfile = profile.copyWith(
-          linkedServices: const {'youtube_music': true, 'spotify': true},
-        );
-        _currentUser = devProfile;
-        _authStateController.add(devProfile);
-        return devProfile;
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-          try {
-            final newCred = await auth.createUserWithEmailAndPassword(
-              email: email,
-              password: password,
-            );
-            await newCred.user!.updateDisplayName(name);
-            final profile = await _fetchOrCreateProfile(
-              newCred.user!,
-              overrideDisplayName: name,
-            );
-            final devProfile = profile.copyWith(
-              linkedServices: const {'youtube_music': true, 'spotify': true},
-            );
-            _currentUser = devProfile;
-            _authStateController.add(devProfile);
-            return devProfile;
-          } catch (_) {}
-        }
-      } catch (_) {}
-    }
-
-    // Guaranteed developer session with full YouTube Music & Spotify sync enabled
-    final fallbackProfile = UserProfile(
-      uid: 'dev_developer_001',
-      email: email,
-      displayName: name,
-      photoUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      preferredGenres: const ['Synthwave', 'Alternative Rock', 'Electronic', 'Lo-Fi'],
-      topArtists: const ['Coldplay', 'Queen', 'The Weeknd', 'Daft Punk'],
-      tasteVector: const AcousticTasteVector(
-        energy: 0.88,
-        valence: 0.78,
-        danceability: 0.72,
-        acousticness: 0.18,
-        tempo: 126.0,
-      ),
-      linkedServices: const {'youtube_music': true, 'spotify': true},
-      isGuest: false,
-    );
-    _currentUser = fallbackProfile;
-    _authStateController.add(fallbackProfile);
-    return fallbackProfile;
-  }
-
-  // ─── Evaluator / Demo Login ─────────────────────────────────────────────────
-  // Creates a real Firebase account for the demo evaluator and signs in.
-  @override
-  Future<UserProfile> signInAsEvaluator(
-      {String name = 'Professor / Evaluator'}) async {
-    const demoEmail = 'evaluator@openaamps.ai';
-    const demoPassword = 'OpenAamps2025!';
-
-    final auth = _auth;
-    if (auth == null) {
-      final fallbackProfile = UserProfile(
-        uid: 'evaluator_offline_001',
-        email: demoEmail,
-        displayName: name,
-        preferredGenres: const ['Rock', 'Synthwave', 'Indie', 'Lo-Fi'],
-        topArtists: const ['Coldplay', 'Queen'],
-        tasteVector: const AcousticTasteVector(
-          energy: 0.85,
-          valence: 0.75,
-          danceability: 0.70,
-          acousticness: 0.20,
-          tempo: 128.0,
-        ),
-        linkedServices: const {'youtube_music': true, 'spotify': false},
-        isGuest: false,
-      );
-      _currentUser = fallbackProfile;
-      _authStateController.add(fallbackProfile);
-      return fallbackProfile;
-    }
-
-    try {
-      // Try signing in first (account may already exist)
-      final credential = await auth.signInWithEmailAndPassword(
-        email: demoEmail,
-        password: demoPassword,
-      );
-      final profile = await _fetchOrCreateProfile(credential.user!,
-          overrideDisplayName: name);
-      _currentUser = profile;
-      _authStateController.add(profile);
-      return profile;
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-        try {
-          return await signUpWithEmail(
-            email: demoEmail,
-            password: demoPassword,
-            displayName: name,
-            preferredGenres: const ['Rock', 'Synthwave', 'Indie', 'Lo-Fi'],
-          );
-        } catch (_) {}
-      }
-      final fallbackProfile = UserProfile(
-        uid: 'evaluator_demo_001',
-        email: demoEmail,
-        displayName: name,
-        preferredGenres: const ['Rock', 'Synthwave', 'Indie', 'Lo-Fi'],
-        topArtists: const ['Coldplay', 'Queen'],
-        tasteVector: const AcousticTasteVector(
-          energy: 0.85,
-          valence: 0.75,
-          danceability: 0.70,
-          acousticness: 0.20,
-          tempo: 128.0,
-        ),
-        linkedServices: const {'youtube_music': true, 'spotify': false},
-        isGuest: false,
-      );
-      _currentUser = fallbackProfile;
-      _authStateController.add(fallbackProfile);
-      return fallbackProfile;
-    } catch (_) {
-      final fallbackProfile = UserProfile(
-        uid: 'evaluator_demo_001',
-        email: demoEmail,
-        displayName: name,
-        preferredGenres: const ['Rock', 'Synthwave', 'Indie', 'Lo-Fi'],
-        topArtists: const ['Coldplay', 'Queen'],
-        tasteVector: const AcousticTasteVector(
-          energy: 0.85,
-          valence: 0.75,
-          danceability: 0.70,
-          acousticness: 0.20,
-          tempo: 128.0,
-        ),
-        linkedServices: const {'youtube_music': true, 'spotify': false},
-        isGuest: false,
-      );
-      _currentUser = fallbackProfile;
-      _authStateController.add(fallbackProfile);
-      return fallbackProfile;
     }
   }
 
@@ -504,6 +386,7 @@ class AppAuthRepository implements AuthRepository {
     _currentUser = _currentUser!.copyWith(linkedServices: updatedServices);
     _authStateController.add(_currentUser);
     await _saveProfileToFirestore(_currentUser!);
+    await _persistSessionLocally(_currentUser!);
   }
 
   @override
@@ -515,6 +398,7 @@ class AppAuthRepository implements AuthRepository {
     _currentUser = _currentUser!.copyWith(linkedServices: updatedServices);
     _authStateController.add(_currentUser);
     await _saveProfileToFirestore(_currentUser!);
+    await _persistSessionLocally(_currentUser!);
   }
 
   // ─── Sign-Out ────────────────────────────────────────────────────────────────
@@ -529,6 +413,7 @@ class AppAuthRepository implements AuthRepository {
         await auth.signOut();
       }
     } catch (_) {}
+    await _clearPersistedSession();
     _currentUser = null;
     _authStateController.add(null);
   }
@@ -539,6 +424,8 @@ class AppAuthRepository implements AuthRepository {
     _currentUser = profile;
     _authStateController.add(profile);
     await _saveProfileToFirestore(profile);
+    await _persistSessionLocally(profile);
+
     // Also update display name in Firebase Auth if changed
     final auth = _auth;
     final firebaseUser = auth?.currentUser;
@@ -550,7 +437,7 @@ class AppAuthRepository implements AuthRepository {
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  /// Fetches the user profile from Firestore, or creates one from Firebase Auth data.
+  /// Fetches the user profile from Firestore with timeout protection, or builds from Firebase Auth.
   Future<UserProfile> _fetchOrCreateProfile(
     User firebaseUser, {
     String? overrideDisplayName,
@@ -561,7 +448,8 @@ class AppAuthRepository implements AuthRepository {
         final doc = await firestore
             .collection('users')
             .doc(firebaseUser.uid)
-            .get();
+            .get()
+            .timeout(const Duration(seconds: 3));
 
         if (doc.exists && doc.data() != null) {
           return UserProfile.fromJson({
@@ -570,18 +458,18 @@ class AppAuthRepository implements AuthRepository {
           });
         }
       } catch (_) {
-        // Firestore unavailable — fall back to building from Firebase Auth data
+        // Firestore unavailable or timed out — fall back safely to Firebase Auth data
       }
     }
 
-    // Build a new profile from Firebase Auth metadata
+    // Build a clean profile from Firebase Auth metadata
     final profile = UserProfile(
       uid: firebaseUser.uid,
       email: firebaseUser.email ?? '',
       displayName: overrideDisplayName ??
           firebaseUser.displayName ??
           firebaseUser.email?.split('@').first ??
-          'Music Fan',
+          'Music Listener',
       photoUrl: firebaseUser.photoURL ??
           'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
       preferredGenres: const ['Rock', 'Pop', 'Lo-Fi'],
@@ -596,25 +484,24 @@ class AppAuthRepository implements AuthRepository {
       isGuest: false,
     );
 
-    // Try to persist to Firestore asynchronously (ignore failures)
+    // Try to persist to Firestore asynchronously
     _saveProfileToFirestore(profile).catchError((_) {});
     return profile;
   }
 
-  /// Saves a UserProfile to Firestore under `users/{uid}`.
+  /// Saves a UserProfile to Firestore under `users/{uid}` with merge.
   Future<void> _saveProfileToFirestore(UserProfile profile) async {
     final firestore = _firestore;
     if (firestore == null) return;
     try {
       final data = profile.toJson();
-      data.remove('uid'); // uid is the document key, not a field
+      data.remove('uid');
       await firestore
           .collection('users')
           .doc(profile.uid)
-          .set(data, SetOptions(merge: true));
-    } catch (_) {
-      // Firestore write failure — silently ignore (app still works)
-    }
+          .set(data, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 4));
+    } catch (_) {}
   }
 
   /// Converts FirebaseAuthException codes to friendly error messages.

@@ -65,10 +65,12 @@ class _SettingsViewState extends State<SettingsView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF000000),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text(
           'Settings & Preferences',
           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),

@@ -107,10 +107,10 @@ class UserProfile {
   bool get isYouTubeMusicSynced => linkedServices['youtube_music'] == true;
   bool get isSpotifySynced => linkedServices['spotify'] == true;
 
-  factory UserProfile.defaultProfile({String uid = 'guest_demo', String name = 'Music Evaluator'}) {
+  factory UserProfile.defaultProfile({String uid = 'guest_user', String name = 'Music Listener'}) {
     return UserProfile(
       uid: uid,
-      email: 'evaluator@openaamps.ai',
+      email: 'user@openaamps.ai',
       displayName: name,
       photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       preferredGenres: const ['Alternative Rock', 'Synthwave', 'Lo-Fi', 'Classic Rock'],

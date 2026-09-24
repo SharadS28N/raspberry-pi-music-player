@@ -17,9 +17,9 @@ import 'views/auth/auth_gate.dart';
 import 'views/home_view.dart';
 import 'views/search_view.dart';
 import 'views/player_view.dart';
-import 'views/pi_hub_view.dart';
 import 'views/library_view.dart';
-import 'views/ai/ai_assistant_view.dart';
+import 'views/party_view.dart';
+import 'views/settings_view.dart';
 import 'widgets/now_playing_bar.dart';
 
 Future<void> main() async {
@@ -155,18 +155,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onPlayTrack: _onPlayTrack,
         audioService: _audioService,
       ),
+      PartyView(audioService: _audioService),
       SearchView(onPlayTrack: _onPlayTrack),
-      AiAssistantView(
-        audioService: _audioService,
-        onPlayTrack: _onPlayTrack,
-      ),
       LibraryView(
         accountService: AccountService.instance,
         localAudioService: LocalAudioService(),
         onPlayTrack: _onPlayTrack,
         audioService: _audioService,
       ),
-      PiHubView(piService: _audioService.piService),
+      SettingsView(audioService: _audioService),
     ];
 
     return ListenableBuilder(
@@ -238,14 +235,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   label: 'Home',
                 ),
                 NavigationDestination(
+                  icon: const Icon(Icons.groups_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.groups_rounded, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'Jam Session',
+                ),
+                NavigationDestination(
                   icon: const Icon(Icons.search_outlined, color: Colors.white60),
                   selectedIcon: Icon(Icons.search_rounded, color: accent == Colors.white ? Colors.white : accent),
                   label: 'Search',
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.auto_awesome_outlined, color: Colors.white60),
-                  selectedIcon: Icon(Icons.auto_awesome, color: accent == Colors.white ? Colors.white : accent),
-                  label: 'AI Studio',
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.library_music_outlined, color: Colors.white60),
@@ -253,9 +250,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   label: 'Library',
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.radio_outlined, color: Colors.white60),
-                  selectedIcon: Icon(Icons.radio_rounded, color: accent == Colors.white ? Colors.white : accent),
-                  label: 'pi-aamps',
+                  icon: const Icon(Icons.settings_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.settings_rounded, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'Settings',
                 ),
               ],
             ),

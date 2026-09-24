@@ -66,22 +66,22 @@ void main() {
     });
   });
 
-  group('Authentication Repository & Evaluator Demo Verification', () {
-    test('AppAuthRepository provides initial auth state stream and singleton', () {
+  group('Authentication Repository & Production Session Verification', () {
+    test('AppAuthRepository provides initial auth state stream and singleton', () async {
       final repo = AppAuthRepository.instance;
       expect(repo, isNotNull);
+      await Future.delayed(const Duration(milliseconds: 50));
       expect(repo.isInitialized, isTrue);
     });
 
-    test('Sign in as Evaluator creates a functional session without network dependency', () async {
+    test('Sign in with valid email creates an authenticated session with token and profile', () async {
       final repo = AppAuthRepository.instance;
-      final profile = await repo.signInAsEvaluator(name: 'Professor Smith');
+      final profile = await repo.signInWithEmail('listener@openaamps.ai', 'SecurePassword123!');
 
       expect(profile, isNotNull);
-      expect(profile.displayName, equals('Professor Smith'));
-      expect(profile.email, equals('evaluator@openaamps.ai'));
+      expect(profile.email, equals('listener@openaamps.ai'));
       expect(repo.currentUser, isNotNull);
-      expect(repo.currentUser!.displayName, equals('Professor Smith'));
+      expect(repo.currentUser!.email, equals('listener@openaamps.ai'));
     });
 
     test('Sign in with invalid email throws descriptive validation error', () async {
