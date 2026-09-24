@@ -136,6 +136,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final track = widget.audioService.currentTrack ?? widget.track;
+    final accent = SettingsService.instance.accentColor;
 
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
@@ -377,12 +378,12 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                   return Column(
                     children: [
                       SliderTheme(
-                        data: const SliderThemeData(
+                        data: SliderThemeData(
                           trackHeight: 3.5,
-                          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
-                          activeTrackColor: Colors.white,
-                          inactiveTrackColor: Color(0xFF27272A),
-                          thumbColor: Colors.white,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          activeTrackColor: accent,
+                          inactiveTrackColor: const Color(0xFF27272A),
+                          thumbColor: accent,
                         ),
                         child: Slider(
                           value: currentSec,
@@ -501,7 +502,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                   IconButton(
                     icon: Icon(
                       Icons.shuffle_rounded,
-                      color: _isShuffle ? Colors.white : Colors.white38,
+                      color: _isShuffle ? accent : Colors.white38,
                       size: 24,
                     ),
                     tooltip: _isShuffle ? 'Shuffle On' : 'Shuffle Off',
@@ -532,7 +533,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                         widget.audioService.pause();
                       } else {
                         if (widget.audioService.player.audioSource == null) {
-                          widget.audioService.playTrack(track);
+                           widget.audioService.playTrack(track);
                         } else {
                           widget.audioService.resume(fallbackTrack: track);
                         }
@@ -541,22 +542,32 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                     child: Container(
                       width: 64,
                       height: 64,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: accent,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.35),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
                       child: Center(
                         child: (widget.audioService.isLoading && !_isPlaying && !widget.audioService.player.playing)
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 24,
                                 height: 24,
-                                child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5),
+                                child: CircularProgressIndicator(
+                                  color: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
                               )
                             : Icon(
                                 (_isPlaying || widget.audioService.player.playing)
                                      ? Icons.pause_rounded
                                      : Icons.play_arrow_rounded,
-                                color: Colors.black,
+                                color: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
                                 size: 38,
                               ),
                       ),
@@ -577,7 +588,7 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
                       _loopMode == LoopMode.one
                           ? Icons.repeat_one_rounded
                           : Icons.repeat_rounded,
-                      color: _loopMode != LoopMode.off ? Colors.white : Colors.white38,
+                      color: _loopMode != LoopMode.off ? accent : Colors.white38,
                       size: 26,
                     ),
                     tooltip: _loopMode == LoopMode.off
@@ -610,18 +621,18 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 20),
 
-              // Volume Slider (Monochrome)
+              // Volume Slider (Dynamic Accent)
               Row(
                 children: [
                   const Icon(Icons.volume_mute_rounded, color: Color(0xFF71717A), size: 20),
                   Expanded(
                     child: SliderTheme(
-                      data: const SliderThemeData(
+                      data: SliderThemeData(
                         trackHeight: 3,
-                        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 5),
-                        activeTrackColor: Colors.white,
-                        inactiveTrackColor: Color(0xFF27272A),
-                        thumbColor: Colors.white,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                        activeTrackColor: accent,
+                        inactiveTrackColor: const Color(0xFF27272A),
+                        thumbColor: accent,
                       ),
                       child: Slider(
                         value: _volume,

@@ -6,6 +6,7 @@ import '../services/party_discovery_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/account_service.dart';
 import '../services/youtube_service.dart';
+import '../services/settings_service.dart';
 import '../widgets/app_alert.dart';
 
 class PartyView extends StatefulWidget {
@@ -168,72 +169,81 @@ class _PartyViewState extends State<PartyView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF000000),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF000000),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.speaker_group_rounded, color: Colors.white, size: 22),
-            SizedBox(width: 10),
-            Text('Music Party & Jam', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        actions: [
-          if (_party.isInParty)
-            IconButton(
-              icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
-              tooltip: 'Leave Party',
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: const Color(0xFF18181B),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: const Text('Leave Music Party?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    content: const Text('You will disconnect from this synchronized session. Your audio will pause locally.', style: TextStyle(color: Colors.white70)),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Leave'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await _party.leaveParty();
-                }
-              },
+    return ListenableBuilder(
+      listenable: SettingsService.instance,
+      builder: (context, _) {
+        final accent = SettingsService.instance.accentColor;
+        return Scaffold(
+          backgroundColor: const Color(0xFF000000),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF000000),
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
-        ],
-      ),
-      body: _party.isInParty ? _buildActivePartyView() : _buildLobbyView(),
+            title: Row(
+              children: [
+                Icon(Icons.speaker_group_rounded, color: accent, size: 22),
+                const SizedBox(width: 10),
+                const Text('Music Party & Jam', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            actions: [
+              if (_party.isInParty)
+                IconButton(
+                  icon: const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent),
+                  tooltip: 'Leave Party',
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: const Color(0xFF18181B),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: const Text('Leave Music Party?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        content: const Text('You will disconnect from this synchronized session. Your audio will pause locally.', style: TextStyle(color: Colors.white70)),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Leave'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await _party.leaveParty();
+                    }
+                  },
+                ),
+            ],
+          ),
+          body: _party.isInParty ? _buildActivePartyView(accent) : _buildLobbyView(accent),
+        );
+      },
     );
   }
 
   // --- 1. LOBBY VIEW (Not in party) ---
-  Widget _buildLobbyView() {
+  Widget _buildLobbyView(Color accent) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
         // Hero Card: How it works
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1E1E24), Color(0xFF121216)],
+            gradient: LinearGradient(
+              colors: [
+                accent.withValues(alpha: 0.12),
+                const Color(0xFF141416),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: accent.withValues(alpha: 0.25)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,18 +251,18 @@ class _PartyViewState extends State<PartyView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF22C55E).withValues(alpha: 0.15),
+                  color: accent.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(9999),
-                  border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.3)),
+                  border: Border.all(color: accent.withValues(alpha: 0.35)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.sync_rounded, color: Color(0xFF22C55E), size: 14),
-                    SizedBox(width: 6),
+                    Icon(Icons.sync_rounded, color: accent, size: 14),
+                    const SizedBox(width: 6),
                     Text(
                       'TIMESTAMP DRIFT SYNC ENGINE',
-                      style: TextStyle(color: Color(0xFF22C55E), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                      style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                     ),
                   ],
                 ),
@@ -264,7 +274,7 @@ class _PartyViewState extends State<PartyView> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Everyone uses their own phone and independent Bluetooth earbuds or AirPods. OpenAamps intelligently synchronizes playback position and collaborative queues over Wi-Fi.',
+                'Connect Bluetooth earbuds or phone speakers. OpenAamps synchronizes track playback and queue changes across all devices in real-time over Wi-Fi.',
                 style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13, height: 1.5),
               ),
             ],
@@ -279,7 +289,7 @@ class _PartyViewState extends State<PartyView> {
             decoration: BoxDecoration(
               color: const Color(0xFF141414),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.35)),
+              border: Border.all(color: accent.withValues(alpha: 0.35)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,16 +299,16 @@ class _PartyViewState extends State<PartyView> {
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF22C55E),
+                      decoration: BoxDecoration(
+                        color: accent,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'NEARBY PARTIES ON WI-FI',
                       style: TextStyle(
-                        color: Color(0xFF22C55E),
+                        color: accent,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
@@ -308,12 +318,12 @@ class _PartyViewState extends State<PartyView> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF22C55E).withValues(alpha: 0.15),
+                        color: accent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(9999),
                       ),
                       child: Text(
                         '${PartyDiscoveryService.instance.nearbyParties.length} ACTIVE',
-                        style: const TextStyle(color: Color(0xFF22C55E), fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -385,8 +395,8 @@ class _PartyViewState extends State<PartyView> {
                         const SizedBox(width: 8),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF22C55E),
-                            foregroundColor: Colors.black,
+                            backgroundColor: accent,
+                            foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
@@ -410,6 +420,32 @@ class _PartyViewState extends State<PartyView> {
             ),
           ),
           const SizedBox(height: 20),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF141414),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Listening for nearby Wi-Fi Jam Sessions...',
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
 
         // Action 1: Host a New Party
@@ -433,12 +469,19 @@ class _PartyViewState extends State<PartyView> {
                 height: 52,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: accent,
+                    foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: _party.isConnecting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.add_circle_rounded, size: 20),
                   label: Text(
                     _party.isConnecting ? 'Starting Party...' : 'Host a Music Party',
@@ -512,6 +555,7 @@ class _PartyViewState extends State<PartyView> {
                         filled: true,
                         fillColor: const Color(0xFF27272A),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: accent, width: 1.5)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                     ),
@@ -521,8 +565,8 @@ class _PartyViewState extends State<PartyView> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
+                        backgroundColor: accent,
+                        foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: _party.isConnecting
@@ -555,7 +599,7 @@ class _PartyViewState extends State<PartyView> {
   }
 
   // --- 2. ACTIVE PARTY VIEW (In party session) ---
-  Widget _buildActivePartyView() {
+  Widget _buildActivePartyView(Color accent) {
     final currentTrack = _party.partyCurrentTrack ?? _audio.currentTrack;
 
     return ListView(
@@ -599,13 +643,13 @@ class _PartyViewState extends State<PartyView> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.wifi_rounded, color: Color(0xFF22C55E), size: 14),
+                    Icon(Icons.wifi_rounded, color: accent, size: 14),
                     const SizedBox(width: 6),
                     Text(
                       _party.isHost
                           ? 'Hosting on Wi-Fi (${_party.activePartyBaseUrl!.replaceAll('http://', '')})'
                           : 'Host IP: ${_party.activePartyBaseUrl!.replaceAll('http://', '')}',
-                      style: const TextStyle(color: Color(0xFF22C55E), fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -619,20 +663,20 @@ class _PartyViewState extends State<PartyView> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withValues(alpha: 0.1),
+            color: accent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+            border: Border.all(color: accent.withValues(alpha: 0.25)),
           ),
           child: Row(
             children: [
-              Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: accent, shape: BoxShape.circle)),
               const SizedBox(width: 8),
               Text(
                 'Synchronized (${_party.driftMs}ms drift)',
-                style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 12),
               ),
               const Spacer(),
-              const Icon(Icons.headphones_rounded, color: Color(0xFF10B981), size: 16),
+              Icon(Icons.headphones_rounded, color: accent, size: 16),
               const SizedBox(width: 4),
               const Text('Local Audio Active', style: TextStyle(color: Colors.white70, fontSize: 11)),
             ],
@@ -658,8 +702,7 @@ class _PartyViewState extends State<PartyView> {
                 ),
                 Switch(
                   value: _party.allowCollaborativeDj,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: Colors.white38,
+                  activeColor: accent,
                   onChanged: (val) => _party.toggleCollaborativeDj(val),
                 ),
               ],
@@ -746,7 +789,7 @@ class _PartyViewState extends State<PartyView> {
                 ),
                 if (_party.canControlPlayback) ...[
                   IconButton(
-                    icon: Icon(_audio.player.playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, color: Colors.white, size: 38),
+                    icon: Icon(_audio.player.playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded, color: accent, size: 38),
                     onPressed: () {
                       if (_audio.player.playing) {
                         _audio.pause();
@@ -773,8 +816,8 @@ class _PartyViewState extends State<PartyView> {
           children: [
             Text('SHARED QUEUE (${_party.partyQueue.length})', style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
             TextButton.icon(
-              icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
-              label: const Text('Add Song', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+              icon: Icon(Icons.add_rounded, size: 16, color: accent),
+              label: Text('Add Song', style: TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 12)),
               onPressed: _showAddTrackSheet,
             ),
           ],
@@ -829,11 +872,11 @@ class _PartyViewState extends State<PartyView> {
                 subtitle: Text('${qItem.track.artist} • Added by ${qItem.addedByName}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 11)),
                 trailing: TextButton.icon(
                   style: TextButton.styleFrom(
-                    backgroundColor: hasVoted ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
+                    backgroundColor: hasVoted ? accent.withValues(alpha: 0.15) : Colors.transparent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
                   ),
-                  icon: Icon(Icons.thumb_up_alt_rounded, size: 16, color: hasVoted ? Colors.white : Colors.white54),
-                  label: Text('${qItem.votes}', style: TextStyle(color: hasVoted ? Colors.white : Colors.white54, fontWeight: FontWeight.bold)),
+                  icon: Icon(Icons.thumb_up_alt_rounded, size: 16, color: hasVoted ? accent : Colors.white54),
+                  label: Text('${qItem.votes}', style: TextStyle(color: hasVoted ? accent : Colors.white54, fontWeight: FontWeight.bold)),
                   onPressed: () => _party.voteQueueTrack(qItem.track.id),
                 ),
               );

@@ -3,6 +3,7 @@ import '../models/track.dart';
 import '../services/youtube_service.dart';
 import '../services/integration_service.dart';
 import 'music_recognition_view.dart';
+import '../services/settings_service.dart';
 import '../widgets/app_alert.dart';
 
 class SearchView extends StatefulWidget {
@@ -187,23 +188,28 @@ class _SearchViewState extends State<SearchView> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 16),
 
-              // Explore / Suggestions Tab Bar (Pure White indicator)
-              TabBar(
-                controller: _tabController,
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: const Color(0xFF71717A),
-                indicatorWeight: 2.5,
-                tabs: const [
-                  Tab(
-                    icon: Icon(Icons.explore_outlined, size: 20),
-                    text: 'Explore',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.auto_awesome_outlined, size: 20),
-                    text: 'Suggestions',
-                  ),
-                ],
+              // Explore / Suggestions Tab Bar (Dynamic Accent)
+              Builder(
+                builder: (context) {
+                  final accent = SettingsService.instance.accentColor;
+                  return TabBar(
+                    controller: _tabController,
+                    indicatorColor: accent,
+                    labelColor: accent == Colors.white ? Colors.white : accent,
+                    unselectedLabelColor: const Color(0xFF71717A),
+                    indicatorWeight: 2.5,
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.explore_outlined, size: 20),
+                        text: 'Explore',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.auto_awesome_outlined, size: 20),
+                        text: 'Suggestions',
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 

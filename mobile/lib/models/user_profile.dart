@@ -86,6 +86,7 @@ class UserProfile {
   final int totalTracksPlayed;
   final AcousticTasteVector tasteVector;
   final DateTime createdAt;
+  final Map<String, dynamic> linkedServices;
   final bool isGuest;
 
   UserProfile({
@@ -99,8 +100,12 @@ class UserProfile {
     this.totalTracksPlayed = 0,
     this.tasteVector = const AcousticTasteVector(),
     DateTime? createdAt,
+    this.linkedServices = const {'youtube_music': true, 'spotify': false},
     this.isGuest = false,
   }) : createdAt = createdAt ?? DateTime.now();
+
+  bool get isYouTubeMusicSynced => linkedServices['youtube_music'] == true;
+  bool get isSpotifySynced => linkedServices['spotify'] == true;
 
   factory UserProfile.defaultProfile({String uid = 'guest_demo', String name = 'Music Evaluator'}) {
     return UserProfile(
@@ -119,6 +124,7 @@ class UserProfile {
         acousticness: 0.28,
         tempo: 122.0,
       ),
+      linkedServices: const {'youtube_music': true, 'spotify': false},
       isGuest: true,
     );
   }
@@ -139,6 +145,9 @@ class UserProfile {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
           : DateTime.now(),
+      linkedServices: json['linked_services'] != null
+          ? Map<String, dynamic>.from(json['linked_services'])
+          : const {'youtube_music': true, 'spotify': false},
       isGuest: json['is_guest'] ?? false,
     );
   }
@@ -155,6 +164,7 @@ class UserProfile {
       'total_tracks_played': totalTracksPlayed,
       'taste_vector': tasteVector.toJson(),
       'created_at': createdAt.toIso8601String(),
+      'linked_services': linkedServices,
       'is_guest': isGuest,
     };
   }
@@ -170,6 +180,7 @@ class UserProfile {
     int? totalTracksPlayed,
     AcousticTasteVector? tasteVector,
     DateTime? createdAt,
+    Map<String, dynamic>? linkedServices,
     bool? isGuest,
   }) {
     return UserProfile(
@@ -183,6 +194,7 @@ class UserProfile {
       totalTracksPlayed: totalTracksPlayed ?? this.totalTracksPlayed,
       tasteVector: tasteVector ?? this.tasteVector,
       createdAt: createdAt ?? this.createdAt,
+      linkedServices: linkedServices ?? this.linkedServices,
       isGuest: isGuest ?? this.isGuest,
     );
   }

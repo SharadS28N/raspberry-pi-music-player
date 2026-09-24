@@ -169,91 +169,99 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       PiHubView(piService: _audioService.piService),
     ];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF000000),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 74.0),
-            child: IndexedStack(
-              index: _currentIndex,
-              children: screens,
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: NowPlayingBar(
-              track: _activeTrack,
-              audioService: _audioService,
-              isPlaying: _isPlaying,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PlayerView(
-                      track: _activeTrack,
-                      audioService: _audioService,
-                    ),
-                  ),
-                );
-              },
-              onPlayPause: () {
-                if (_isPlaying) {
-                  _audioService.pause();
-                } else {
-                  _audioService.resume(fallbackTrack: _activeTrack);
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF000000),
-          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 0.8)),
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
+    return ListenableBuilder(
+      listenable: SettingsService.instance,
+      builder: (context, _) {
+        final accent = SettingsService.instance.accentColor;
+        return Scaffold(
           backgroundColor: const Color(0xFF000000),
-          indicatorColor: Colors.white.withValues(alpha: 0.14),
-          elevation: 0,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined, color: Colors.white60),
-              selectedIcon: Icon(Icons.home_rounded, color: Colors.white),
-              label: 'Home',
+          body: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 74.0),
+                child: IndexedStack(
+                  index: _currentIndex,
+                  children: screens,
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: NowPlayingBar(
+                  track: _activeTrack,
+                  audioService: _audioService,
+                  isPlaying: _isPlaying,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlayerView(
+                          track: _activeTrack,
+                          audioService: _audioService,
+                        ),
+                      ),
+                    );
+                  },
+                  onPlayPause: () {
+                    if (_isPlaying) {
+                      _audioService.pause();
+                    } else {
+                      _audioService.resume(fallbackTrack: _activeTrack);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF000000),
+              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 0.8)),
             ),
-            NavigationDestination(
-              icon: Icon(Icons.search_outlined, color: Colors.white60),
-              selectedIcon: Icon(Icons.search_rounded, color: Colors.white),
-              label: 'Search',
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              backgroundColor: const Color(0xFF000000),
+              indicatorColor: accent == Colors.white
+                  ? Colors.white.withValues(alpha: 0.14)
+                  : accent.withValues(alpha: 0.22),
+              elevation: 0,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.home_rounded, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.search_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.search_rounded, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'Search',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.auto_awesome_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.auto_awesome, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'AI Studio',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.library_music_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.library_music_rounded, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'Library',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.radio_outlined, color: Colors.white60),
+                  selectedIcon: Icon(Icons.radio_rounded, color: accent == Colors.white ? Colors.white : accent),
+                  label: 'pi-aamps',
+                ),
+              ],
             ),
-            NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined, color: Colors.white60),
-              selectedIcon: Icon(Icons.auto_awesome, color: Colors.white),
-              label: 'AI Studio',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.library_music_outlined, color: Colors.white60),
-              selectedIcon: Icon(Icons.library_music_rounded, color: Colors.white),
-              label: 'Library',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.radio_outlined, color: Colors.white60),
-              selectedIcon: Icon(Icons.radio_rounded, color: Colors.white),
-              label: 'pi-aamps',
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

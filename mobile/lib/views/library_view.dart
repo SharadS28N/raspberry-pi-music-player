@@ -12,6 +12,7 @@ import 'settings_view.dart';
 import '../widgets/app_alert.dart';
 import '../widgets/equalizer_sheet.dart';
 import '../widgets/tag_editor_modal.dart';
+import '../services/settings_service.dart';
 import 'ai/ai_playlist_maker.dart';
 
 class LibraryView extends StatefulWidget {
@@ -400,16 +401,17 @@ class _LibraryViewState extends State<LibraryView> {
                 separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final isSelected = index == _selectedFilterIndex;
+                  final accent = SettingsService.instance.accentColor;
                   return ChoiceChip(
                     label: Text(
                       _filters[index],
                       style: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
+                        color: isSelected ? (accent.computeLuminance() > 0.5 ? Colors.black : Colors.white) : Colors.white,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     selected: isSelected,
-                    selectedColor: Colors.white,
+                    selectedColor: accent,
                     backgroundColor: const Color(0xFF141414),
                     showCheckmark: false,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -802,22 +802,23 @@ class _HomeViewState extends State<HomeView> {
                   itemBuilder: (context, index) {
                     final cat = _categories[index];
                     final isSelected = cat == _selectedCategory;
+                    final accent = SettingsService.instance.accentColor;
                     return ChoiceChip(
                       label: Text(
                         cat,
                         style: TextStyle(
-                          color: isSelected ? Colors.black : Colors.white,
+                          color: isSelected ? (accent.computeLuminance() > 0.5 ? Colors.black : Colors.white) : Colors.white,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                           fontSize: 13,
                         ),
                       ),
                       selected: isSelected,
-                      selectedColor: Colors.white,
+                      selectedColor: accent,
                       backgroundColor: const Color(0xFF141414),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
-                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.1),
+                          color: isSelected ? accent : Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                       onSelected: (selected) => _selectCategory(cat),
