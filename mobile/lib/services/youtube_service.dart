@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' hide Playlist;
 import '../models/track.dart';
+import '../models/playlist.dart';
 
 class StreamData {
   final String url;
@@ -198,6 +199,161 @@ class YoutubeService {
     } catch (_) {
       return [];
     }
+  }
+
+  // ─── Real YouTube Data API v3 Integration ────────────────────────────────
+  
+  /// Fetches real playlists owned by the authenticated YouTube account
+  Future<List<Playlist>> fetchUserPlaylists(String accessToken) async {
+    try {
+      final url = Uri.parse(
+        'https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50',
+      );
+      final resp = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        final items = (data['items'] as List<dynamic>?) ?? [];
+        final playlists = <Playlist>[];
+
+        for (final item in items) {
+          final id = item['id']?.toString() ?? '';
+          final snippet = item['snippet'] ?? {};
+          final contentDetails = item['contentDetails'] ?? {};
+          final title = snippet['title']?.toString() ?? 'YouTube Playlist';
+          final desc = snippet['description']?.toString() ?? '';
+          final thumbs = snippet['thumbnails'] ?? {};
+          final coverUrl = thumbs['high']?['url']?.toString() ??
+              thumbs['medium']?['url']?.toString() ??
+              thumbs['default']?['url']?.toString() ??
+              '';
+          final count = (contentDetails['itemCount'] as num?)?.toInt() ?? 0;
+
+          playlists.add(Playlist(
+            id: 'yt_$id',
+            title: title,
+            description: desc,
+            coverUrl: coverUrl,
+            tracks: const [],
+            ownerUid: 'youtube_user',
+            likesCount: count,
+          ));
+        }
+        return playlists;
+      } else {
+        debugPrint('fetchUserPlaylists API status ${resp.statusCode}: ${resp.body}');
+      }
+    } catch (e) {
+      debugPrint('fetchUserPlaylists error: $e');
+    }
+    return [];
+  }
+
+  /// Fetches real tracks for a specific YouTube playlist
+  Future<List<Track>> fetchPlaylistTracksWithToken(String rawPlaylistId, String accessToken, {int limit = 50}) async {
+    try {
+      final playlistId = rawPlaylistId.replaceFirst('yt_', '');
+      final url = Uri.parse(
+        'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=$playlistId&maxResults=$limit',
+      );
+      final resp = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        final items = (data['items'] as List<dynamic>?) ?? [];
+        final tracks = <Track>[];
+
+        for (final item in items) {
+          final snippet = item['snippet'] ?? {};
+          final videoId = snippet['resourceId']?['videoId']?.toString() ?? '';
+          if (videoId.isEmpty || videoId == 'private') continue;
+
+          final title = snippet['title']?.toString() ?? 'Track';
+          final artist = snippet['videoOwnerChannelTitle']?.toString() ??
+              snippet['channelTitle']?.toString() ??
+              'YouTube Artist';
+          final thumbs = snippet['thumbnails'] ?? {};
+          final artworkUrl = thumbs['high']?['url']?.toString() ??
+              thumbs['medium']?['url']?.toString() ??
+              'https://i.ytimg.com/vi/$videoId/hqdefault.jpg';
+
+          tracks.add(Track(
+            id: videoId,
+            title: title,
+            artist: artist,
+            album: 'YouTube Music',
+            duration: const Duration(minutes: 3, seconds: 30),
+            artworkUrl: artworkUrl,
+            streamUrl: '',
+          ));
+        }
+        return tracks;
+      }
+    } catch (e) {
+      debugPrint('fetchPlaylistTracksWithToken error: $e');
+    }
+    return [];
+  }
+
+  /// Fetches real liked music tracks from user's YouTube account
+  Future<List<Track>> fetchUserLikedSongs(String accessToken, {int limit = 50}) async {
+    try {
+      final url = Uri.parse(
+        'https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&myRating=like&maxResults=$limit',
+      );
+      final resp = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        final items = (data['items'] as List<dynamic>?) ?? [];
+        final tracks = <Track>[];
+
+        for (final item in items) {
+          final id = item['id']?.toString() ?? '';
+          final snippet = item['snippet'] ?? {};
+          if (id.isEmpty) continue;
+
+          final title = snippet['title']?.toString() ?? 'Track';
+          final artist = snippet['channelTitle']?.toString() ?? 'YouTube Artist';
+          final thumbs = snippet['thumbnails'] ?? {};
+          final artworkUrl = thumbs['high']?['url']?.toString() ??
+              thumbs['medium']?['url']?.toString() ??
+              'https://i.ytimg.com/vi/$id/hqdefault.jpg';
+
+          tracks.add(Track(
+            id: id,
+            title: title,
+            artist: artist,
+            album: 'Liked Songs',
+            duration: const Duration(minutes: 3, seconds: 45),
+            artworkUrl: artworkUrl,
+            streamUrl: '',
+          ));
+        }
+        return tracks;
+      }
+    } catch (e) {
+      debugPrint('fetchUserLikedSongs error: $e');
+    }
+    return [];
   }
 
   void dispose() {

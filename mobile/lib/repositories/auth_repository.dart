@@ -53,8 +53,25 @@ class AppAuthRepository implements AuthRepository {
     scopes: [
       'email',
       'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/youtube.readonly',
     ],
   );
+
+  String? _googleAccessToken;
+  String? get googleAccessToken => _googleAccessToken;
+
+  Future<String?> getValidGoogleAccessToken() async {
+    if (_googleAccessToken != null) return _googleAccessToken;
+    try {
+      final account = _googleSignIn.currentUser ?? await _googleSignIn.signInSilently();
+      if (account != null) {
+        final auth = await account.authentication;
+        _googleAccessToken = auth.accessToken;
+        return _googleAccessToken;
+      }
+    } catch (_) {}
+    return null;
+  }
 
   FirebaseFirestore? get _firestore {
     try {
@@ -288,6 +305,8 @@ class AppAuthRepository implements AuthRepository {
         idToken: googleAuth.idToken,
       );
 
+      _googleAccessToken = googleAuth.accessToken;
+
       final userCredential = await auth.signInWithCredential(credential);
       final profile = await _fetchOrCreateProfile(userCredential.user!);
       
@@ -306,19 +325,6 @@ class AppAuthRepository implements AuthRepository {
     } on FirebaseAuthException catch (e) {
       throw Exception(_mapFirebaseError(e));
     } catch (e) {
-      final str = e.toString();
-      if (str.contains('Api7') ||
-          str.contains('network_error') ||
-          str.contains('12500') ||
-          str.contains('10')) {
-        throw Exception(
-          'Google Play Services SHA-1 verification required in Firebase:\n\n'
-          '• Package: com.openaamps.open_aamps\n'
-          '• SHA-1: 92:86:86:5C:7F:76:06:2A:4C:E2:36:2A:80:99:C9:45:8A:55:02:98\n\n'
-          'Add this SHA-1 to your Firebase project to enable direct Google OAuth. '
-          'In the meantime, please tap "Developer Login" to test with full permissions and sync!'
-        );
-      }
       rethrow;
     }
   }

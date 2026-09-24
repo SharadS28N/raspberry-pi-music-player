@@ -48,35 +48,7 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  Future<void> _handleDeveloperLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _emailCtrl.text = 'developer@openaamps.ai';
-      _passCtrl.text = 'OpenAamps2026!';
-    });
 
-    try {
-      await AppAuthRepository.instance.signInAsDeveloper(
-        email: 'developer@openaamps.ai',
-        password: 'OpenAamps2026!',
-        name: 'OpenAamps Core Developer',
-      );
-      if (mounted) {
-        if (widget.onLoginSuccess != null) {
-          widget.onLoginSuccess!();
-        } else if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() {
@@ -307,26 +279,7 @@ class _LoginViewState extends State<LoginView> {
 
 
 
-                  // Developer Test Account Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: accent == Colors.white ? Colors.white : accent,
-                        side: BorderSide(color: (accent == Colors.white ? Colors.white : accent).withValues(alpha: 0.35)),
-                        backgroundColor: const Color(0xFF18181C),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
-                      icon: Icon(Icons.terminal_rounded, color: accent == Colors.white ? Colors.white : accent, size: 18),
-                      label: const Text(
-                        'Developer Test Account (Full Sync)',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      onPressed: _isLoading ? null : _handleDeveloperLogin,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+
 
                   // Google Sign-In Button
                   SizedBox(

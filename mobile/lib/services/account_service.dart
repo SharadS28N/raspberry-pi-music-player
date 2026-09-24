@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/account.dart';
 import '../models/track.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/user_data_repository.dart';
 import 'party_service.dart';
 import 'pi_aamps_service.dart';
 import 'youtube_service.dart';
@@ -31,138 +31,127 @@ class ConnectedDevice {
 }
 
 class AccountService extends ChangeNotifier {
-  static final AccountService instance = AccountService();
+  static final AccountService instance = AccountService._internal();
 
-  static final List<Account> _defaultAccounts = [
-    Account(
-      id: 'acc_1',
-      name: 'Sharad Bhandari',
-      email: 'sharad@aamps-audio.io',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      isPremium: true,
-      playlistsCount: 16,
-      likedSongsCount: 240,
-      subscriptionsCount: 38,
-      isCoupleProfile: false,
-    ),
-    Account(
-      id: 'acc_couple_1',
-      name: 'Couple Shared Account',
-      email: 'couple.shared@open-aamps.io',
-      avatarUrl: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=150',
-      isPremium: true,
-      playlistsCount: 28,
-      likedSongsCount: 520,
-      subscriptionsCount: 64,
-      isCoupleProfile: true,
-      partnerName: 'Radha',
-      partnerAvatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    ),
-    Account(
-      id: 'acc_ytm_1',
-      name: 'YouTube Music Premium',
-      email: 'ytm.member@youtube.com',
-      avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
-      isPremium: true,
-      playlistsCount: 12,
-      likedSongsCount: 384,
-      subscriptionsCount: 52,
-      isCoupleProfile: false,
-    ),
-  ];
-
-  Account _activeAccount = _defaultAccounts.first;
+  late Account _activeAccount;
   final List<Account> _availableAccounts = [];
+  bool _isSyncing = false;
 
   Account get activeAccount => _activeAccount;
   List<Account> get availableAccounts => List.unmodifiable(_availableAccounts);
+  bool get isSyncing => _isSyncing;
 
-  AccountService() {
-    _initAccounts();
+  AccountService._internal() {
+    _initDynamicAccount();
   }
 
-  Future<void> _initAccounts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedList = prefs.getStringList('available_user_accounts');
-      final activeId = prefs.getString('active_user_account_id');
+  void _initDynamicAccount() {
+    final user = AppAuthRepository.instance.currentUser;
+    _activeAccount = _buildAccountFromUser(user);
+    _availableAccounts.clear();
+    _availableAccounts.add(_activeAccount);
 
+    // Listen to real-time auth state changes
+    AppAuthRepository.instance.authStateChanges.listen((updatedUser) {
+      _activeAccount = _buildAccountFromUser(updatedUser);
       _availableAccounts.clear();
-      if (savedList != null && savedList.isNotEmpty) {
-        for (var str in savedList) {
-          try {
-            _availableAccounts.add(Account.fromJson(jsonDecode(str)));
-          } catch (_) {}
-        }
-      }
-
-      if (_availableAccounts.isEmpty) {
-        _availableAccounts.addAll(_defaultAccounts);
-        await _saveAccounts();
-      }
-
-      if (activeId != null) {
-        final match = _availableAccounts.firstWhere(
-          (a) => a.id == activeId,
-          orElse: () => _availableAccounts.first,
-        );
-        _activeAccount = match;
-      } else {
-        _activeAccount = _availableAccounts.first;
-      }
+      _availableAccounts.add(_activeAccount);
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading accounts: $e');
+
+      // Automatically sync real YouTube playlists if signed in via Google
+      if (updatedUser != null && updatedUser.linkedServices['youtube_music'] == true) {
+        syncRealYouTubeAccount();
+      }
+    });
+
+    // Also auto-sync on launch if already authenticated with Google
+    if (user != null && user.linkedServices['youtube_music'] == true) {
+      syncRealYouTubeAccount();
     }
   }
 
-  Future<void> _saveAccounts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final listStr = _availableAccounts.map((a) => jsonEncode(a.toJson())).toList();
-      await prefs.setStringList('available_user_accounts', listStr);
-      await prefs.setString('active_user_account_id', _activeAccount.id);
-    } catch (e) {
-      debugPrint('Error saving accounts: $e');
+  Account _buildAccountFromUser(dynamic user) {
+    if (user == null) {
+      return Account(
+        id: 'guest',
+        name: 'Guest User',
+        email: 'Sign in with Google / Email',
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        isPremium: false,
+        playlistsCount: 0,
+        likedSongsCount: 0,
+        subscriptionsCount: 0,
+        isCoupleProfile: false,
+      );
     }
+
+    final playlists = UserDataRepository.instance.playlists;
+    final favorites = UserDataRepository.instance.favorites;
+
+    return Account(
+      id: user.uid as String? ?? 'user',
+      name: (user.displayName as String? ?? '').isNotEmpty
+          ? user.displayName as String
+          : (user.email as String? ?? 'OpenAamps User').split('@').first,
+      email: user.email as String? ?? 'user@openaamps.ai',
+      avatarUrl: (user.photoUrl as String? ?? '').isNotEmpty
+          ? user.photoUrl as String
+          : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      isPremium: true,
+      playlistsCount: playlists.length,
+      likedSongsCount: favorites.length,
+      subscriptionsCount: playlists.where((p) => p.id.startsWith('yt_')).length,
+      isCoupleProfile: false,
+    );
+  }
+
+  /// Syncs real playlists and liked tracks from the user's actual YouTube account
+  Future<bool> syncRealYouTubeAccount() async {
+    if (_isSyncing) return false;
+    _isSyncing = true;
+    notifyListeners();
+
+    try {
+      final token = await AppAuthRepository.instance.getValidGoogleAccessToken();
+      if (token != null && token.isNotEmpty) {
+        final yt = YoutubeService();
+        final playlists = await yt.fetchUserPlaylists(token);
+        final liked = await yt.fetchUserLikedSongs(token);
+
+        if (playlists.isNotEmpty) {
+          await UserDataRepository.instance.setSyncedPlaylists(playlists);
+        }
+        if (liked.isNotEmpty) {
+          await UserDataRepository.instance.setSyncedFavorites(liked);
+        }
+
+        _activeAccount = _buildAccountFromUser(AppAuthRepository.instance.currentUser);
+        _availableAccounts.clear();
+        _availableAccounts.add(_activeAccount);
+        _isSyncing = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('syncRealYouTubeAccount error: $e');
+    }
+
+    _isSyncing = false;
+    notifyListeners();
+    return false;
   }
 
   void switchAccount(Account account) {
-    if (_activeAccount.id != account.id) {
-      _activeAccount = account;
-      _saveAccounts();
-      notifyListeners();
-    }
-  }
-
-  void addAccount(Account account) {
-    _availableAccounts.removeWhere((a) => a.id == account.id);
-    _availableAccounts.add(account);
     _activeAccount = account;
-    _saveAccounts();
     notifyListeners();
-  }
-
-  void removeAccount(String accountId) {
-    if (_availableAccounts.length > 1) {
-      _availableAccounts.removeWhere((a) => a.id == accountId);
-      if (_activeAccount.id == accountId) {
-        _activeAccount = _availableAccounts.first;
-      }
-      _saveAccounts();
-      notifyListeners();
-    }
   }
 
   void updateActiveAccount({
     required String name,
     required String email,
     String? avatarUrl,
-    bool? isCoupleProfile,
-    String? partnerName,
-    String? partnerAvatarUrl,
   }) {
-    final updated = Account(
+    _activeAccount = Account(
       id: _activeAccount.id,
       name: name,
       email: email,
@@ -171,40 +160,9 @@ class AccountService extends ChangeNotifier {
       playlistsCount: _activeAccount.playlistsCount,
       likedSongsCount: _activeAccount.likedSongsCount,
       subscriptionsCount: _activeAccount.subscriptionsCount,
-      isCoupleProfile: isCoupleProfile ?? _activeAccount.isCoupleProfile,
-      partnerName: partnerName ?? _activeAccount.partnerName,
-      partnerAvatarUrl: partnerAvatarUrl ?? _activeAccount.partnerAvatarUrl,
+      isCoupleProfile: false,
     );
-    final idx = _availableAccounts.indexWhere((a) => a.id == _activeAccount.id);
-    if (idx != -1) {
-      _availableAccounts[idx] = updated;
-    }
-    _activeAccount = updated;
-    _saveAccounts();
     notifyListeners();
-  }
-
-  Future<Account?> connectRealYouTubeAccount(String handleOrQuery) async {
-    final yt = YoutubeService();
-    final channel = await yt.getChannelByHandle(handleOrQuery);
-    if (channel != null) {
-      final clean = handleOrQuery.trim();
-      final handle = clean.startsWith('@') ? clean : '@$clean';
-      final newAcc = Account(
-        id: channel.id.value,
-        name: channel.title,
-        email: handle,
-        avatarUrl: channel.logoUrl,
-        isPremium: true,
-        playlistsCount: 16,
-        likedSongsCount: 240,
-        subscriptionsCount: 38,
-        isCoupleProfile: false,
-      );
-      addAccount(newAcc);
-      return newAcc;
-    }
-    return null;
   }
 
   // --- Spotify Connect Style Device Presence ---
@@ -219,7 +177,7 @@ class AccountService extends ChangeNotifier {
         type: 'phone',
         isCurrent: true,
         isOnline: true,
-        subtitle: 'Local playback • Bluetooth Earbuds / AirPods',
+        subtitle: 'Local playback • High-res audio engine',
       ),
       ConnectedDevice(
         id: 'device_pi_streamer',
@@ -231,15 +189,6 @@ class AccountService extends ChangeNotifier {
             ? '${pi.ipAddress}:${pi.port} • Bit-perfect ALSA DAC Hub'
             : 'Offline at ${pi.ipAddress}:${pi.port}',
       ),
-      if (_activeAccount.isCoupleProfile)
-        ConnectedDevice(
-          id: 'device_partner_phone',
-          name: '${_activeAccount.partnerName}\'s Device (Couple Session)',
-          type: 'phone',
-          isCurrent: false,
-          isOnline: true,
-          subtitle: 'Listen Together • Synchronized dual AirPods playback',
-        ),
       ConnectedDevice(
         id: 'device_desktop_web',
         name: 'Desktop Web Player',
@@ -251,7 +200,6 @@ class AccountService extends ChangeNotifier {
     ];
   }
 
-  // --- Launch Couple Mode / Listen Together ---
   Future<bool> startCoupleListenTogether({Track? track}) async {
     final party = PartyService.instance;
     if (!party.isInParty) {

@@ -2,10 +2,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
+import '../models/playlist.dart';
+import '../repositories/user_data_repository.dart';
+import '../repositories/auth_repository.dart';
 import '../services/account_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/download_service.dart';
 import '../services/local_audio_service.dart';
+import '../services/youtube_service.dart';
 import 'album_view.dart';
 import 'artist_view.dart';
 import 'settings_view.dart';
@@ -52,6 +56,8 @@ class _LibraryViewState extends State<LibraryView> {
     DownloadService.instance.addListener(_onStateChange);
     widget.audioService?.addListener(_onStateChange);
     widget.localAudioService.addListener(_onStateChange);
+    UserDataRepository.instance.addListener(_onStateChange);
+    AccountService.instance.addListener(_onStateChange);
     _loadUserPlaylists();
   }
 
@@ -300,6 +306,178 @@ class _LibraryViewState extends State<LibraryView> {
     );
   }
 
+  void _showYouTubePlaylistDetails(Playlist playlist) {
+    List<Track> tracks = List.from(playlist.tracks);
+    bool isLoadingTracks = tracks.isEmpty;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          if (isLoadingTracks) {
+            () async {
+              try {
+                final token = await AppAuthRepository.instance.getValidGoogleAccessToken();
+                List<Track> fetched = [];
+                if (token != null && token.isNotEmpty) {
+                  fetched = await YoutubeService().fetchPlaylistTracksWithToken(playlist.id, token);
+                }
+                if (fetched.isEmpty) {
+                  final cleanId = playlist.id.replaceFirst('yt_', '');
+                  fetched = await YoutubeService().getPlaylistTracks(cleanId);
+                }
+                if (ctx.mounted) {
+                  setSheetState(() {
+                    tracks = fetched;
+                    isLoadingTracks = false;
+                  });
+                }
+              } catch (_) {
+                if (ctx.mounted) {
+                  setSheetState(() => isLoadingTracks = false);
+                }
+              }
+            }();
+          }
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.75,
+            minChildSize: 0.4,
+            maxChildSize: 0.95,
+            expand: false,
+            builder: (_, scrollCtrl) => ListView(
+              controller: scrollCtrl,
+              padding: const EdgeInsets.all(20),
+              children: [
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: playlist.coverUrl.isNotEmpty
+                          ? Image.network(
+                              playlist.coverUrl,
+                              width: 54,
+                              height: 54,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: 54,
+                                height: 54,
+                                color: const Color(0xFF242424),
+                                child: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                              ),
+                            )
+                          : Container(
+                              width: 54,
+                              height: 54,
+                              color: const Color(0xFF242424),
+                              child: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                            ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            playlist.title,
+                            style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          const Row(
+                            children: [
+                              Icon(Icons.play_circle_fill_rounded, color: Colors.redAccent, size: 14),
+                              SizedBox(width: 4),
+                              Text('YouTube Music Playlist', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      onPressed: () => Navigator.pop(sheetCtx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: const Icon(Icons.play_arrow_rounded, color: Colors.black),
+                    label: const Text('Play All from YouTube', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: tracks.isEmpty
+                        ? null
+                        : () {
+                            Navigator.pop(sheetCtx);
+                            widget.audioService?.setQueue(tracks);
+                          },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (isLoadingTracks)
+                  const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  )
+                else if (tracks.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    alignment: Alignment.center,
+                    child: const Text('No tracks found in this YouTube playlist.', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                  )
+                else
+                  ...tracks.map((track) => ListTile(
+                        contentPadding: const EdgeInsets.symmetric(vertical: 2),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            track.artworkUrl,
+                            width: 42,
+                            height: 42,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              width: 42,
+                              height: 42,
+                              color: const Color(0xFF242424),
+                              child: const Icon(Icons.music_note_rounded, color: Colors.white54, size: 18),
+                            ),
+                          ),
+                        ),
+                        title: Text(track.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text(track.artist, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 26),
+                          onPressed: () {
+                            Navigator.pop(sheetCtx);
+                            widget.onPlayTrack(track);
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheetCtx);
+                          widget.onPlayTrack(track);
+                        },
+                      )),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _onStateChange() {
     if (mounted) setState(() {});
   }
@@ -309,6 +487,8 @@ class _LibraryViewState extends State<LibraryView> {
     DownloadService.instance.removeListener(_onStateChange);
     widget.audioService?.removeListener(_onStateChange);
     widget.localAudioService.removeListener(_onStateChange);
+    UserDataRepository.instance.removeListener(_onStateChange);
+    AccountService.instance.removeListener(_onStateChange);
     _webDavUrlController.dispose();
     _webDavUserController.dispose();
     _webDavPassController.dispose();
@@ -742,6 +922,88 @@ class _LibraryViewState extends State<LibraryView> {
                 onTap: pl['action'] as VoidCallback,
               ),
             )),
+        // Real YouTube Music Synced Playlists
+        Builder(
+          builder: (context) {
+            final ytPlaylists = UserDataRepository.instance.playlists.where((p) => p.id.startsWith('yt_')).toList();
+            if (ytPlaylists.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.play_circle_fill_rounded, color: Colors.redAccent, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'YouTube Music Playlists',
+                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      onPressed: () async {
+                        await AccountService.instance.syncRealYouTubeAccount();
+                        if (mounted) setState(() {});
+                      },
+                      icon: const Icon(Icons.sync_rounded, size: 14, color: Colors.white70),
+                      label: const Text('Sync', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...ytPlaylists.map((pl) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    tileColor: const Color(0xFF141414),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: pl.coverUrl.isNotEmpty
+                          ? Image.network(
+                              pl.coverUrl,
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: 44,
+                                height: 44,
+                                color: const Color(0xFF1E1E1E),
+                                child: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                              ),
+                            )
+                          : Container(
+                              width: 44,
+                              height: 44,
+                              color: const Color(0xFF1E1E1E),
+                              child: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                            ),
+                    ),
+                    title: Text(
+                      pl.title,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      '${pl.likesCount > 0 ? pl.likesCount : pl.tracks.length} tracks • YouTube Music',
+                      style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 14),
+                    onTap: () => _showYouTubePlaylistDetails(pl),
+                  ),
+                )),
+              ],
+            );
+          },
+        ),
         if (_userPlaylists.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Text('Your Custom Playlists', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5)),

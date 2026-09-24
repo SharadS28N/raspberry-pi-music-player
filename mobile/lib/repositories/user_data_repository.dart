@@ -297,4 +297,22 @@ class UserDataRepository extends ChangeNotifier {
       await prefs.setString(_prefTasteVectorKey, jsonEncode(newVector.toJson()));
     } catch (_) {}
   }
+
+  // --- YouTube Music Synchronisation ---
+  Future<void> setSyncedPlaylists(List<Playlist> newPlaylists) async {
+    _playlists.removeWhere((p) => p.id.startsWith('yt_'));
+    _playlists.insertAll(0, newPlaylists);
+    await _savePlaylists();
+    notifyListeners();
+  }
+
+  Future<void> setSyncedFavorites(List<Track> newFavorites) async {
+    for (final track in newFavorites) {
+      if (!_favorites.any((f) => f.id == track.id)) {
+        _favorites.add(track);
+      }
+    }
+    await _saveFavorites();
+    notifyListeners();
+  }
 }

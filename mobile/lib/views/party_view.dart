@@ -702,7 +702,7 @@ class _PartyViewState extends State<PartyView> {
                 ),
                 Switch(
                   value: _party.allowCollaborativeDj,
-                  activeColor: accent,
+                  activeThumbColor: accent,
                   onChanged: (val) => _party.toggleCollaborativeDj(val),
                 ),
               ],
