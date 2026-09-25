@@ -119,7 +119,10 @@ class SettingsService extends ChangeNotifier {
   Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _playerStyle = PlayerStyle.modern;
+      final pIndex = prefs.getInt('pref_player_style') ?? PlayerStyle.modern.index;
+      if (pIndex >= 0 && pIndex < PlayerStyle.values.length) {
+        _playerStyle = PlayerStyle.values[pIndex];
+      }
 
       final bIndex = prefs.getInt('pref_bg_style') ?? BackgroundStyle.customWallpaper.index;
       if (bIndex >= 0 && bIndex < BackgroundStyle.values.length) {
@@ -177,8 +180,10 @@ class SettingsService extends ChangeNotifier {
   }
 
   Future<void> setPlayerStyle(PlayerStyle style) async {
-    _playerStyle = PlayerStyle.modern;
+    _playerStyle = style;
     notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('pref_player_style', style.index);
   }
 
   Future<void> setBackgroundStyle(BackgroundStyle style) async {

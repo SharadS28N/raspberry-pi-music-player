@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import '../models/track.dart';
 import '../models/playlist.dart';
 import '../models/ai_recommendation.dart';
@@ -10,7 +8,6 @@ import 'equalizer_service.dart';
 import 'party_service.dart';
 import 'ai_music_service.dart';
 import 'youtube_service.dart';
-import 'settings_service.dart';
 
 class AssistantMessage {
   final String id;
@@ -355,25 +352,7 @@ class AiVoiceAssistant extends ChangeNotifier {
     String lower,
     Function(Track)? onPlayTrack,
   ) async {
-    // 1. Check if Gemini API is configured
-    final geminiKey = SettingsService.instance.geminiApiKey;
-    if (geminiKey.isNotEmpty) {
-      try {
-        final geminiAnswer = await _queryGemini(geminiKey, raw);
-        if (geminiAnswer != null && geminiAnswer.isNotEmpty) {
-          return AssistantMessage(
-            id: 'ai_gemini_${DateTime.now().millisecondsSinceEpoch}',
-            text: geminiAnswer,
-            isUser: false,
-            parameters: {'AI Engine': 'Google Gemini 1.5 Flash'},
-          );
-        }
-      } catch (e) {
-        debugPrint('[AiAssistant] Gemini query fallback: $e');
-      }
-    }
-
-    // 2. Comprehensive Built-In Music Intelligence Knowledge Base
+    // Autonomous On-Device Music Intelligence Knowledge Base (Zero-Config / 100% Local)
 
     // Category A: BPM / Tempo & Acoustic Parameter Search
     if (lower.contains('bpm') || lower.contains('tempo')) {
@@ -545,38 +524,6 @@ class AiVoiceAssistant extends ChangeNotifier {
         'Suggestion': 'Try: "What is the BPM of Blinding Lights?" or "Explain 24-bit FLAC"',
       },
     );
-  }
-
-  Future<String?> _queryGemini(String apiKey, String prompt) async {
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
-    );
-
-    final resp = await http
-        .post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'contents': [
-              {
-                'parts': [
-                  {
-                    'text':
-                        'You are OpenAamps AI, a sophisticated music streaming assistant and musicologist. Answer this music query clearly, concisely, and accurately:\n$prompt'
-                  }
-                ]
-              }
-            ]
-          }),
-        )
-        .timeout(const Duration(seconds: 10));
-
-    if (resp.statusCode == 200) {
-      final json = jsonDecode(resp.body);
-      final text = json['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
-      return text?.trim();
-    }
-    return null;
   }
 
   void clearConversation() {

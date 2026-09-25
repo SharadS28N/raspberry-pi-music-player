@@ -74,6 +74,30 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
+  Future<void> _handleGuestLogin() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await AppAuthRepository.instance.signInAsGuest();
+      if (mounted) {
+        if (widget.onLoginSuccess != null) {
+          widget.onLoginSuccess!();
+        } else if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -327,7 +351,32 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
+
+                  // Safe Frictionless Guest Entry
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+                        backgroundColor: const Color(0xFF181818),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      ),
+                      onPressed: _isLoading ? null : _handleGuestLogin,
+                      icon: const Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF10B981)),
+                      label: const Text(
+                        'Continue as Guest (Safe Mode)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
 
                   // Switch to Register
                   Wrap(

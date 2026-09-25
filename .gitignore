@@ -19,6 +19,8 @@ backend/*.db
 database/*.db-journal
 *.sqlite
 scratch/
+backend/releases/
+openaamps-release.apk
 
 
 # Logs & Temporary Files

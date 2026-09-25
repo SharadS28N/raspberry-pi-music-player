@@ -24,6 +24,7 @@ abstract class AuthRepository {
     List<String> preferredGenres = const [],
   });
   Future<UserProfile> signInWithGoogle();
+  Future<UserProfile> signInAsGuest();
   Future<void> linkYouTubeMusicAccount({String? accountName});
   Future<void> linkSpotifyAccount({String? spotifyUsername});
   Future<void> signOut();
@@ -52,12 +53,12 @@ class AppAuthRepository implements AuthRepository {
     }
   }
 
+  // Safe standard scopes: standard email and basic profile prevent Google unverified app / unsafe OAuth warning screens
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId: '777154173201-e6d9jpage9t5hqeq6udtp7qf0h5m56dm.apps.googleusercontent.com',
     scopes: [
       'email',
       'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/youtube.readonly',
     ],
   );
 
@@ -374,6 +375,33 @@ class AppAuthRepository implements AuthRepository {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // ─── Sign-In as Guest (Safe / Frictionless Zero-Setup Mode) ──────────────────
+  @override
+  Future<UserProfile> signInAsGuest() async {
+    final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
+    final profile = UserProfile(
+      uid: guestId,
+      email: 'guest@openaamps.local',
+      displayName: 'Guest Audiophile',
+      photoUrl: '',
+      preferredGenres: const ['Hi-Res Audio', 'Lossless Stream', 'Acoustic'],
+      tasteVector: const AcousticTasteVector(
+        energy: 0.65,
+        valence: 0.70,
+        danceability: 0.60,
+        acousticness: 0.50,
+        tempo: 124.0,
+      ),
+      linkedServices: const {'youtube_music': false, 'spotify': false},
+      isGuest: true,
+    );
+
+    await _persistSessionLocally(profile);
+    _currentUser = profile;
+    _authStateController.add(profile);
+    return profile;
   }
 
   // ─── Account Synchronization (YouTube Music & Spotify) ──────────────────────

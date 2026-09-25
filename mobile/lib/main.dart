@@ -13,6 +13,7 @@ import 'services/local_audio_service.dart';
 import 'services/firebase_service.dart';
 import 'services/ai_music_service.dart';
 import 'services/settings_service.dart';
+import 'services/update_service.dart';
 import 'views/auth/auth_gate.dart';
 import 'views/home_view.dart';
 import 'views/search_view.dart';
@@ -35,8 +36,11 @@ Future<void> main() async {
     debugPrint('[Firebase] Initialization skipped or error: $e');
   }
 
+  // Initialize non-intrusive Update Service
+  await UpdateService.instance.init();
+
   await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.openaamps.open_aamps.channel.audio',
+    androidNotificationChannelId: 'com.aamps.openaamps.channel.audio',
     androidNotificationChannelName: 'OpenAamps Playback',
     androidNotificationOngoing: true,
     androidStopForegroundOnPause: true,
@@ -103,6 +107,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _requestNotificationPermission();
+    _checkUpdateOnLaunch();
     _playerStateSub = _audioService.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
@@ -131,6 +136,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         debugPrint('Notification permission request error: $e');
       }
     });
+  }
+
+  Future<void> _checkUpdateOnLaunch() async {
+    await Future.delayed(const Duration(seconds: 4));
+    if (!mounted) return;
+    if (!UpdateService.instance.autoCheckUpdates) return;
+    final update = await UpdateService.instance.checkForUpdate(userInitiated: false);
+    if (update != null && mounted) {
+      UpdateService.instance.showUpdatePrompt(context, update);
+    }
   }
 
   void _onPlayTrack(Track track) {

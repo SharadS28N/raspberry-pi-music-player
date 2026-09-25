@@ -7,6 +7,7 @@ import '../services/settings_service.dart';
 import '../widgets/account_switcher_modal.dart';
 import '../widgets/spotify_import_modal.dart';
 import '../widgets/equalizer_sheet.dart';
+import '../services/update_service.dart';
 
 class SettingsView extends StatefulWidget {
   final AudioPlayerService? audioService;
@@ -26,15 +27,12 @@ class _SettingsViewState extends State<SettingsView> {
   final SettingsService _settings = SettingsService.instance;
   late AudioPlayerService _audio;
   late TextEditingController _customWallpaperInputCtrl;
-  late TextEditingController _geminiApiKeyCtrl;
-  bool _obscureApiKey = true;
 
   @override
   void initState() {
     super.initState();
     _audio = widget.audioService ?? AudioPlayerService();
     _customWallpaperInputCtrl = TextEditingController(text: _settings.customWallpaperUrl);
-    _geminiApiKeyCtrl = TextEditingController(text: _settings.geminiApiKey);
     _settings.addListener(_onSettingsChange);
   }
 
@@ -42,9 +40,6 @@ class _SettingsViewState extends State<SettingsView> {
     if (mounted) {
       if (_customWallpaperInputCtrl.text != _settings.customWallpaperUrl) {
         _customWallpaperInputCtrl.text = _settings.customWallpaperUrl;
-      }
-      if (_geminiApiKeyCtrl.text != _settings.geminiApiKey) {
-        _geminiApiKeyCtrl.text = _settings.geminiApiKey;
       }
       setState(() {});
     }
@@ -54,7 +49,6 @@ class _SettingsViewState extends State<SettingsView> {
   void dispose() {
     _settings.removeListener(_onSettingsChange);
     _customWallpaperInputCtrl.dispose();
-    _geminiApiKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -616,8 +610,12 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 28),
 
-          // Section 5: AI Intelligence & Gemini Engine
+          // Section 5: Autonomous Music Intelligence
           _buildAiIntelligenceSection(context),
+          const SizedBox(height: 28),
+
+          // Section 6: App Updates & Version Control
+          _buildAppUpdateSection(context),
           const SizedBox(height: 32),
         ],
       ),
@@ -629,7 +627,7 @@ class _SettingsViewState extends State<SettingsView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'AI INTELLIGENCE & NATURAL LANGUAGE ENGINE',
+          'AUTONOMOUS ON-DEVICE ACOUSTIC AI',
           style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
         const SizedBox(height: 12),
@@ -643,70 +641,49 @@ class _SettingsViewState extends State<SettingsView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Text(
-                    'Google Gemini AI Configuration',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Power live multi-modal music reasoning, dynamic playlist synthesis, and conversational song discovery.',
-                style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 11, height: 1.4),
-              ),
-              const SizedBox(height: 14),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Gemini API Key (Optional)', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
-                  GestureDetector(
-                    onTap: () => setState(() => _obscureApiKey = !_obscureApiKey),
-                    child: Text(
-                      _obscureApiKey ? 'Show' : 'Hide',
-                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.bolt_rounded, color: Color(0xFF10B981), size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'OpenAamps Neural Acoustic Engine',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        Text(
+                          'Active • Zero Cloud Credentials Required',
+                          style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: TextField(
-                  controller: _geminiApiKeyCtrl,
-                  obscureText: _obscureApiKey,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(
-                    hintText: 'AIzaSy... (Gemini API Key)',
-                    hintStyle: TextStyle(color: Color(0xFF71717A), fontSize: 12),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
+              const SizedBox(height: 12),
+              const Text(
+                'High-performance on-device music reasoning model actively analyzing harmonic keys, BPM matching, 5-band audio equalizers, and natural language playback requests.',
+                style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12, height: 1.4),
               ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onPressed: _saveGeminiKey,
-                  icon: const Icon(Icons.check_rounded, size: 16),
-                  label: const Text('Save AI Key', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _buildAiBadge('Tempo & BPM Matching'),
+                  _buildAiBadge('FLAC & Bitrate Analysis'),
+                  _buildAiBadge('Chord Theory & Keys'),
+                  _buildAiBadge('100% Private & Offline'),
+                ],
               ),
             ],
           ),
@@ -715,18 +692,122 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  Future<void> _saveGeminiKey() async {
-    final geminiKey = _geminiApiKeyCtrl.text.trim();
-    await _settings.setGeminiApiKey(geminiKey);
+  Widget _buildAiBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF222222),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500),
+      ),
+    );
+  }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('AI configuration saved successfully.'),
-          backgroundColor: Color(0xFF1F1F1F),
+  Widget _buildAppUpdateSection(BuildContext context) {
+    final updateService = UpdateService.instance;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'APP VERSION & UPDATES',
+          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
-      );
-    }
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'OpenAamps Mobile',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Version 1.2.6 (Build 22) • Canonical Package',
+                        style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('v1.2.6', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Notify for updates', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: const Text('Gentle notification once per version. Never prompts again once dismissed.', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 11)),
+                value: updateService.autoCheckUpdates,
+                activeTrackColor: Colors.white38,
+                activeThumbColor: Colors.white,
+                onChanged: (val) async {
+                  await updateService.setAutoCheckUpdates(val);
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white24),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () async {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Checking for updates...'),
+                        backgroundColor: Color(0xFF222222),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                    final update = await updateService.checkForUpdate(userInitiated: true);
+                    if (context.mounted) {
+                      if (update != null) {
+                        updateService.showUpdatePrompt(context, update);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('You are using the latest release of OpenAamps (v1.2.6)!'),
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   void _showPlayerStylePicker(BuildContext context) {

@@ -855,26 +855,334 @@ class _PlayerViewState extends State<PlayerView> with SingleTickerProviderStateM
   }
 
   Widget _buildArtworkWidget(Track track) {
-    return Container(
-      width: 290,
-      height: 290,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.85),
-            blurRadius: 32,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
+    final style = SettingsService.instance.playerStyle;
+    final accent = SettingsService.instance.accentColor;
+
+    switch (style) {
+      case PlayerStyle.vinyl:
+        // Authentic Vinyl Turntable with spinning vinyl disc emerging from sleeve
+        return SizedBox(
+          width: 320,
+          height: 270,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. Spinning Vinyl Record (Slides out from behind sleeve)
+              Positioned(
+                right: 8,
+                child: RotationTransition(
+                  turns: _vinylController,
+                  child: Container(
+                    width: 230,
+                    height: 230,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const RadialGradient(
+                        colors: [
+                          Color(0xFF0F0F0F),
+                          Color(0xFF1E1E1E),
+                          Color(0xFF0D0D0D),
+                          Color(0xFF222222),
+                          Color(0xFF111111),
+                        ],
+                        stops: [0.0, 0.45, 0.65, 0.85, 1.0],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.9),
+                          blurRadius: 20,
+                          offset: const Offset(4, 8),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Concentric Vinyl Sound Grooves
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1.5),
+                          ),
+                        ),
+                        Container(
+                          width: 170,
+                          height: 170,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+                          ),
+                        ),
+                        Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+                          ),
+                        ),
+                        // Center Circular Record Label
+                        ClipOval(
+                          child: SizedBox(
+                            width: 86,
+                            height: 86,
+                            child: Image.network(
+                              track.artworkUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                color: accent,
+                                child: const Icon(Icons.album_rounded, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Spindle Center Hole
+                        Container(
+                          width: 14,
+                          height: 14,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF000000),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. Vinyl Album Jacket Sleeve (Layered in front with depth)
+              Positioned(
+                left: 12,
+                child: Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.95),
+                        blurRadius: 24,
+                        offset: const Offset(-4, 10),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.network(
+                      track.artworkUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: const Color(0xFF1E1E1E),
+                        child: const Icon(Icons.music_note_rounded, color: Colors.white54, size: 48),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-        image: DecorationImage(
-          image: NetworkImage(track.artworkUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
+        );
+
+      case PlayerStyle.minimal:
+        // Minimalist circular aesthetic with ambient animated sound waves
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: accent.withValues(alpha: 0.4), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.2),
+                    blurRadius: 30,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  track.artworkUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    color: const Color(0xFF121212),
+                    child: const Icon(Icons.music_note_rounded, color: Colors.white54, size: 50),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            // Minimal Rhythm Bar Visualizer
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(16, (i) {
+                final barHeight = 8.0 + (i % 5) * 4.0;
+                return Container(
+                  width: 3.5,
+                  height: _isPlaying ? barHeight : 4.0,
+                  margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                  decoration: BoxDecoration(
+                    color: i % 2 == 0 ? accent : Colors.white.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                );
+              }),
+            ),
+          ],
+        );
+
+      case PlayerStyle.classic:
+        // Retro CD Jewel Case with spine tray and glossy light reflection
+        return Container(
+          width: 280,
+          height: 280,
+          decoration: BoxDecoration(
+            color: const Color(0xFF161618),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.9),
+                blurRadius: 28,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Ribbed CD Case Spine (Clear frosted plastic texture)
+              Container(
+                width: 18,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  border: Border(
+                    right: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(8, (_) => Container(
+                    width: 10,
+                    height: 2,
+                    color: Colors.white.withValues(alpha: 0.25),
+                  )),
+                ),
+              ),
+              // Square CD Booklet Artwork with Glossy Sheen
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      track.artworkUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: const Color(0xFF222222),
+                        child: const Icon(Icons.album_rounded, color: Colors.white54, size: 60),
+                      ),
+                    ),
+                    // Diagonal CD Glass Reflection Highlight
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.25),
+                            Colors.white.withValues(alpha: 0.05),
+                            Colors.transparent,
+                            Colors.white.withValues(alpha: 0.08),
+                          ],
+                          stops: const [0.0, 0.35, 0.65, 1.0],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case PlayerStyle.glassmorphism:
+        // Frosted Acrylic Floating Glass with ambient glow
+        return Container(
+          width: 290,
+          height: 290,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: accent == Colors.white ? Colors.white38 : accent.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.25),
+                blurRadius: 36,
+                spreadRadius: 2,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.network(
+              track.artworkUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                color: const Color(0xFF1E1E1E),
+                child: const Icon(Icons.music_note_rounded, color: Colors.white54, size: 54),
+              ),
+            ),
+          ),
+        );
+
+      case PlayerStyle.modern:
+        // Modern Sleek Card with soft shadow and accent glow
+        return Container(
+          width: 290,
+          height: 290,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.85),
+                blurRadius: 32,
+                spreadRadius: 2,
+                offset: const Offset(0, 10),
+              ),
+              if (accent != Colors.white)
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.18),
+                  blurRadius: 40,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 14),
+                ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(23),
+            child: Image.network(
+              track.artworkUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                color: const Color(0xFF1E1E1E),
+                child: const Icon(Icons.music_note_rounded, color: Colors.white54, size: 54),
+              ),
+            ),
+          ),
+        );
+    }
   }
 
   void _showQueueModal(BuildContext context) {
