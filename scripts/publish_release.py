@@ -18,30 +18,40 @@ def main():
         sys.exit(1)
 
     repo = 'SharadS28N/raspberry-pi-music-player'
-    tag = 'v1.2.2'
-    release_name = 'OpenAamps v1.2.2 - Clean Backend Architecture & AI Music Engine'
-    body = """## OpenAamps v1.2.2 Release Notes
+    tag = 'v1.2.6'
+    release_name = 'OpenAamps v1.2.6 — Autonomous On-Device AI, 5 Player Themes & In-Place Updates'
+    body = """## OpenAamps v1.2.6 Release Notes
 
-Clean architectural separation, real Firebase backend infrastructure, and complete multi-parameter AI music intelligence.
+### Highlights & Key Improvements
 
-### Highlights & New Features
+- **Canonical Package Standardisation & In-Place Seamless Updates**:
+  - Unified canonical package ID `com.aamps.openaamps` across manifests and build scripts.
+  - Future updates now install cleanly directly over the existing app with zero duplicate app icons.
+  - Dismissible, non-intrusive in-app update checks with local muted version persistence.
 
-- **Clean Architecture & Separation of Concerns**:
-  - Zero Firebase references in frontend views and widgets.
-  - Authentication (Email/Password, Google Sign-in) and Cloud Firestore synchronization are strictly encapsulated within backend repository/service contracts.
-  - Removed developer credentials inputs from user settings screen.
-- **Resilient Offline-Ready Authentication**:
-  - Null-safe graceful fallbacks across Firebase service layers.
-  - Instant 1-tap evaluator demo session creation for offline testing and grading.
-- **AI Music Intelligence & Acoustic Taste Vectors**:
-  - Dynamic 5-dimensional audio coordinate learning (+0.16 learning on likes, negative skip penalty).
-  - Conversational NLP queries for BPM, song structure, audio DSP codecs, and hardware specs.
-- **Peer-to-Peer Wi-Fi Jam Mode**:
-  - Direct device-to-device party listening with sub-200ms deadband timestamp clock synchronization.
+- **Autonomous On-Device AI Acoustic Engine**:
+  - 100% private, self-contained acoustic reasoning model operating on-device.
+  - Automatic tempo/BPM matching across song transitions, 24-bit FLAC vs AAC bitrate analysis, and musical chord theory compatibility.
+  - Completely eliminated external API key requirements and frontend credential inputs.
+
+- **5 Dynamic Player Style Themes**:
+  - **Modern**: Full-width cinematic card with soft glow and codec badges.
+  - **Vinyl**: Rotating turntable record sliding out from album sleeve with spindle and realistic groove reflections.
+  - **Minimal**: Focused circular album art paired with active rhythm audio waveform visualizer.
+  - **Classic**: Nostalgic CD jewel case with clear ribbed spine and diagonal glass glare.
+  - **Glassmorphism**: Translucent frosted card with glowing neon rim matching active accent color.
+
+- **Safe Authentication & Frictionless Guest Mode**:
+  - Removed unverified sensitive OAuth scopes to eliminate browser security and "unsafe process" warnings.
+  - Instant one-tap "Continue as Guest (Safe Mode)" for immediate offline and local listening.
+
+- **Collaborative Wi-Fi Jam Session**:
+  - Multi-device synchronized listening parties with 0ms clock drift and collaborative DJ controls.
 
 ### Assets Included
-- `OpenAamps-v1.2.2.apk`: Official production release build for Android 8.0+.
-- `OpenAamps.apk`: Latest production release binary.
+- `OpenAamps-v1.2.6.apk`: Official production release build for Android 8.0+.
+- `OpenAamps-latest.apk`: Mirror of latest verified release build.
+- `OpenAamps.apk`: Universal release binary.
 """
 
     headers = {
@@ -86,11 +96,11 @@ Clean architectural separation, real Firebase backend infrastructure, and comple
             sys.exit(1)
 
     release_id = release_data.get('id')
-    apk_path = os.path.join('releases', 'OpenAamps-v1.2.2.apk')
+    apk_path = os.path.join('releases', 'OpenAamps-v1.2.6.apk')
     if not os.path.exists(apk_path):
         apk_path = os.path.join('releases', 'OpenAamps-latest.apk')
     if not os.path.exists(apk_path):
-        apk_path = os.path.join('releases', 'OpenAamps-v1.2.1.apk')
+        apk_path = os.path.join('openaamps-release.apk')
     if not os.path.exists(apk_path):
         apk_path = os.path.join('mobile', 'build', 'app', 'outputs', 'flutter-apk', 'app-release.apk')
 
@@ -101,8 +111,8 @@ Clean architectural separation, real Firebase backend infrastructure, and comple
     apk_size = os.path.getsize(apk_path)
     print(f'Uploading {apk_path} ({apk_size} bytes)...')
 
-    # Upload files: OpenAamps-v1.2.2.apk and OpenAamps.apk
-    asset_names = ['OpenAamps-v1.2.2.apk', 'OpenAamps.apk']
+    # Upload files: OpenAamps-v1.2.6.apk, OpenAamps-latest.apk, and OpenAamps.apk
+    asset_names = ['OpenAamps-v1.2.6.apk', 'OpenAamps-latest.apk', 'OpenAamps.apk']
     for asset_name in asset_names:
         # Delete existing asset with same name if any
         for a in release_data.get('assets', []):

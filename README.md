@@ -11,11 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.0.0">
-    <img src="https://img.shields.io/badge/Release-v1.0.0-10B981?style=for-the-badge&logo=github" alt="Release v1.0.0">
+  <a href="https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.2.6">
+    <img src="https://img.shields.io/badge/Release-v1.2.6-10B981?style=for-the-badge&logo=github" alt="Release v1.2.6">
   </a>
-  <a href="releases/OpenAamps-v1.0.0.apk">
-    <img src="https://img.shields.io/badge/Download_APK-v1.0.0_(62MB)-06B6D4?style=for-the-badge&logo=android&logoColor=white" alt="Download APK">
+  <a href="releases/OpenAamps-v1.2.6.apk">
+    <img src="https://img.shields.io/badge/Download_APK-v1.2.6_(70MB)-06B6D4?style=for-the-badge&logo=android&logoColor=white" alt="Download APK">
   </a>
   <a href="https://sharads28n.github.io/raspberry-pi-music-player/">
     <img src="https://img.shields.io/badge/Live_Website-GitHub_Pages-8B5CF6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Website">
@@ -117,8 +117,8 @@ Access the desktop web player in your browser at `http://<your-pi-ip>:8000`.
 ### 2. Android App Installation (OpenAamps)
 
 1. Download the release APK directly to your phone:
-   - **Download Link**: [OpenAamps-v1.0.0.apk](releases/OpenAamps-v1.0.0.apk)
-   - Or from GitHub Releases: [Releases / v1.0.0](https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.0.0)
+   - **Download Link**: [OpenAamps-v1.2.6.apk](releases/OpenAamps-v1.2.6.apk)
+   - Or from GitHub Releases: [Releases / v1.2.6](https://github.com/SharadS28N/raspberry-pi-music-player/releases/tag/v1.2.6)
 2. Tap the downloaded file and select **Install** (allow installation from unknown sources if prompted).
 3. Open **OpenAamps**. Tap the audio pill in the player or settings to verify the connection to your Raspberry Pi.
 
@@ -159,7 +159,7 @@ raspberry-pi-music-player/
 │   ├── android/              # Native Android gradle configuration & drawables
 │   └── lib/                  # Dart UI views, services, models, & proxy
 ├── releases/                 # Production compiled APK binaries
-│   └── OpenAamps-v1.0.0.apk  # Verified 62 MB standalone release APK
+│   └── OpenAamps-v1.2.6.apk  # Verified 70.8 MB standalone release APK
 ├── install.sh                # Single-line automated Raspberry Pi installer
 └── run.py                    # Local development launcher
 ```
