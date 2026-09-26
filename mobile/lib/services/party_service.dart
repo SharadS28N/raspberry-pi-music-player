@@ -279,8 +279,9 @@ class PartyService extends ChangeNotifier {
 
   // --- Join Listening Party by Room Code ---
   Future<bool> joinParty(String roomCode) async {
-    final code = roomCode.trim().toUpperCase();
-    if (code.isEmpty) return false;
+    final rawCode = roomCode.trim().toUpperCase();
+    if (rawCode.isEmpty) return false;
+    final code = rawCode.startsWith('JAM-') ? rawCode : 'JAM-$rawCode';
 
     _isConnecting = true;
     notifyListeners();
@@ -289,6 +290,9 @@ class PartyService extends ChangeNotifier {
 
     // 1. Resolve host base URL via UDP discovery & local network probing
     String? hostBaseUrl = await PartyDiscoveryService.instance.resolveHostBaseUrl(code);
+    if (hostBaseUrl == null && rawCode != code) {
+      hostBaseUrl = await PartyDiscoveryService.instance.resolveHostBaseUrl(rawCode);
+    }
 
     // 2. If not found via discovery, check configured Pi server
     if (hostBaseUrl == null) {
@@ -335,11 +339,26 @@ class PartyService extends ChangeNotifier {
       }
     }
 
-    // 3. Cloud Firestore Fallback: enables cross-network / 5G Jam Sessions
+    // 3. Cloud Firestore: enables WAN / Cellular / Tokha remote cross-network Jam Sessions
     try {
-      final doc = await FirebaseFirestore.instance.collection('jam_rooms').doc(code).get().timeout(const Duration(seconds: 4));
-      if (doc.exists && doc.data() != null) {
-        final data = doc.data()!;
+      var candidateCode = code;
+      var snap = await FirebaseFirestore.instance
+          .collection('jam_rooms')
+          .doc(candidateCode)
+          .get()
+          .timeout(const Duration(seconds: 5));
+
+      if (!snap.exists) {
+        candidateCode = rawCode;
+        snap = await FirebaseFirestore.instance
+            .collection('jam_rooms')
+            .doc(candidateCode)
+            .get()
+            .timeout(const Duration(seconds: 5));
+      }
+
+      if (snap.exists && snap.data() != null) {
+        final data = snap.data()!;
         final myMember = {
           'id': account.id,
           'name': account.name,
@@ -348,13 +367,16 @@ class PartyService extends ChangeNotifier {
           'role': 'listener',
           'is_online': true,
         };
-        await FirebaseFirestore.instance.collection('jam_rooms').doc(code).update({
-          'members.${account.id}': myMember,
-        });
+        await FirebaseFirestore.instance.collection('jam_rooms').doc(candidateCode).set({
+          'members': {
+            account.id: myMember,
+          }
+        }, SetOptions(merge: true));
+
         _applyRoomSnapshot(data);
         _isInParty = true;
         _isConnecting = false;
-        _listenFirestoreRoom(code);
+        _listenFirestoreRoom(candidateCode);
         _startDriftCorrection();
         _syncLocalAudioPlayer();
         notifyListeners();
@@ -508,21 +530,31 @@ class PartyService extends ChangeNotifier {
 
     // Members
     _members.clear();
-    final membersMap = data['members'] as Map<String, dynamic>? ?? {};
-    for (var m in membersMap.values) {
-      _members.add(PartyMemberModel.fromJson(m));
+    final membersRaw = data['members'];
+    if (membersRaw is Map) {
+      for (var m in membersRaw.values) {
+        if (m is Map) {
+          _members.add(PartyMemberModel.fromJson(Map<String, dynamic>.from(m)));
+        }
+      }
+    } else if (membersRaw is List) {
+      for (var m in membersRaw) {
+        if (m is Map) {
+          _members.add(PartyMemberModel.fromJson(Map<String, dynamic>.from(m)));
+        }
+      }
     }
 
     // Current Track
-    if (data['current_track'] != null) {
-      final ct = data['current_track'];
+    if (data['current_track'] != null && data['current_track'] is Map) {
+      final ct = Map<String, dynamic>.from(data['current_track'] as Map);
       _partyCurrentTrack = Track(
-        id: ct['id'] ?? '',
-        title: ct['title'] ?? 'Unknown',
-        artist: ct['artist'] ?? 'Unknown Artist',
-        album: '',
-        duration: Duration(seconds: ct['duration'] ?? 0),
-        artworkUrl: ct['thumbnail'] ?? '',
+        id: ct['id']?.toString() ?? '',
+        title: ct['title']?.toString() ?? 'Unknown',
+        artist: ct['artist']?.toString() ?? 'Unknown Artist',
+        album: ct['album']?.toString() ?? '',
+        duration: Duration(seconds: (ct['duration'] as num?)?.toInt() ?? 0),
+        artworkUrl: ct['thumbnail']?.toString() ?? '',
         streamUrl: '',
       );
     } else {
@@ -533,7 +565,9 @@ class PartyService extends ChangeNotifier {
     _partyQueue.clear();
     final qList = data['queue'] as List<dynamic>? ?? [];
     for (var item in qList) {
-      _partyQueue.add(PartyTrackModel.fromJson(item));
+      if (item is Map) {
+        _partyQueue.add(PartyTrackModel.fromJson(Map<String, dynamic>.from(item)));
+      }
     }
   }
 
@@ -606,7 +640,7 @@ class PartyService extends ChangeNotifier {
     final account = AccountService.instance.activeAccount;
     final baseUrl = _activePartyBaseUrl ?? PiAampsService.instance.baseUrl;
 
-    // If this device is the local embedded server host, update directly
+    // If this device is the local embedded server host, update local server
     if (PartyHostServer.instance.isRunning) {
       PartyHostServer.instance.updatePlaybackState(
         track: track ?? _partyCurrentTrack,
@@ -615,7 +649,6 @@ class PartyService extends ChangeNotifier {
       );
       _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
       notifyListeners();
-      return;
     }
 
     final payload = {
@@ -652,24 +685,30 @@ class PartyService extends ChangeNotifier {
       );
     } catch (_) {}
 
-    // 3. Cloud Firestore real-time sync for cross-network devices
+    // 3. Cloud Firestore real-time sync for cross-network / remote devices (e.g. Tokha friend)
     try {
+      final activeTrack = track ?? _partyCurrentTrack;
       final updateData = <String, dynamic>{
         'is_playing': isPlaying,
         'position_ms': position.inMilliseconds,
         'server_timestamp_ms': DateTime.now().millisecondsSinceEpoch,
       };
-      if (track != null) {
+      if (activeTrack != null) {
         updateData['current_track'] = {
-          'id': track.id,
-          'title': track.title,
-          'artist': track.artist,
-          'thumbnail': track.artworkUrl,
-          'duration': track.duration.inSeconds,
+          'id': activeTrack.id,
+          'title': activeTrack.title,
+          'artist': activeTrack.artist,
+          'thumbnail': activeTrack.artworkUrl,
+          'duration': activeTrack.duration.inSeconds,
         };
       }
-      FirebaseFirestore.instance.collection('jam_rooms').doc(_currentRoomCode!).update(updateData);
-    } catch (_) {}
+      await FirebaseFirestore.instance.collection('jam_rooms').doc(_currentRoomCode!).set(
+        updateData,
+        SetOptions(merge: true),
+      );
+    } catch (e) {
+      debugPrint('[PartyService] Firestore playback update error: $e');
+    }
   }
 
   Future<void> addToPartyQueue(Track track) async {
@@ -682,7 +721,6 @@ class PartyService extends ChangeNotifier {
       PartyHostServer.instance.addQueueItem(track, account.id, account.name);
       _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
       notifyListeners();
-      return;
     }
 
     final payload = {
@@ -782,7 +820,6 @@ class PartyService extends ChangeNotifier {
       _applyRoomSnapshot(PartyHostServer.instance.toSnapshot());
       _syncLocalAudioPlayer();
       notifyListeners();
-      return;
     }
 
     if (_wsChannel != null) {

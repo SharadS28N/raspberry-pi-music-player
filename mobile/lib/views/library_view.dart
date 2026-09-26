@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/track.dart';
@@ -39,7 +40,7 @@ class LibraryView extends StatefulWidget {
 
 class _LibraryViewState extends State<LibraryView> {
   int _selectedFilterIndex = 0;
-  final List<String> _filters = ['Library', 'Playlists', 'Songs', 'Albums', 'Artists', 'Folders', 'WebDAV'];
+  final List<String> _filters = ['Library', 'Playlists', 'Downloaded', 'Songs', 'Albums', 'Artists', 'Folders', 'WebDAV'];
 
   // WebDAV Controller state
   final TextEditingController _webDavUrlController = TextEditingController(text: 'https://cloud.example.com/remote.php/dav/files/user/Music/');
@@ -616,15 +617,17 @@ class _LibraryViewState extends State<LibraryView> {
     switch (_selectedFilterIndex) {
       case 1: // Playlists
         return _buildPlaylistsTab();
-      case 2: // Songs
+      case 2: // Downloaded / Offline
+        return _buildDownloadedTab();
+      case 3: // Songs
         return _buildSongsTab();
-      case 3: // Albums
+      case 4: // Albums
         return _buildAlbumsTab();
-      case 4: // Artists
+      case 5: // Artists
         return _buildArtistsTab();
-      case 5: // Folders
+      case 6: // Folders
         return _buildFoldersTab();
-      case 6: // WebDAV
+      case 7: // WebDAV
         return _buildWebDavTab();
       case 0: // Library Overview
       default:
@@ -796,23 +799,23 @@ class _LibraryViewState extends State<LibraryView> {
             _buildLibraryCard(
               icon: Icons.offline_pin_rounded,
               iconColor: Colors.white,
-              title: 'Offline',
+              title: 'Offline Audio',
               subtitle: '${DownloadService.instance.downloadedTracks.length} tracks',
-              onTap: () => _showOfflineTracksModal(context),
+              onTap: () => setState(() => _selectedFilterIndex = 2),
             ),
             _buildLibraryCard(
               icon: Icons.folder_rounded,
               iconColor: Colors.white,
               title: 'Folder Browser',
               subtitle: '${widget.localAudioService.folders.length} directories',
-              onTap: () => setState(() => _selectedFilterIndex = 5),
+              onTap: () => setState(() => _selectedFilterIndex = 6),
             ),
             _buildLibraryCard(
               icon: Icons.cloud_queue_rounded,
               iconColor: Colors.white,
               title: 'WebDAV Cloud',
               subtitle: _isWebDavConnected ? 'Connected' : 'Configure',
-              onTap: () => setState(() => _selectedFilterIndex = 6),
+              onTap: () => setState(() => _selectedFilterIndex = 7),
             ),
             _buildLibraryCard(
               icon: Icons.history_rounded,
@@ -826,7 +829,7 @@ class _LibraryViewState extends State<LibraryView> {
               iconColor: Colors.white,
               title: 'Local Files',
               subtitle: '${localTracks.length} tracks',
-              onTap: () => setState(() => _selectedFilterIndex = 2),
+              onTap: () => setState(() => _selectedFilterIndex = 3),
             ),
           ],
         ),
@@ -856,7 +859,7 @@ class _LibraryViewState extends State<LibraryView> {
         'desc': 'Saved on device with tagged metadata',
         'count': '${DownloadService.instance.downloadedTracks.length} songs',
         'icon': Icons.offline_pin_rounded,
-        'action': () => _showOfflineTracksModal(context),
+        'action': () => setState(() => _selectedFilterIndex = 2),
       },
       {
         'title': 'Most Played Hits',
@@ -1033,7 +1036,249 @@ class _LibraryViewState extends State<LibraryView> {
     );
   }
 
-  // --- Tab 2: All Songs with Tag Editor ---
+  // --- Tab 2: Downloaded / Offline Storage ---
+  Widget _buildDownloadedTab() {
+    final downloadedTracks = DownloadService.instance.downloadedTracks;
+    int totalBytes = 0;
+    for (final t in downloadedTracks) {
+      if (t.localPath != null) {
+        try {
+          final f = File(t.localPath!);
+          if (f.existsSync()) totalBytes += f.lengthSync();
+        } catch (_) {}
+      }
+    }
+
+    final mbStr = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Storage & Playback Controls Header
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.offline_pin_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Offline Storage',
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${downloadedTracks.length} tracks cached • $mbStr MB storage used',
+                          style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (downloadedTracks.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.play_arrow_rounded, color: Colors.black),
+                        label: const Text('Play All (Offline)', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          widget.audioService?.setQueue(downloadedTracks);
+                          if (downloadedTracks.isNotEmpty) {
+                            widget.onPlayTrack(downloadedTracks.first);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton.filledTonal(
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.all(12),
+                      ),
+                      icon: const Icon(Icons.shuffle_rounded, color: Colors.white, size: 20),
+                      tooltip: 'Shuffle Offline',
+                      onPressed: () {
+                        final shuffled = List<Track>.from(downloadedTracks)..shuffle();
+                        widget.audioService?.setQueue(shuffled);
+                        if (shuffled.isNotEmpty) {
+                          widget.onPlayTrack(shuffled.first);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (downloadedTracks.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFF141414),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.download_for_offline_outlined, color: Colors.white.withValues(alpha: 0.3), size: 52),
+                const SizedBox(height: 14),
+                const Text(
+                  'No Offline Tracks Yet',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Tap the download icon on any song, album, or search result to cache it locally. Cached songs play with 0ms buffering with zero internet required.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13, height: 1.4),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Downloaded Tracks (${downloadedTracks.length})',
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+              const Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 14),
+                  SizedBox(width: 4),
+                  Text('100% Offline Ready', style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: downloadedTracks.length,
+            separatorBuilder: (c, i) => const SizedBox(height: 8),
+            itemBuilder: (c, i) {
+              final track = downloadedTracks[i];
+              String fileSizeStr = '';
+              if (track.localPath != null) {
+                try {
+                  final f = File(track.localPath!);
+                  if (f.existsSync()) {
+                    final bytes = f.lengthSync();
+                    fileSizeStr = ' • ${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+                  }
+                } catch (_) {}
+              }
+
+              return ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tileColor: const Color(0xFF141414),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    track.artworkUrl,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 48,
+                      height: 48,
+                      color: const Color(0xFF242424),
+                      child: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  track.title,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Row(
+                  children: [
+                    const Icon(Icons.offline_pin_rounded, color: Colors.greenAccent, size: 12),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '${track.artist}$fileSizeStr',
+                        style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_note_rounded, color: Colors.white54, size: 20),
+                      tooltip: 'Edit tags',
+                      onPressed: () => _showTagEditor(track),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.white38, size: 20),
+                      tooltip: 'Remove download',
+                      onPressed: () async {
+                        await DownloadService.instance.deleteDownloadedTrack(track.id);
+                        setState(() {});
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 28),
+                      tooltip: 'Play',
+                      onPressed: () {
+                        widget.onPlayTrack(track);
+                      },
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  widget.onPlayTrack(track);
+                },
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  // --- Tab 3: All Songs with Tag Editor ---
   Widget _buildSongsTab() {
     final tracks = widget.localAudioService.localTracks;
 
@@ -1485,112 +1730,7 @@ class _LibraryViewState extends State<LibraryView> {
     );
   }
 
-  void _showOfflineTracksModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141414),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (modalCtx, setModalState) {
-          final currentDownloaded = DownloadService.instance.downloadedTracks;
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.offline_pin_rounded, color: Colors.white, size: 24),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Offline Tracks (${currentDownloaded.length})',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (currentDownloaded.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      alignment: Alignment.center,
-                      child: const Column(
-                        children: [
-                          Icon(Icons.download_for_offline_outlined, color: Colors.white38, size: 48),
-                          SizedBox(height: 12),
-                          Text(
-                            'No Offline Downloads',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Tap download on any track while playing to save tagged audio for offline playback.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: currentDownloaded.length,
-                        separatorBuilder: (c, i) => const SizedBox(height: 8),
-                        itemBuilder: (c, i) {
-                          final track = currentDownloaded[i];
-                          return ListTile(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            tileColor: Colors.white.withValues(alpha: 0.04),
-                            leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(track.artworkUrl, width: 44, height: 44, fit: BoxFit.cover),
-                            ),
-                            title: Text(track.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            subtitle: Text('${track.artist} • Offline M4A', style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 12)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_note_rounded, color: Colors.white54, size: 20),
-                                  tooltip: 'Edit tags',
-                                  onPressed: () => _showTagEditor(track),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.white38, size: 20),
-                                  tooltip: 'Delete download',
-                                  onPressed: () async {
-                                    await DownloadService.instance.deleteDownloadedTrack(track.id);
-                                    setModalState(() {});
-                                    setState(() {});
-                                  },
-                                ),
-                                const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 28),
-                              ],
-                            ),
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              widget.onPlayTrack(track);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+
 
   void _showLikedTracksModal(BuildContext context) {
     final liked = widget.audioService?.likedTracks ?? [];

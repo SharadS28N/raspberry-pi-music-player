@@ -342,6 +342,15 @@ class AudioPlayerService extends ChangeNotifier {
     return ConcatenatingAudioSource(
       useLazyPreparation: true,
       children: queueList.map((t) {
+        if (t.localPath != null && t.localPath!.isNotEmpty) {
+          final f = File(t.localPath!);
+          if (f.existsSync()) {
+            return AudioSource.uri(
+              Uri.file(f.path),
+              tag: _mediaItemForTrack(t),
+            );
+          }
+        }
         final localFile = _proxy.getLocalCacheFile(t.id);
         if (localFile != null && localFile.existsSync()) {
           return AudioSource.uri(
